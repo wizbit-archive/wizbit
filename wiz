@@ -1,8 +1,20 @@
 #!/usr/bin/python
 import sys
 import wizbit
+from os.path import abspath, exists
+from subprocess import CalledProcessError
 
-if sys.argv[1] == "create":
-	wizbit.create(sys.argv[2])
-elif sys.argv[1] == "clone":
-	wizbit.clone(sys.argv[2], sys.argv[3])
+try:
+    if sys.argv[1] == "create":
+        wizbit.create(abspath(sys.argv[2]))
+    elif sys.argv[1] == "clone":
+        newwizbit = abspath(sys.argv[3])
+        if exists(newwizbit):
+            print "clone: %s already exists!" % (sys.argv[3])
+            sys.exit(1)
+        wizbit.clone(abspath(sys.argv[2]), newwizbit)
+    elif sys.argv[1] == "add":
+        wizbit.add(abspath(sys.argv[2]), sys.argv[3])
+except CalledProcessError, e:
+    print e
+    sys.exit(2)
