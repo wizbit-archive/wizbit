@@ -28,7 +28,11 @@ def add (dir, file):
     check_call (["git-add", file], env = {"GIT_DIR":gitdir}, cwd=dir)
     ct = commit (gitdir, False)
 
-    repos = etree.parse (wizdir + "repos")
+    try:
+        repos = etree.parse (wizdir + "repos")
+    except IOError:
+        root = etree.Element("wizbit")
+        repos = etree.ElementTree(root) 
     newrepo = etree.SubElement(repos.getroot(), "repo", attrib={"name":file+".git"})
     fileel = etree.SubElement(newrepo, "file")
     fileel.text = file
