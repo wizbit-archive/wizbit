@@ -22,6 +22,8 @@ try:
             wizbit.log (sys.argv[2], sys.argv[3])
         else:
             wizbit.log_all (sys.argv[2])
+    elif sys.argv[1] == "checkout":
+        wizbit.checkout (sys.argv[2], sys.argv[3], sys.argv[4])
 
 except CalledProcessError, e:
     print e

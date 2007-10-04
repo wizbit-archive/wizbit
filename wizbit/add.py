@@ -71,3 +71,12 @@ def log_all (dir):
     for e in repos.xpath("/wizbit/repo"):
         log (dir, e.attrib["name"])
     
+def checkout (dir, file, head):
+    wizdir = dir + "/.wizbit/"
+    gitdir = abspath(wizdir + file + ".git")
+    check_call(["git-update-index", "--index-info"],env = {"GIT_DIR":gitdir},
+            stdin = Popen(["git-ls-tree", "--full-name", "-r", head], 
+                env = {"GIT_DIR":gitdir}, stdout=PIPE).stdout)
+
+    check_call(["git-checkout-index", "-f", "--", file], env = {"GIT_DIR":gitdir})
+
