@@ -12,11 +12,17 @@ try:
         if exists(newwizbit):
             print "clone: %s already exists!" % (sys.argv[3])
             sys.exit(1)
-        wizbit.clone(abspath(sys.argv[2]), newwizbit)
+        wizbit.clone(sys.argv[2], newwizbit)
     elif sys.argv[1] == "add":
-        wizbit.add(abspath(sys.argv[2]), sys.argv[3])
+        wizbit.add(sys.argv[2], sys.argv[3])
     elif sys.argv[1] == "update":
-        wizbit.update(abspath(sys.argv[2]), sys.argv[3])
+        wizbit.update(sys.argv[2], sys.argv[3])
+    elif sys.argv[1] == "log":
+        if (len(sys.argv) > 3):
+            wizbit.log (sys.argv[2], sys.argv[3])
+        else:
+            wizbit.log_all (sys.argv[2])
+
 except CalledProcessError, e:
     print e
     sys.exit(2)
