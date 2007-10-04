@@ -1,5 +1,6 @@
 from subprocess import check_call, Popen, PIPE
 from lxml import etree
+from os.path import abspath, exists
 
 def get_head (gitdir):
     return  Popen (["git-rev-list", "HEAD"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
@@ -49,3 +50,20 @@ def update(dir, file):
             e.text = ct
     repos.write (wizdir + "repos", pretty_print=True, encoding="utf-8", xml_declaration=True)
 
+def pull (dir, file):
+    wizdir = dir + "/.wizbit/"
+    gitdir = wizdir + file + ".git"
+
+def log (dir, repo):
+    wizdir = dir + "/.wizbit/"
+    gitdir = abspath(wizdir + repo)
+    print gitdir
+    log = Popen (["git-log", "--pretty=raw"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
+    print log
+
+def log_all (dir):
+    wizdir = dir + "/.wizbit/"
+    repos = etree.parse (wizdir + "repos")
+    for e in repos.xpath("/wizbit/repo"):
+        log (dir, e.attrib["name"])
+    
