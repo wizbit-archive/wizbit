@@ -1,5 +1,5 @@
-import sys
+import os
 
 def create (newdir):
-    sys.makedirs (newdir + "/.wizbit")
+    os.makedirs (newdir + "/.wizbit")
 
