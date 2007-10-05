@@ -67,9 +67,20 @@ def update(dir, file):
             e.text = ct
     repos.write (wizdir + "repos", pretty_print=True, encoding="utf-8", xml_declaration=True)
 
-def pull (dir, file):
-    wizdir = dir + "/.wizbit/"
-    gitdir = wizdir + file + ".git"
+def pull (fromdir, todir):
+    fromwizdir = fromdir + "/.wizbit/"
+    towizdir = todir + "/.wizbit/"
+    fromrepos = etree.parse (fromwizdir + "repos")
+    torepos = etree.parse (towizdir + "repos")
+    for ef in fromrepos.xpath("/wizbit/repo"):
+        et = torepos.find("/wizbit/repo[@attrib='"+ef.attrib[name]+"']")
+        if et:
+            for heads in ef.findall("head"):
+                None
+
+
+
+
 
 def log (dir, repo):
     wizdir = dir + "/.wizbit/"
