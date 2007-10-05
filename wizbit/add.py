@@ -1,6 +1,7 @@
 from subprocess import check_call, Popen, PIPE
 from lxml import etree
 from os.path import abspath, exists
+from os import getcwd
 
 def get_head (gitdir):
     return  Popen (["git-rev-list", "HEAD"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
@@ -74,9 +75,8 @@ def log_all (dir):
 def checkout (dir, file, head):
     wizdir = dir + "/.wizbit/"
     gitdir = abspath(wizdir + file + ".git")
-    check_call(["git-update-index", "--index-info"],env = {"GIT_DIR":gitdir},
+    check_call(["git-update-index", "--index-info"], env = {"GIT_DIR":gitdir},
             stdin = Popen(["git-ls-tree", "--full-name", "-r", head], 
                 env = {"GIT_DIR":gitdir}, stdout=PIPE).stdout)
 
     check_call(["git-checkout-index", "-f", "--", file], env = {"GIT_DIR":gitdir})
-
