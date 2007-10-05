@@ -36,7 +36,7 @@ def merge_commit (dir, file, heads):
 
 def add (dir, file):
     wizdir = dir + "/.wizbit/"
-    gitdir = wizdir + file + ".git"
+    gitdir = abspath(wizdir + file + ".git")
     check_call (["git-init-db"], env = {"GIT_DIR":gitdir}, cwd=dir)
     check_call (["git-add", file], env = {"GIT_DIR":gitdir}, cwd=dir)
     ct = commit (gitdir, False)
@@ -56,7 +56,7 @@ def add (dir, file):
 
 def update(dir, file):
     wizdir = dir + "/.wizbit/"
-    gitdir = wizdir + file + ".git"
+    gitdir = abspath(wizdir + file + ".git")
     check_call (["git-add", file], env = {"GIT_DIR":gitdir}, cwd=dir)
     oldhead = get_head(gitdir)
     ct = commit (gitdir, oldhead)
