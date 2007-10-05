@@ -6,20 +6,32 @@ def get_head (gitdir):
     return  Popen (["git-rev-list", "HEAD"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
 
 
-def commit (gitdir, parent):
+def commit (gitdir, parents):
     print "git dir:", gitdir
     tree = Popen (["git-write-tree"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
 
-    if parent:
-        command = ["git-commit-tree",tree, "-p",parent]
-    else:
-        command = ["git-commit-tree",tree]
+    command = ["git-commit-tree",tree]
+    for parent in parents:
+        command = command + ["-p",parent]
 
     commit = Popen (command, env = {"GIT_DIR":gitdir}, stdin = Popen(["echo"], stdout=PIPE).stdout, stdout = PIPE).communicate()[0].split()[0]
     # print "commit: ", commit
 
     check_call (["git-update-ref", "HEAD", commit], env = {"GIT_DIR":gitdir})
     return commit
+
+def merge_commit (dir, file, heads):
+    wizdir = dir + "/.wizbit/"
+    gitdir = abspath(wizdir + file + ".git")
+
+    check_call (["git-add", "-u"], env = {"GIT_DIR":gitdir}, cwd=dir)
+    ct = commit(gitdir, heads);
+    repos = etree.parse (wizdir + "repos")
+    xpath = "/wizbit/repo[@name='"+file+".git']/head"
+    for e in repos.xpath(xpath):
+        if e.text in heads:
+            e.text = ct
+    repos.write (wizdir + "repos", pretty_print=True, encoding="utf-8", xml_declaration=True)
 
 
 def add (dir, file):
