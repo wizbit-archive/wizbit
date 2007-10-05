@@ -19,7 +19,7 @@ try:
         wizbit.update(sys.argv[2], sys.argv[3])
     elif sys.argv[1] == "log":
         if (len(sys.argv) > 3):
-            wizbit.log (sys.argv[2], sys.argv[3])
+            wizbit.log (sys.argv[2], sys.argv[3]+".git")
         else:
             wizbit.log_all (sys.argv[2])
     elif sys.argv[1] == "checkout":
