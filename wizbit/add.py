@@ -61,7 +61,8 @@ def update(dir, file):
     oldhead = get_head(gitdir)
     ct = commit (gitdir, oldhead)
     repos = etree.parse (wizdir + "repos")
-    for e in repos.xpath("/wizbit/repo/head"):
+    xpath = "/wizbit/repo[@name='"+file+".git']/head"
+    for e in repos.xpath(xpath):
         if e.text == oldhead:
             e.text = ct
     repos.write (wizdir + "repos", pretty_print=True, encoding="utf-8", xml_declaration=True)
