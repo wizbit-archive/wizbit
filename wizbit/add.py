@@ -7,14 +7,13 @@ def get_head (gitdir):
     return  Popen (["git-rev-list", "HEAD"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
 
 
-def commit (gitdir, parent):
+def commit (gitdir, parents):
     print "git dir:", gitdir
     tree = Popen (["git-write-tree"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
 
-    if parent:
-        command = ["git-commit-tree",tree, "-p",parent]
-    else:
-        command = ["git-commit-tree",tree]
+    command = ["git-commit-tree",tree]
+    for parent in parents:
+        command = command + ["-p",parent]
 
     commit = Popen (command, env = {"GIT_DIR":gitdir}, stdin = Popen(["echo"], stdout=PIPE).stdout, stdout = PIPE).communicate()[0].split()[0]
     # print "commit: ", commit
@@ -22,10 +21,23 @@ def commit (gitdir, parent):
     check_call (["git-update-ref", "HEAD", commit], env = {"GIT_DIR":gitdir})
     return commit
 
+def merge_commit (dir, file, heads):
+    wizdir = dir + "/.wizbit/"
+    gitdir = abspath(wizdir + file + ".git")
+
+    check_call (["git-add", "-u"], env = {"GIT_DIR":gitdir}, cwd=dir)
+    ct = commit(gitdir, heads);
+    repos = etree.parse (wizdir + "repos")
+    xpath = "/wizbit/repo[@name='"+file+".git']/head"
+    for e in repos.xpath(xpath):
+        if e.text in heads:
+            e.text = ct
+    repos.write (wizdir + "repos", pretty_print=True, encoding="utf-8", xml_declaration=True)
+
 
 def add (dir, file):
     wizdir = dir + "/.wizbit/"
-    gitdir = wizdir + file + ".git"
+    gitdir = abspath(wizdir + file + ".git")
     check_call (["git-init-db"], env = {"GIT_DIR":gitdir}, cwd=dir)
     check_call (["git-add", file], env = {"GIT_DIR":gitdir}, cwd=dir)
     ct = commit (gitdir, False)
@@ -45,19 +57,31 @@ def add (dir, file):
 
 def update(dir, file):
     wizdir = dir + "/.wizbit/"
-    gitdir = wizdir + file + ".git"
+    gitdir = abspath(wizdir + file + ".git")
     check_call (["git-add", file], env = {"GIT_DIR":gitdir}, cwd=dir)
     oldhead = get_head(gitdir)
     ct = commit (gitdir, oldhead)
     repos = etree.parse (wizdir + "repos")
-    for e in repos.xpath("/wizbit/repo/head"):
+    xpath = "/wizbit/repo[@name='"+file+".git']/head"
+    for e in repos.xpath(xpath):
         if e.text == oldhead:
             e.text = ct
     repos.write (wizdir + "repos", pretty_print=True, encoding="utf-8", xml_declaration=True)
 
-def pull (dir, file):
-    wizdir = dir + "/.wizbit/"
-    gitdir = wizdir + file + ".git"
+def pull (fromdir, todir):
+    fromwizdir = fromdir + "/.wizbit/"
+    towizdir = todir + "/.wizbit/"
+    fromrepos = etree.parse (fromwizdir + "repos")
+    torepos = etree.parse (towizdir + "repos")
+    for ef in fromrepos.xpath("/wizbit/repo"):
+        et = torepos.find("/wizbit/repo[@attrib='"+ef.attrib[name]+"']")
+        if et:
+            for heads in ef.findall("head"):
+                None
+
+
+
+
 
 def log (dir, repo):
     wizdir = dir + "/.wizbit/"
