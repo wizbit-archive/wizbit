@@ -1,4 +1,4 @@
-from subprocess import check_call, Popen, PIPE
+from subprocess import call, check_call, Popen, PIPE
 from lxml import etree
 from os.path import abspath, exists
 
@@ -67,16 +67,27 @@ def update(dir, file):
             e.text = ct
     repos.write (wizdir + "repos", pretty_print=True, encoding="utf-8", xml_declaration=True)
 
+def check_pull_needed (fromhead, togitdir):
+    return call (["git-rev-list", "--objects", fromhead, "--not", "--all"], env = {"GIT_DIR":togitdir}) == 0:
+
+    
+
 def pull (fromdir, todir):
     fromwizdir = fromdir + "/.wizbit/"
     towizdir = todir + "/.wizbit/"
     fromrepos = etree.parse (fromwizdir + "repos")
     torepos = etree.parse (towizdir + "repos")
     for ef in fromrepos.xpath("/wizbit/repo"):
-        et = torepos.find("/wizbit/repo[@attrib='"+ef.attrib[name]+"']")
+        et = torepos.find("/wizbit/repo[@attrib='"+ef.attrib["name"]+"']")
         if et:
-            for heads in ef.findall("head"):
-                None
+            fromgitdir = fromwizdir + ef.attrib["name"]
+            togitdir = towizdir + ef.attrib["name"]
+            pullneeded = False;
+            for head in ef.findall("head"):
+                pullneeded = pullneeded || check_pull_needed (head)
+            if pullneeded:
+                check_call("git-fetch-pack", "--all", fromgitdir], env = {"GIT_DIR":togitdir})
+
 
 
 
