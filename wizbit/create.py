@@ -1,14 +1,16 @@
 import os
-import wizbit
-
-def _controlfile(base, dir, files):
-    if ".wizbit" in files:
-        files.remove(".wizbit")	    
-    for f in files:
-	if not os.path.isdir(dir + f):    
-            wizbit.add(wizbit.getwizpath(dir), f)
+import uuid
+import platform
+from lxml import etree
 
 def create (newdir):
-    if not os.path.exists(newdir + "/.wizbit"):
-        os.makedirs (newdir + "/.wizbit")
-    os.path.walk(newdir, _controlfile, "/")
+    wizdir = newdir + "/.wizbit/"
+    os.makedirs (wizdir)
+    root = etree.Element("wizbit")
+    wizbitconf = etree.ElementTree(root)
+    id = etree.SubElement (root, "myid")
+    id.text = uuid.uuid4().hex
+    machine = etree.SubElement (root, "machine")
+    machine.text = platform.node()
+    wizbitconf.write (wizdir + "wizbit.conf", pretty_print=True, encoding="utf-8", xml_declaration=True)
+    return id.text
