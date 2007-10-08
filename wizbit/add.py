@@ -40,7 +40,7 @@ def add (dir, file):
     gitdir = abspath(wizdir + file + ".git")
     check_call (["git-init-db"], env = {"GIT_DIR":gitdir}, cwd=dir)
     check_call (["git-add", file], env = {"GIT_DIR":gitdir}, cwd=dir)
-    ct = commit (gitdir, False)
+    ct = commit (gitdir, [])
 
     try:
         repos = etree.parse (wizdir + "repos")
