@@ -148,7 +148,7 @@ def log_all (dir):
     for e in wizbitconf.xpath("/wizbit/repo"):
         log (dir, e.attrib["name"])
 
-def checkout (dir, files, ref, **kwargs):
+def checkout (dir, files, ref, cwd=dir, **kwargs):
     wizdir = dir + "/.wizbit/"
     gitdir = kwargs["gitdir"] or abspath(wizdir + file + ".git")
 

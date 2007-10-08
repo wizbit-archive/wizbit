@@ -33,9 +33,9 @@ class WizResolveDialog(gtk.VBox):
 		infoView.append_column(size)
 		
 		self.pack_start(infoView)
-		self.changefile(file)
+		self.getVersionInfo(file)
 
-	def changefile(self, file):
+	def getVersionInfo(self, file):
 		(scheme, netloc, path, params, query, fragment) = urlparse(file.get_uri())
 
 		wizpath = wizbit.getwizpath(path)
@@ -105,22 +105,6 @@ class WizbitExtension(nautilus.ColumnProvider, nautilus.InfoProvider, nautilus.M
 	
 	return items
 
-    #def get_property_pages(self, files):
-    #    if len(files) != 1:
-    #        return
-    #    file = files[0]
-
-    #    if (file.get_string_attribute(WIZ_CONTROLLED) == YES) and \
-    #       (file.get_string_attribute(WIZ_CONFLICT) == YES):
-    #        self.property_label = gtk.Label("Wizbit versions")
-    #        self.property_label.show()
-    #        self.hbox = gtk.HBox(0, False)
-    #        self.hbox.show_all()
-    #        property_page = WizResolveDialog(file)
-    #        property_page.show()
-    #        self.hbox.pack_start(property_page)
-    #        return nautilus.PropertyPage("NautilusWizbit::resolve_page",
-    #                                     self.property_label, self.hbox),
     def get_property_pages(self, files):
         if len(files) != 1:
             return
