@@ -3,7 +3,6 @@ import uuid
 import platform
 from lxml import etree
 
-
 def create (newdir):
     wizdir = newdir + "/.wizbit/"
     os.makedirs (wizdir)
@@ -14,5 +13,4 @@ def create (newdir):
     machine = etree.SubElement (root, "machine")
     machine.text = platform.node()
     wizbitconf.write (wizdir + "wizbit.conf", pretty_print=True, encoding="utf-8", xml_declaration=True)
-
     return id.text

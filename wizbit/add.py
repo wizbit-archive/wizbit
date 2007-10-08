@@ -1,6 +1,7 @@
 from subprocess import call, check_call, Popen, PIPE
 from lxml import etree
 from os.path import abspath, exists
+from os import getcwd
 
 def get_treeish(gitdir,ref):
     return Popen (["git-show-ref", ref], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
@@ -164,4 +165,3 @@ def checkout (dir, files, ref, **kwargs):
     else:
         print "checking out all"
         check_call(["git-checkout-index", "-f", "-a"], env = {"GIT_DIR":gitdir}, cwd=dir)
-
