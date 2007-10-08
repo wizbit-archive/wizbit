@@ -1,27 +1,38 @@
 #!/usr/bin/python
 import sys
 import os
+from create import *
+from add import *
 from subprocess import Popen, check_call
 from lxml import etree
 
 def clone (olddir, newdir):
     print olddir, newdir
+
+    myid = create (newdir)
+
     oldwizdir = olddir + "/.wizbit/"
     newwizdir = newdir + "/.wizbit/"
 
-    wizbit = etree.parse (oldwizdir + "repos")
-    for i in wizbit.getiterator("repo"):
+    wizbitconf = etree.parse (oldwizdir + "wizbit.conf")
+    new_wizbitconf = etree.parse (newwizdir + "wizbit.conf")
+    for i in wizbitconf.getiterator("repo"):
         print i.attrib
 
-    try:
-        os.makedirs (newwizdir)
-    except:
-        None
-
-    for i in wizbit.getiterator("repo"):
-        orig_git = oldwizdir + i.attrib["name"]
-        dest_git = newwizdir +i.attrib["name"]
+    for i in wizbitconf.getiterator("repo"):
+        name = i.attrib["name"]
+        orig_git = oldwizdir + name
+        dest_git = newwizdir + name
+        repo = etree.SubElement(new_wizbitconf.getroot(), "repo", name=name)
         check_call(["git","clone", "--bare",  orig_git , dest_git])
-        check_call(["git","checkout"], env={"GIT_DIR":dest_git}, cwd=newdir)
+        checkout (newdir, [], "master", gitdir=dest_git)
 
-    wizbit.write (newwizdir + "repos")
+        for j in i.getiterator("head"):
+            if j.attrib["ref"] == "refs/heads/master":
+                head = etree.SubElement(repo, "head", ref="refs/heads/master")
+                etree.SubElement(head, "id").text = myid
+            else:
+                head = etree.SubElement(repo, "head", ref=j.attrib["ref"])
+                etree.SubElement(head, "id").text = j.find("id").text
+
+    new_wizbitconf.write (newwizdir + "wizbit.conf", pretty_print=True, encoding="utf-8", xml_declaration=True)

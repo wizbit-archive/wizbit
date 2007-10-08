@@ -23,11 +23,11 @@ try:
         else:
             wizbit.log_all (sys.argv[2])
     elif sys.argv[1] == "checkout":
-        wizbit.checkout (sys.argv[2], sys.argv[3], sys.argv[4])
-    elif sys.argv[1] == "checkout":
-        wizbit.checkout (sys.argv[2], sys.argv[3], sys.argv[4])
+        wizbit.checkout (sys.argv[2], sys.argv[3], sys.argv[4:])
     elif sys.argv[1] == "merge":
         wizbit.merge_commit (sys.argv[2], sys.argv[3], sys.argv[4:])
+    elif sys.argv[1] == "pull":
+        wizbit.pull (sys.argv[2], sys.argv[3])
 
 except CalledProcessError, e:
     print e
