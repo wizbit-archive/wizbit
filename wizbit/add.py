@@ -2,9 +2,8 @@ from subprocess import call, check_call, Popen, PIPE
 from lxml import etree
 from os.path import abspath, exists
 
-def get_head (gitdir):
-    return  Popen (["git-rev-list", "refs/heads/master"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
-
+def get_treeish(gitdir,ref):
+    return Popen (["git-show-ref", ref], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
 
 def commit (gitdir, parents):
     print "git dir:", gitdir
@@ -20,11 +19,14 @@ def commit (gitdir, parents):
     check_call (["git-update-ref", "refs/heads/master", commit], env = {"GIT_DIR":gitdir})
     return commit
 
-def merge_commit (dir, file, heads):
+def merge_commit (dir, file, refs):
     wizdir = dir + "/.wizbit/"
     gitdir = abspath(wizdir + file + ".git")
 
     check_call (["git-add", "-u"], env = {"GIT_DIR":gitdir}, cwd=dir)
+
+    heads = [get_treeish(gitdir,"refs/heads/" + i) for i in refs]
+
     ct = commit(gitdir, heads);
     wizbitconf = etree.parse (wizdir + "wizbit.conf")
     xpath = "/wizbit/repo[@name='"+file+".git']/head"
@@ -57,7 +59,7 @@ def update(dir, file):
     wizdir = dir + "/.wizbit/"
     gitdir = abspath(wizdir + file + ".git")
     check_call (["git-add", file], env = {"GIT_DIR":gitdir}, cwd=dir)
-    oldhead = get_head(gitdir)
+    oldhead = get_treeish(gitdir, "refs/heads/master")
     ct = commit (gitdir, [oldhead])
     wizbitconf = etree.parse (wizdir + "wizbit.conf")
     xpath = "/wizbit/repo[@name='"+file+".git']/head"
