@@ -39,10 +39,10 @@ class WizResolveDialog(gtk.VBox):
 		(scheme, netloc, path, params, query, fragment) = urlparse(file.get_uri())
 
 		wizpath = wizbit.getwizpath(path)
-		(head, filename) = split(path)
+		filename = path.rsplit(wizpath + "/")[1]
  		if wizpath:
 			try:
-				repos = etree.parse (wizpath + "/.wizbit/repos")
+				repos = etree.parse (wizpath + "/.wizbit/wizbit.conf")
 			except IOError:
 				pass
 			else:
@@ -52,7 +52,11 @@ class WizResolveDialog(gtk.VBox):
 						heads = [h for h in r if h.tag=="head"]
 				gitdir = wizpath + "/.wizbit/" + filename + ".git"
 				for head in heads:
-					self.infoStore.append(wizbit.commitinfo(gitdir, head.text, filename))
+					refdir = head.get("ref")
+					ref = open(gitdir + "/" + refdir)
+					id = ref.readline()
+					self.infoStore.append(wizbit.commitinfo(gitdir, id.strip('\n'), filename))
+					ref.close()
 
 gobject.type_register(WizResolveDialog)
 
@@ -73,7 +77,8 @@ class WizbitExtension(nautilus.ColumnProvider, nautilus.InfoProvider, nautilus.M
 
     def resolve_callback(self, menu, file):
 	win = gtk.Window()
-	win.set_title("Wizbit Resolver")
+	(scheme, netloc, path, params, query, fragment) = urlparse(file.get_uri())
+	win.set_title(split(path)[1] + "  Wizbit")
 	res = WizResolveDialog(file)
 	win.add(res)
 	win.show_all()
@@ -81,6 +86,12 @@ class WizbitExtension(nautilus.ColumnProvider, nautilus.InfoProvider, nautilus.M
     def create_callback(self, menu, file):
 	(scheme, netloc, path, params, query, fragment) = urlparse(file.get_uri())
 	wizbit.create(path) 
+
+    def add_callback(self, menu, file):
+	(scheme, netloc, path, params, query, fragment) = urlparse(file.get_uri())
+        wizpath = wizbit.getwizpath(path)
+	#TODO Error if not contained in wizbit directory.
+	wizbit.add(wizpath, path.rsplit(wizpath + "/")[1]) 
 
     def get_file_items(self, window, files):
 	items = []
@@ -91,16 +102,23 @@ class WizbitExtension(nautilus.ColumnProvider, nautilus.InfoProvider, nautilus.M
         if (file.get_string_attribute(WIZ_CONTROLLED) == YES) and \
            (file.get_string_attribute(WIZ_CONFLICT) == YES):
             item = nautilus.MenuItem('NautilusWizbit:resolve_item',
-                                     'Resolve the Wizbit conflict',
+                                     'Wizbit resolve...',
                                      'Resolve the Wizbit conflict')
             item.connect('activate', self.resolve_callback, file)
             items.append(item)
 	if (file.get_string_attribute(WIZ_CONTROLLED) == NO) and \
 	   (file.is_directory()):
             item = nautilus.MenuItem('NautilusWizbit:create',
-                                     'Create a Wizbit controlled directory',
+                                     'Wizbit create...',
                                      'Create a Wizbit controlled directory')
             item.connect('activate', self.create_callback, file)
+            items.append(item)
+	if (file.get_string_attribute(WIZ_CONTROLLED) == NO) and \
+	   not (file.is_directory()):
+            item = nautilus.MenuItem('NautilusWizbit:add',
+                                     'Wizbit add...',
+                                     'Add file to a Wizbit controlled directory')
+            item.connect('activate', self.add_callback, file)
             items.append(item)
 	
 	return items
@@ -115,7 +133,7 @@ class WizbitExtension(nautilus.ColumnProvider, nautilus.InfoProvider, nautilus.M
             return
 
         if (file.get_string_attribute(WIZ_CONTROLLED) == YES):
-            self.property_label = gtk.Label('Wizbit Versions')
+            self.property_label = gtk.Label('Wizbit versions')
             self.property_label.show()
 
             self.property_page = WizResolveDialog(file)
@@ -139,23 +157,22 @@ class WizbitExtension(nautilus.ColumnProvider, nautilus.InfoProvider, nautilus.M
                 controlled = True
             else:
                 try:
-                    repos = etree.parse (wizpath + "/.wizbit/repos")
+                    repos = etree.parse (wizpath + "/.wizbit/wizbit.conf")
                 except IOError:
                     pass
                 else:
                     #Find if file is controlled
-                    files = [f.text for f in repos.getroot().xpath("/wizbit/repo/file")]
-                    (path, filename) = split(path)
+                    files = [f.get("name") for f in repos.getroot().xpath("/wizbit/repo")]
+                    filename = path.rsplit(wizpath + "/")[1] + ".git"
                     if filename in files:
                         controlled = True
                     
                         #Find if file is conflicting
-                        repel = repos.getroot().xpath("/wizbit/repo")
-                        for r in repel:
-                            if r.get("name") == filename + ".git":
-                                heads = [h for h in r if h.tag == "head"]
-                                if len(heads) > 1:
-                                    conflict = True
+			for r in repos.getroot().xpath("/wizbit/repo"):
+				if r.get("name") == filename:
+					heads = [h for h in r if h.tag=="head"]
+			if len(heads) > 1:
+				conflict = True
 
         if controlled:
             file.add_emblem("cvs-controlled")

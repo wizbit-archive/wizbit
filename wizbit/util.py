@@ -11,6 +11,7 @@ def commitinfo(gitdir, commit, filename):
 	
 	results = Popen(["git-ls-tree", "-l", commit, "--", filename],
 			env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
+	print results
 	info.append(int(results.split()[3]))
 
 	return tuple(info)
