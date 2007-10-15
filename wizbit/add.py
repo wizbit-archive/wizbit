@@ -117,7 +117,7 @@ def pull (fromdir, todir):
                     ref = i.split()
                     print ref
                     if ref[1] == "refs/heads/master":
-                        headish= Popen (["git-show-ref", "refs/heads/master"], env = {"GIT_DIR":togitdir}, stdout=PIPE).communicate()[0].split()[0]
+                        headish = get_treeish (togitdir, "refs/heads/master")
                         baseish = Popen(["git-merge-base", "--all", headish, ref[0]],env = {"GIT_DIR":togitdir}, stdout=PIPE).communicate()[0].strip()
                         if headish == baseish:
                             #head and merge base are teh same, so we can just
@@ -154,7 +154,7 @@ def checkout (dir, files, ref, **kwargs):
     wizdir = dir + "/.wizbit/"
     gitdir = kwargs["gitdir"] or abspath(wizdir + file + ".git")
 
-    treeish = Popen (["git-show-ref", ref], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
+    treeish = get_treeish(gitdir, ref)
     print "treeish:", treeish
     check_call(["git-update-index", "--index-info"],env = {"GIT_DIR":gitdir},
             stdin = Popen(["git-ls-tree", "--full-name", "-r", treeish], 
