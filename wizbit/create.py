@@ -1,6 +1,7 @@
 import os
 import uuid
 import platform
+import shares
 from lxml import etree
 
 def create (newdir):
@@ -13,4 +14,5 @@ def create (newdir):
     machine = etree.SubElement (root, "machine")
     machine.text = platform.node()
     wizbitconf.write (wizdir + "wizbit.conf", pretty_print=True, encoding="utf-8", xml_declaration=True)
+    shares.addShare(id.text, wizdir)
     return id.text

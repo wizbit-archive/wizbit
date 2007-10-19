@@ -16,7 +16,12 @@ class WizbitServer():
 		return ["%s %s" % (key, value) for key, value in tempDirs.items()]
 
 	def getLastConfSeen(self, uuid):
-		return "Not Implemented"
+		tempDirs = self.__sharesData.getShares()
+		dir = tempDirs[uuid]
+		file = open(dir + "wizbit.conf", "r")
+		conf = file.read()
+		file.close()
+		return conf
 
 	def setConf(self, uuid, confstring):
 		return "Not Implemented"

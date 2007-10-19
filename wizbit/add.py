@@ -1,6 +1,7 @@
 from subprocess import call, check_call, Popen, PIPE
 from lxml import etree
-from os.path import abspath, exists
+import os
+from os.path import abspath, exists, split
 from os import getcwd
 
 def get_treeish(gitdir,ref):
@@ -39,6 +40,10 @@ def merge_commit (dir, file, refs):
 
 def add (dir, file):
     wizdir = dir + "/.wizbit/"
+    try:
+        os.mkdir(wizdir + split(file)[0])
+    except OSError:
+        pass
     gitdir = abspath(wizdir + file + ".git")
     check_call (["git-init-db"], env = {"GIT_DIR":gitdir}, cwd=dir)
     check_call (["git-add", file], env = {"GIT_DIR":gitdir}, cwd=dir)
