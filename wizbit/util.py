@@ -1,22 +1,17 @@
-from subprocess import check_call, Popen, PIPE
-from lxml import etree
-from os.path import abspath, exists, split
-from os import getcwd
+def makeRefname (id):
+    return "refs/heads/" + id
 
-def commitinfo(gitdir, commit, filename):
-	info = []
-	results = Popen(["git-log", "-n1", "--pretty=format:%an%n%aD", commit],
-			env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
-	info.extend([item.strip() for item in results.split('\n')[:2]])
-	
-	results = Popen(["git-ls-tree", "-l", commit, "--", filename],
-			env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
-	print results
-	info.append(int(results.split()[3]))
+def getParams(dir):
+	return (dir, dir + '/.wizbit', dir + '/.wizbit/wizbit.conf')
 
-	return tuple(info)
+def getRepoName(file):
+	return file + '.git'
 
-def getwizpath(path):
+def getFileName(repoName):
+	return repoName.rsplit('.git')[0]
+
+def getWizPath(path):
+	from os.path import exists, split
 	if exists(path + "/.wizbit"):	 
 		return path
 	else:

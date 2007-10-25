@@ -3,118 +3,124 @@ Module containing a wrapper object for the Wizbit configuration file.
 """
 from lxml import etree
 
-class WizbitConf():
+def _getConf(cfile):
+	return etree.parse(cfile)
+
+def _write(cfile, conf):
+        conf.write (cfile, pretty_print=True, encoding="utf-8", xml_declaration=True)
+
+def createConf(cfile, shareId, dirId, machine):
+	root = etree.Element("wizbit")
+	conf = etree.ElementTree(root)
+	shareIdElement = etree.SubElement(root, "shareid")
+	shareIdElement.text = shareId
+	dirIdElement = etree.SubElement(root, "dirid")
+	dirIdElement.text = dirId
+	machineElement = etree.SubElement(root, "machine")
+	machineElement.text = machine
+	_write(cfile, conf)
+
+def getShareId(cfile):
+	conf = _getConf(cfile)
+	shareIdElement = conf.xpath("/wizbit/shareid")[0]
+	return shareIdElement.text
+
+def getDirId(cfile):
+	conf = _getConf(cfile)
+	dirIdElement = conf.xpath("/wizbit/dirid")[0]
+	return dirIdElement.text
+
+def getRepos(cfile):
 	"""
-	Access object for the wizbit configuration file.
-
-	@param file - (string) Conf file to be opened or created
-	@param shareId - (string) Unique id of the shared directory 
-	@param dirId - (string) Unique id of a particular instance of the shared directory
-
-	If file is opened, shareId and dirId are ignored. 
-	If file is to be created shareId and dirId must be provided
+	Gets a list of all the repos.
 	"""
-	def __init__(self, file, shareId=None, dirId=None, machine=None):
-		self.__file = file
-		try:
-			self.__conf = etree.parse(file)
-		except IOError:
-			if not (shareId and dirId and machine):
-				raise ValueError, "When creating wizbit directory must \
-provide shareId, dirId and machine values"
-			root = etree.Element("wizbit")
-			self.__conf = etree.ElementTree(root)
-			shareIdElement = etree.SubElement(root, "shareid")
-			shareIdElement.text = shareId
-			dirIdElement = etree.SubElement(root, "dirid")
-			dirIdElement.text = dirId
-			machineElement = etree.SubElement(root, "machine")
-			machineElement.text = machine
+	conf = _getConf(cfile)
+	repoElements = conf.xpath("/wizbit/repo")
+	repos = []
+	for repoElement in repoElements:
+		repos.append(repoElement.attrib["name"])
+	return repos
 
-	def getShareId(self):
-		shareIdElement = self.__conf.xpath("/wizbit/shareid")[0]
-		return shareIdElement.text
+def getRepo(cfile, reponame):
+	"""
+	Gets all the data from a particular repo.
+	(name, file, [(ref, id)])
+	"""
+	conf = _getConf(cfile)
+	try:
+		repoElement = conf.xpath("/wizbit/repo[@name=\""+reponame+"\"]")[0]
+	except IndexError:
+		raise ValueError, "Cannot find named repo"
+	heads = []
+	headElements = [h for h in repoElement if h.tag=="head"]
+	for headElement in headElements:
+		ref = headElement.attrib["ref"]
+		id = headElement.find("id").text
+		heads.append((ref, id))
+	return heads
 
-	def getDirId(self):
-		dirIdElement = self.__conf.xpath("/wizbit/dirid")[0]
-		return dirIdElement.text
+def addRepo(cfile, file, head=None):
+	"""
+	Adds a repository to the conf file.
 
-	def getRepos(self):
-		"""
-		Gets a list of all the repos.
-		"""
-		repoElements = self.__conf.xpath("/wizbit/repo")
-		for repoElement in repoElements:
-			yield repoElement.attrib["name"]
+	This consists of a git directory, that is the repository name,
+	along with a file, which the git directory is version controlling. 
+	"""
+	conf = _getConf(cfile)
+	repoElement = etree.SubElement(conf.getroot(), "repo", attrib={"name" : file})
+	_write(cfile, conf)
+	if head:
+		addHead(cfile, file, head)
 
-	def getRepo(self, reponame):
-		"""
-		Gets all the data from a particular repo.
-		(name, file, [(ref, id)])
-		"""
-		try:
-			repoElement = self.__conf.xpath("/wizbit/repo[@name=\""+reponame+"\"]")[0]
-		except IndexError:
-			raise ValueError, "Cannot find named repo"
-		name = repoElement.attrib["name"]
-		file = repoElement.find("file").text
-		heads = []
-		headElements = [h for h in repoElement if h.tag=="head"]
-		for headElement in headElements:
-			ref = headElement.attrib["ref"]
-			id = headElement.find("id").text
-			heads.append((ref, id))
-		return (name, file, heads)
+def addHead(cfile, reponame, head):
+	"""
+	Takes a repository in the conf file and adds the head tuple (ref, id)
+	"""
+	conf = _getConf(cfile)
+	head, id = head
+	try:
+		repoElement = conf.xpath("/wizbit/repo[@name=\""+reponame+"\"]")[0]
+	except IndexError:
+		raise ValueError, "Cannot find named repo"
+	headElement = etree.SubElement(repoElement, "head", attrib={"ref" : head})
+	idElement = etree.SubElement(headElement, "id")
+	idElement.text = id
+	_write(cfile, conf)
 
-	def addRepo(self, file, head=None):
-		"""
-		Adds a repository to the conf file.
+def removeHead(cfile, reponame, head):
+	"""
+	Takes a repository and head name, that can either be the ref or the id and 
+	removes the head that they point to.
+	"""
+	conf = _getConf(cfile)
+	try:
+		repoElement = conf.xpath("/wizbit/repo[@name=\""+reponame+"\"]")[0]
+	except IndexError:
+		raise ValueError, "Cannot find named repo"
+	for headElement in [h for h in repoElement if h.tag=="head"]:
+		idElement = headElement.find("id")
+		if idElement.text == head or headElement.attrib["ref"] == head:
+			repoElement.remove(headElement)
+			break
+	_write(cfile, conf)
 
-		This consists of a git directory, that is the repository name,
-		along with a file, which the git directory is version controlling. 
-		"""
-		repoElement = etree.SubElement(self.__conf.getroot(), "repo", attrib={"name" : file + ".git"})
-		fileElement = etree.SubElement(repoElement, "file")
-		fileElement.text = file
-		if head:
-			self.addHead(file + ".git", head)
-
-	def addHead(self, reponame, head):
-		"""
-		Takes a repository in the conf file and adds the head tuple (ref, id)
-		"""
-		head, id = head
-		try:
-			repoElement = self.__conf.xpath("/wizbit/repo[@name=\""+reponame+"\"]")[0]
-		except IndexError:
-			raise ValueError, "Cannot find named repo"
-		headElement = etree.SubElement(repoElement, "head", attrib={"ref" : head})
-		idElement = etree.SubElement(headElement, "id")
-		idElement.text = id
-
-	def removeHead(self, reponame, head):
-		"""
-		Takes a repository and head name, that can either be the ref or the id and 
-		removes the head that they point to.
-		"""
-		try:
-			repoElement = self.__conf.xpath("/wizbit/repo[@name=\""+reponame+"\"]")[0]
-		except IndexError:
-			raise ValueError, "Cannot find named repo"
-		for headElement in [h for h in repoElement if h.tag=="head"]:
+def modifyHead(cfile, reponame, head):
+	"""
+	Takes the name of a reference head and modifies its ID.
+	"""
+	conf = _getConf(cfile)
+	head, id = head
+	try:
+		repoElement = conf.xpath("/wizbit/repo[@name=\""+reponame+"\"]")[0]
+	except IndexError:
+		raise ValueError, "Cannot find named repo"
+	for headElement in [h for h in repoElement if h.tag=="head"]:
+		if headElement.attrib["ref"] == head:
 			idElement = headElement.find("id")
-			if idElement.text == head or headElement.attrib["ref"] == head:
-				repoElement.remove(headElement)
-				break
+			idElement.text = id
+			break
+	_write(cfile, conf)
 
-	def flush(self):
-		"""
-		Writes the contents of the XML tree to the conf file.
-		"""
-		self.__conf.write (self.__file, pretty_print=True, encoding="utf-8", xml_declaration=True)
-
-	def __del__(self):
-		self.__conf.write (self.__file, pretty_print=True, encoding="utf-8", xml_declaration=True)
-
-	def __str__(self):
-		return etree.tostring(self.__conf, pretty_print=True)
+def toString(cfile):
+	conf = _getConf(cfile)
+	return etree.tostring(conf, pretty_print=True)
