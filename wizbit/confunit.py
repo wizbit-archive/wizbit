@@ -22,7 +22,7 @@ class ConfCase(unittest.TestCase):
 		R2 = 'RepositoryTwo'
 		R3 = 'RepositoryThree'
 		R4 = 'RepositoryFour'
-		H1 = ('HeadRefOne', 'HeadIdOne')
+		H1 = 'HeadRefOne'
 		conf.createConf(CONF_FILE, SHARE_ID, DIR_ID, MACHINE)
 		self.assertTrue(exists(CONF_FILE))
 		conf.addRepo(CONF_FILE, R1)
@@ -39,10 +39,10 @@ class ConfCase(unittest.TestCase):
 
 	def testHeads(self):
 		R1 = 'RepositoryOne'
-		H1 = ('HeadRefOne', 'HeadIdOne')
-		H2 = ('HeadRefTwo', 'HeadIdTwo')
-		H3 = ('HeadRefThree', 'HeadIdThree')
-		M1 = ('HeadRefTwo', 'ModifiedId')
+		H1 = 'HeadRefOne'
+		H2 = 'HeadRefTwo'
+		H3 = 'HeadRefThree'
+		M1 = 'HeadRefTwo'
 		conf.createConf(CONF_FILE, SHARE_ID, DIR_ID, MACHINE)
 		self.assertTrue(exists(CONF_FILE))
 		conf.addRepo(CONF_FILE, R1)
@@ -52,20 +52,16 @@ class ConfCase(unittest.TestCase):
 		testHeads = [H1, H2, H3]
 		heads = conf.getRepo(CONF_FILE, R1)
 		self.assertEqual(heads, testHeads)
-		conf.removeHead(CONF_FILE, R1, H1[1])
+		conf.removeHead(CONF_FILE, R1, H1)
 		testHeads = [H2, H3]
 		heads = conf.getRepo(CONF_FILE, R1)
 		self.assertEqual(heads, testHeads)
-		conf.removeHead(CONF_FILE, R1, H3[0])
+		conf.removeHead(CONF_FILE, R1, H3)
 		testHeads = [H2]
 		heads = conf.getRepo(CONF_FILE, R1)
 		self.assertEqual(heads, testHeads)
-		conf.removeHead(CONF_FILE, R1, H3[0])
+		conf.removeHead(CONF_FILE, R1, H3)
 		testHeads = [H2]
-		heads = conf.getRepo(CONF_FILE, R1)
-		self.assertEqual(heads, testHeads)
-		conf.modifyHead(CONF_FILE, R1, M1)
-		testHeads = [M1]
 		heads = conf.getRepo(CONF_FILE, R1)
 		self.assertEqual(heads, testHeads)
 		remove(CONF_FILE)
