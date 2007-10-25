@@ -1,3 +1,9 @@
+import os
+import uuid
+import platform
+import shares
+import conf
+
 from util import getParams, getRepoName, getWizPath, makeRefname
 from gitcommand import getOutput
 import repo
@@ -8,7 +14,7 @@ def addEmpty(dir, file):
 	file name. This is needed for adding new files to a directory that
 	are subsequently to be pushed to / pulled from a remote repository.
 	"""
-	dir, wizdir, wizconf = getParams(dir)
+	wizdir, wizconf = getParams(dir)
 	repoName = getRepoName(file)
 	try:
 		os.mkdir(self.__wizdir + split(file)[0])
@@ -22,7 +28,7 @@ def add(dir, file):
 	"""
 	Adds an existing file to the wizbit directory.
 	"""
-	dir, wizdir, wizconf = getParams(dir)
+	wizdir, wizconf = getParams(dir)
 	repoName = getRepoName(file)
 	addEmpty(file)
 	ct = repo.add(repoName)
@@ -35,7 +41,7 @@ def mergeConfs(dir, new):
 	conf file with the new repositories. 
 	Takes two XML strings. 
 	"""
-	dir, wizdir, wizconf = getParams(dir)
+	wizdir, wizconf = getParams(dir)
 	cfile = open(self.__wizdir + '/wizbit.conf')
 	current = cfile.read()
 	cfile.close()
@@ -50,5 +56,34 @@ def mergeConfs(dir, new):
 		addEmpty(dir, file.rsplit('.git')[0])
 
 def pull(dir, remoteUrl):
-	dir, wizdir, wizconf = getParams(dir)
+	wizdir, wizconf = getParams(dir)
 
+def clone (host, srcdir, destpath):
+    newwizdir, newconf = _getParams(destpath)
+
+    wizbitconf = etree.parse (oldwizdir + "wizbit.conf")
+    new_wizbitconf = etree.parse (newconf)
+    for i in wizbitconf.getiterator("repo"):
+        print i.attrib
+
+    for i in wizbitconf.getiterator("repo"):
+        name = i.attrib["name"]
+        orig_git = oldwizdir + name
+        dest_git = newwizdir + name
+        repo = etree.SubElement(new_wizbitconf.getroot(), "repo", name=name)
+        check_call(["git","clone", "--bare",  orig_git , dest_git])
+        checkout (destpath, [], "master", gitdir=dest_git)
+
+        for j in i.getiterator("head"):
+            if j.attrib["ref"] == "refs/heads/master":
+                head = etree.SubElement(repo, "head", ref="refs/heads/master")
+            else:
+                head = etree.SubElement(repo, "head", ref=j.attrib["ref"])
+
+    new_wizbitconf.write (newwizdir + "wizbit.conf", pretty_print=True, encoding="utf-8", xml_declaration=True)
+
+def create (newdir):
+    wizdir, conf = getParams(newdir)
+    os.makedirs (wizdir)
+    conf.createConf(conf, uuid.uuid4().hex, uuid.uuid4().hex, platform.node())
+    shares.addShare(id.text, wizdir)

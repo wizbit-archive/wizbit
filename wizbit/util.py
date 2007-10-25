@@ -2,7 +2,7 @@ def makeRefname (id):
     return "refs/heads/" + id
 
 def getParams(dir):
-	return (dir, dir + '/.wizbit', dir + '/.wizbit/wizbit.conf')
+	return (dir + '/.wizbit', dir + '/.wizbit/wizbit.conf')
 
 def getRepoName(file):
 	return file + '.git'
