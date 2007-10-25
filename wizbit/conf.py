@@ -55,8 +55,7 @@ def getRepo(cfile, reponame):
 	headElements = [h for h in repoElement if h.tag=="head"]
 	for headElement in headElements:
 		ref = headElement.attrib["ref"]
-		id = headElement.find("id").text
-		heads.append((ref, id))
+		heads.append(ref)
 	return heads
 
 def addRepo(cfile, file, head=None):
@@ -77,14 +76,11 @@ def addHead(cfile, reponame, head):
 	Takes a repository in the conf file and adds the head tuple (ref, id)
 	"""
 	conf = _getConf(cfile)
-	head, id = head
 	try:
 		repoElement = conf.xpath("/wizbit/repo[@name=\""+reponame+"\"]")[0]
 	except IndexError:
 		raise ValueError, "Cannot find named repo"
 	headElement = etree.SubElement(repoElement, "head", attrib={"ref" : head})
-	idElement = etree.SubElement(headElement, "id")
-	idElement.text = id
 	_write(cfile, conf)
 
 def removeHead(cfile, reponame, head):
@@ -98,26 +94,8 @@ def removeHead(cfile, reponame, head):
 	except IndexError:
 		raise ValueError, "Cannot find named repo"
 	for headElement in [h for h in repoElement if h.tag=="head"]:
-		idElement = headElement.find("id")
-		if idElement.text == head or headElement.attrib["ref"] == head:
-			repoElement.remove(headElement)
-			break
-	_write(cfile, conf)
-
-def modifyHead(cfile, reponame, head):
-	"""
-	Takes the name of a reference head and modifies its ID.
-	"""
-	conf = _getConf(cfile)
-	head, id = head
-	try:
-		repoElement = conf.xpath("/wizbit/repo[@name=\""+reponame+"\"]")[0]
-	except IndexError:
-		raise ValueError, "Cannot find named repo"
-	for headElement in [h for h in repoElement if h.tag=="head"]:
 		if headElement.attrib["ref"] == head:
-			idElement = headElement.find("id")
-			idElement.text = id
+			repoElement.remove(headElement)
 			break
 	_write(cfile, conf)
 
