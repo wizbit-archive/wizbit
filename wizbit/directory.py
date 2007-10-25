@@ -49,6 +49,67 @@ def mergeConfs(dir, new):
 	for file in diff:
 		addEmpty(dir, file.rsplit('.git')[0])
 
-def pull(dir, remoteUrl):
-	dir, wizdir, wizconf = getParams(dir)
+def check_pull_needed (fromgitdir, remote_ref, togitdir):
+    treeish = Popen (["git-ls-remote", "--heads", fromgitdir, remote_ref], stdout=PIPE).communicate()[0].split()[0]
+
+    p = Popen(["git-rev-list", "--objects", treeish, "--not", "--all"], env = {"GIT_DIR":togitdir}, stdout=PIPE, stderr=PIPE)
+    p.communicate();
+    return p.returncode != 0
+
+def make_refname (id):
+    return "refs/heads/" + id
+
+
+def remote_ref (repoel, id):
+    toref = make_refname(id)
+    els = repoel.xpath ("head[@ref='"+ toref +"']")
+    if len(els) == 0:
+        el = etree.SubElement(repoel, "head", ref = toref)
+        etree.SubElement(el, "id").text = id
+        return el
+    else:
+        return els[0]
+
+
+
+
+def pull (fromdir, todir):
+    fromwizdir = fromdir + "/.wizbit/"
+    towizdir = todir + "/.wizbit/"
+    fromwizbitconf = etree.parse (fromwizdir + "wizbit.conf")
+    towizbitconf = etree.parse (towizdir + "wizbit.conf")
+    fromid = fromwizbitconf.xpath("/wizbit/myid")[0].text
+    for ef in fromwizbitconf.xpath("/wizbit/repo"):
+        et = towizbitconf.xpath("/wizbit/repo[@name='"+ef.attrib["name"]+"']")[0]
+        if et:
+            fromgitdir = fromwizdir + ef.attrib["name"]
+            togitdir = towizdir + ef.attrib["name"]
+            pullneeded = False;
+            for head in ef.findall("head"):
+                print  check_pull_needed (fromgitdir, head.attrib["ref"], togitdir )
+
+                pullneeded = pullneeded or check_pull_needed (fromgitdir, head.attrib["ref"], togitdir )
+            if pullneeded:
+                heads = Popen(["git-fetch-pack", "--all", fromgitdir], env = {"GIT_DIR":togitdir}, stdout=PIPE).communicate()[0]
+                print heads
+                for i in heads.split("\n")[:-1]:
+                    ref = i.split()
+                    print ref
+                    if ref[1] == "refs/heads/master":
+                        headish = get_treeish (togitdir, "refs/heads/master")
+                        baseish = Popen(["git-merge-base", "--all", headish, ref[0]],env = {"GIT_DIR":togitdir}, stdout=PIPE).communicate()[0].strip()
+                        if headish == baseish:
+                            #head and merge base are teh same, so we can just
+                            #fast-forward our master
+                            print "fast forwarding master to ", ref[0]
+                            print "headish",headish,"baseish",baseish
+                            check_call(["git-update-ref","refs/heads/master", ref[0]], env = {"GIT_DIR":togitdir})
+                        else:
+                            el = remote_ref(et, fromid)
+                            check_call(["git-update-ref",el.attrib["ref"], ref[0]], env = {"GIT_DIR":togitdir})
+                    elif ref[1].startswith("refs/heads/"):
+                        el = remote_ref(et, ref[0].split('/')[3])
+                        check_call(["git-update-ref",el.attrib["ref"], ref[0]], env = {"GIT_DIR":togitdir})
+
+    towizbitconf.write (towizdir + "wizbit.conf", pretty_print=True, encoding="utf-8", xml_declaration=True)
 
