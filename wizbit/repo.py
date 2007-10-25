@@ -6,47 +6,52 @@ from subprocess import check_call, Popen, PIPE
 from os.path import exists, split, abspath
 from util import getFileName
 
+import conf
+
 def _getTreeish(gitdir, ref):
 	return Popen (["git-show-ref", ref], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
 
-def _commit (gitdir, parents):
+def _commit (gitdir, cfile, parents):
 	tree = Popen (["git-write-tree"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
     	command = ["git-commit-tree",tree]
 	for parent in parents:
 		command = command + ["-p",parent]
 	pop = Popen (command, env = {"GIT_DIR":gitdir}, stdin = Popen(["echo"], stdout=PIPE).stdout, stdout = PIPE)
 	commit = pop.communicate()[0].split()[0]
-	check_call (["git-update-ref", "refs/heads/master", commit], env = {"GIT_DIR":gitdir})
-	return commit
+	check_call (['git-update-ref', 'refs/heads/master', commit], env = {"GIT_DIR":gitdir})
+	conf.modifyHead(cfile, gitdir, ('refs/heads/master', commit))
 
 def create(gitdir):
 	check_call (["git-init-db"], env = {"GIT_DIR":gitdir})
 
-def add(gitdir):
+def add(gitdir, cfile):
 	check_call (["git-add", getFileName(gitdir)], env = {"GIT_DIR":gitdir})
-	return _commit(gitdir, [])
+	conf.addRepo(cfile, gitdir)
+	_commit(gitdir, cfile, [])
 
-def mergeCommit(gitdir, refs):
+def mergeCommit(gitdir, cfile, refs):
 	"""
 	Takes a list of references, and commits a file from the index
 	that has the parents pointed to by those references. 
 	Returns a tuple (New master sha, list of old sha sums ( the parents))
 	"""
 	check_call (["git-add", "-u"], env = {"GIT_DIR":gitdir})
-	heads = [_getTreeish('refs/heads/' + r) for r in refs]
+	oldheads = [_getTreeish('refs/heads/' + r) for r in refs]
 	master = _getTreeish('refs/heads/master')
-	heads.append(master)
-	ct = _commit(heads);
+	heads = oldheads + [master]
+	ct = _commit(gitdir, cfile, heads);
+	for h in oldheads:
+		conf.removeHead(cfile, h)
 	return (ct, heads)
 
-def update(gitdir):
+def update(gitdir, cfile):
 	"""
 	Updates the file to its new version.
 	Returns the new Sha
 	"""
 	check_call (["git-add", getFileName(gitdir)], env = {"GIT_DIR":gitdir})
-	oldhead = _getTreeish(gitdir, "refs/heads/master")
-	return _commit (gitdir, [oldhead])
+	oldhead = _getTreeish(gitdir, 'refs/heads/master')
+	_commit (gitdir, cfile, [oldhead])
 
 def checkout(gitdir, ref, codir):
 	treeish = _getTreeish(gitdir, ref)

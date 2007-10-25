@@ -1,10 +1,16 @@
 import unittest
 import repo
+import conf
 
 from os.path import exists
 from os import remove
 from commands import getoutput
 from util import getFileName 
+
+CONF_FILE = 'testconf.xml'
+SHARE_ID = 'AShareId'
+DIR_ID = 'ADirID'
+MACHINE = 'AMachine'
 
 GIT_DIR = 'atest.git'
 TEST_FILE = 'atest'
@@ -16,6 +22,7 @@ REF = 'refs/heads/master'
 
 class RepoCase(unittest.TestCase):
 	def __createFile(self):
+		conf.createConf(CONF_FILE, SHARE_ID, DIR_ID, MACHINE)
 		file = open(TEST_FILE, 'w')
 		file.write(TEST_STRING_ONE)
 		file.close()
@@ -23,6 +30,7 @@ class RepoCase(unittest.TestCase):
 	def __clean(self):
 		getoutput('rm -rf %s' % GIT_DIR)
 		remove(TEST_FILE)
+		remove(CONF_FILE)
 
 	def testCreate(self):
 		self.__createFile()
@@ -34,25 +42,26 @@ class RepoCase(unittest.TestCase):
 		self.__createFile()
 		repo.create(GIT_DIR)
 		self.assertTrue(exists(TEST_FILE))
-		repo.add(GIT_DIR)	
+		repo.add(GIT_DIR, CONF_FILE)	
 		self.__clean()
 
 	def testUpdate(self):
 		self.__createFile()
 		repo.create(GIT_DIR)
 		self.assertTrue(exists(TEST_FILE))
-		repo.add(GIT_DIR)	
+		repo.add(GIT_DIR, CONF_FILE)	
+		file = open(TEST_FILE, 'a')
 		file = open(TEST_FILE, 'a')
 		file.write(TEST_STRING_TWO)
 		file.close()
-		repo.update(GIT_DIR)
+		repo.update(GIT_DIR, CONF_FILE)
 		self.__clean()
 
 	def testCheckout(self):
 		self.__createFile()
 		repo.create(GIT_DIR)
 		self.assertTrue(exists(TEST_FILE))
-		repo.add(GIT_DIR)	
+		repo.add(GIT_DIR, CONF_FILE)	
 		getoutput('mkdir %s' % TEST_OUT_DIR)
 		repo.checkout(GIT_DIR, REF, TEST_OUT_DIR)
 		self.assertTrue(exists(TEST_OUT_DIR + TEST_FILE))
@@ -64,7 +73,7 @@ class RepoCase(unittest.TestCase):
 		self.__createFile()
 		repo.create(GIT_DIR)
 		self.assertTrue(exists(TEST_FILE))
-		repo.add(GIT_DIR)	
+		repo.add(GIT_DIR, CONF_FILE)	
 		repo.log(GIT_DIR)
 		self.__clean()
 
@@ -72,7 +81,7 @@ class RepoCase(unittest.TestCase):
 		self.__createFile()
 		repo.create(GIT_DIR)
 		self.assertTrue(exists(TEST_FILE))
-		repo.add(GIT_DIR)	
+		repo.add(GIT_DIR, CONF_FILE)	
 		repo.commitInfo(GIT_DIR, REF)
 		self.__clean()
 
