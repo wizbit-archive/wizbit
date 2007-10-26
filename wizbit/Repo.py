@@ -56,8 +56,9 @@ def checkout(gitdir, ref, codir):
 	check_call(["git-update-index", "--index-info"],env = {"GIT_DIR":gitdir}, 
 			stdin = Popen(["git-ls-tree", "--full-name", "-r", treeish], 
 				env = {"GIT_DIR":gitdir}, stdout=PIPE).stdout)
+	filename = getFileName(gitdir)
 	gitdir = abspath(gitdir)
-        check_call(["git-checkout-index", "-f", "--"] + [getFileName(gitdir)], env = {"GIT_DIR":gitdir}, cwd=codir)
+        check_call(["git-checkout-index", "-f", "--"] + [filename], env = {"GIT_DIR":gitdir}, cwd=codir)
 
 def _makeRefname (id):
 	return "refs/heads/" + id
@@ -69,13 +70,15 @@ def pull(gitdir, cfile, host, path, srcId):
 	"""
 	#Get all remote heads
 	srcUrl = host + ':' + path
-	remotes = Popen(["git-fetch-pack", "--all", srcUrl], env = {"GIT_DIR":togitdir}, stdout=PIPE).communicate()[0]
-	remotes = heads.split()[:-1]
+	remotes = Popen(["git-fetch-pack", "--all", srcUrl], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
+	remotes = [r.split() for r in remotes.split('\n') if r and r.split()[1] != 'HEAD']
+	print remotes
 	#Get all local heads
 	heads = Conf.getHeads(cfile, gitdir)
+	print heads
 	for h in heads:
 		headish = _getTreeish(gitdir, h)
-		addBranch = False
+		newRemoteHead = ""
 		for r in remotes:
 			remoteref = r[1]
 			remotesha = r[0]
@@ -90,14 +93,21 @@ def pull(gitdir, cfile, host, path, srcId):
 				#Just update ref
 				check_call(["git-update-ref", h, remotesha], env = {"GIT_DIR":gitdir})
 			else:
-				addBranch = True
-		if addBranch:
-			if r == 'refs/heads/master':
+				newRemoteHead = remoteref
+		if newRemoteHead:
+			if newRemoteHead == 'refs/heads/master':
 				refName = _makeRefname(srcId)
 			else:
-				refname = r
+				refName = newRemoteHead
                         check_call(["git-update-ref", refName, remotesha], env = {"GIT_DIR":gitdir})
 			Conf.addHead(cfile, gitdir, refName)
+	#Special case of an empty repository
+	if not heads:
+		for r in remotes:
+			remoteref = r[1]
+			remotesha = r[0]
+                        check_call(["git-update-ref", remoteref, remotesha], env = {"GIT_DIR":gitdir})
+			Conf.addHead(cfile, gitdir, remoteref)
 
 def log(gitdir):
 	return Popen (["git-log", "--pretty=raw", "refs/heads/master"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
