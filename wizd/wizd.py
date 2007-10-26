@@ -14,6 +14,10 @@ class WizbitServer():
 	def getShares(self):
 		tempDirs = self.__sharesData.getShares()
 		return ["%s %s" % (key, value) for key, value in tempDirs.items()]
+	
+	def getPath(self, uuid):
+		tempDirs = self.__sharesData.getShares()
+		return tempDirs[uuid]
 
 	def getLastConfSeen(self, uuid):
 		return "Not Implemented"

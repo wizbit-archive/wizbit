@@ -40,7 +40,7 @@ def add(dir, file):
 	_addEmpty(file)
 	ct = Repo.add(repoName)
 
-def update(dir, dirId, srchost, srcpath):
+def update(dir, dirId, srchost):
 	"""
 	Merges a wizbit.conf file. This means looking 
 	for the files in the new conf that are not version controlled
@@ -57,6 +57,7 @@ def update(dir, dirId, srchost, srcpath):
 	#Get the remote conf
 	srcUrl = getWizUrl(srchost)
 	server = xmlrpclib.ServerProxy(srcUrl)
+	srcpath = server.getPath(dirId)
 	newconf = server.getConf(dirId)
 
 	curconf = etree.XML(current)
@@ -73,16 +74,20 @@ def update(dir, dirId, srchost, srcpath):
 
 	_pull(dir, srchost, srcpath, dirId):
 
-def clone(dir, dirId, srchost, srcpath):
+def clone(dir, dirId, srchost):
 	"""
 	Clones a remote directory by 
 	creating a new repository and updating
 	from a possibly remote one.
 	"""
 	wizdir, wizconf = getParams(dir)
-	#Get the conf file from the remote host
 	srcUrl = getWizUrl(srchost)
 	server = xmlrpclib.ServerProxy(srcUrl)
+	#Get the path to the directory from the 
+	#Remote host
+	srcpath = server.getPath(dirId)
+	#Get the conf file from the remote host
+	srcConf = server.getConf(dirId)
 	shareId = Conf.getShareId(srcConf)
 	#Create the empty directory and update it
 	create(dir, shareId)
