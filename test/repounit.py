@@ -2,6 +2,7 @@ import unittest
 
 from os.path import exists
 from os import remove
+from commands import getoutput
 
 import wizbit
 from wizbit import Conf, Repo
