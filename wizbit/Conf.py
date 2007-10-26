@@ -6,6 +6,9 @@ from lxml import etree
 def _getConf(cfile):
 	return etree.parse(cfile)
 
+def _getStringConf(cstring):
+	return etree.XML(cstring)
+
 def _write(cfile, conf):
         conf.write (cfile, pretty_print=True, encoding="utf-8", xml_declaration=True)
 
@@ -25,28 +28,29 @@ def getShareId(cfile):
 	shareIdElement = conf.xpath("/wizbit/shareid")[0]
 	return shareIdElement.text
 
+def getRemoteShareId(cstring):
+	conf = _getConf(cfile)
+	shareIdElement = conf.xpath("/wizbit/shareid")[0]
+	return shareIdElement.text
+
 def getDirId(cfile):
 	conf = _getConf(cfile)
 	dirIdElement = conf.xpath("/wizbit/dirid")[0]
 	return dirIdElement.text
 
-def getRepos(cfile):
-	"""
-	Gets a list of all the repos.
-	"""
+def getRemoteDirId(cstring):
 	conf = _getConf(cfile)
+	dirIdElement = conf.xpath("/wizbit/dirid")[0]
+	return dirIdElement.text
+
+def _getRepos(conf):
 	repoElements = conf.xpath("/wizbit/repo")
 	repos = []
 	for repoElement in repoElements:
 		repos.append(repoElement.attrib["name"])
 	return repos
 
-def getRepo(cfile, reponame):
-	"""
-	Gets all the data from a particular repo.
-	(name, file, [(ref, id)])
-	"""
-	conf = _getConf(cfile)
+def _getHeads(conf, reponame):
 	try:
 		repoElement = conf.xpath("/wizbit/repo[@name=\""+reponame+"\"]")[0]
 	except IndexError:
@@ -57,6 +61,34 @@ def getRepo(cfile, reponame):
 		ref = headElement.attrib["ref"]
 		heads.append(ref)
 	return heads
+
+def getHeads(cfile, reponame):
+	"""
+	Gets all the heads data from a particular repo.
+	"""
+	conf = _getConf(cfile)
+	return _getHeads(conf, reponame)
+
+def getRepos(cfile):
+	"""
+	Gets a list of all the repos.
+	"""
+	conf = _getConf(cfile)
+	return _getRepos(conf)
+
+def getRemoteHeads(cstring, reponame):
+	"""
+	Gets all the heads data from a particular repo.
+	"""
+	conf = _getRemoteConf(cstring)
+	return _getHeads(conf, reponame)
+
+def getRemoteRepos(cstring):
+	"""
+	Gets a list of all the repos.
+	"""
+	conf = _getRemoteConf(cstring)
+	return _getRepos(conf)
 
 def addRepo(cfile, file, head=None):
 	"""

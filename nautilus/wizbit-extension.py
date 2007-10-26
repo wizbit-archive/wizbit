@@ -13,6 +13,20 @@ WIZ_CONFLICT = "wiz-conflict"
 YES = "Yes"
 NO = "No"
 
+def getWizPath(path):
+	from os.path import exists, split
+	if exists(path + "/.wizbit"):	 
+		return path
+	else:
+		(head, tail) = split(path)
+		if head != '/':
+			return getwizpath(head)
+		else:
+			if exists("/.wizbit"):
+				return head
+			else:
+				return ""
+
 class WizResolveDialog(gtk.VBox):
 	def __init__(self, file):
 		gtk.VBox.__init__(self)

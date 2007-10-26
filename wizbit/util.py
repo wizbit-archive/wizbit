@@ -1,3 +1,5 @@
+WIZBIT_SERVER_PORT = 1221
+
 def makeRefname (id):
     return "refs/heads/" + id
 
@@ -10,16 +12,5 @@ def getRepoName(file):
 def getFileName(repoName):
 	return repoName.rsplit('.git')[0]
 
-def getWizPath(path):
-	from os.path import exists, split
-	if exists(path + "/.wizbit"):	 
-		return path
-	else:
-		(head, tail) = split(path)
-		if head != '/':
-			return getwizpath(head)
-		else:
-			if exists("/.wizbit"):
-				return head
-			else:
-				return ""
+def getWizUrl(host):
+	return 'http://%s:%d' % (host, WIZBIT_SERVER_PORT)

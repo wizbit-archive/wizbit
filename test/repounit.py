@@ -1,11 +1,10 @@
 import unittest
-import repo
-import conf
 
 from os.path import exists
 from os import remove
-from commands import getoutput
-from util import getFileName 
+
+import wizbit
+from wizbit import Conf, Repo
 
 CONF_FILE = 'testconf.xml'
 SHARE_ID = 'AShareId'
@@ -22,7 +21,7 @@ REF = 'refs/heads/master'
 
 class RepoCase(unittest.TestCase):
 	def __createFile(self):
-		conf.createConf(CONF_FILE, SHARE_ID, DIR_ID, MACHINE)
+		Conf.createConf(CONF_FILE, SHARE_ID, DIR_ID, MACHINE)
 		file = open(TEST_FILE, 'w')
 		file.write(TEST_STRING_ONE)
 		file.close()
@@ -34,36 +33,36 @@ class RepoCase(unittest.TestCase):
 
 	def testCreate(self):
 		self.__createFile()
-		repo.create(GIT_DIR)
+		Repo.create(GIT_DIR)
 		self.assertTrue(exists(GIT_DIR))
 		self.__clean()
 
 	def testAdd(self):
 		self.__createFile()
-		repo.create(GIT_DIR)
+		Repo.create(GIT_DIR)
 		self.assertTrue(exists(TEST_FILE))
-		repo.add(GIT_DIR, CONF_FILE)	
+		Repo.add(GIT_DIR, CONF_FILE)	
 		self.__clean()
 
 	def testUpdate(self):
 		self.__createFile()
-		repo.create(GIT_DIR)
+		Repo.create(GIT_DIR)
 		self.assertTrue(exists(TEST_FILE))
-		repo.add(GIT_DIR, CONF_FILE)	
+		Repo.add(GIT_DIR, CONF_FILE)	
 		file = open(TEST_FILE, 'a')
 		file = open(TEST_FILE, 'a')
 		file.write(TEST_STRING_TWO)
 		file.close()
-		repo.update(GIT_DIR, CONF_FILE)
+		Repo.update(GIT_DIR, CONF_FILE)
 		self.__clean()
 
 	def testCheckout(self):
 		self.__createFile()
-		repo.create(GIT_DIR)
+		Repo.create(GIT_DIR)
 		self.assertTrue(exists(TEST_FILE))
-		repo.add(GIT_DIR, CONF_FILE)	
+		Repo.add(GIT_DIR, CONF_FILE)	
 		getoutput('mkdir %s' % TEST_OUT_DIR)
-		repo.checkout(GIT_DIR, REF, TEST_OUT_DIR)
+		Repo.checkout(GIT_DIR, REF, TEST_OUT_DIR)
 		self.assertTrue(exists(TEST_OUT_DIR + TEST_FILE))
 		remove(TEST_OUT_DIR + TEST_FILE)
 		getoutput('rm -rf %s' % TEST_OUT_DIR)
@@ -71,18 +70,18 @@ class RepoCase(unittest.TestCase):
 
 	def testLog(self):
 		self.__createFile()
-		repo.create(GIT_DIR)
+		Repo.create(GIT_DIR)
 		self.assertTrue(exists(TEST_FILE))
-		repo.add(GIT_DIR, CONF_FILE)	
-		repo.log(GIT_DIR)
+		Repo.add(GIT_DIR, CONF_FILE)	
+		Repo.log(GIT_DIR)
 		self.__clean()
 
 	def testCommitInfo(self):
 		self.__createFile()
-		repo.create(GIT_DIR)
+		Repo.create(GIT_DIR)
 		self.assertTrue(exists(TEST_FILE))
-		repo.add(GIT_DIR, CONF_FILE)	
-		repo.commitInfo(GIT_DIR, REF)
+		Repo.add(GIT_DIR, CONF_FILE)	
+		Repo.commitInfo(GIT_DIR, REF)
 		self.__clean()
 
 if __name__ == '__main__':
