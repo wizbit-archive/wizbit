@@ -29,7 +29,7 @@ def getShareId(cfile):
 	return shareIdElement.text
 
 def getRemoteShareId(cstring):
-	conf = _getConf(cfile)
+	conf = _getStringConf(cstring)
 	shareIdElement = conf.xpath("/wizbit/shareid")[0]
 	return shareIdElement.text
 
@@ -39,7 +39,7 @@ def getDirId(cfile):
 	return dirIdElement.text
 
 def getRemoteDirId(cstring):
-	conf = _getConf(cfile)
+	conf = _getStringConf(cstring)
 	dirIdElement = conf.xpath("/wizbit/dirid")[0]
 	return dirIdElement.text
 

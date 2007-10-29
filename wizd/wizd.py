@@ -2,22 +2,23 @@
 import sys
 import socket
 import os
-from sharedict import WizbitSharesData
 import SimpleXMLRPCServer
 
 WIZBIT_SERVER_PORT = 3492
 
-class WizbitServer():
-	def __init__(self):
-		self.__sharesData = WizbitSharesData()
+from wizbit import Shares
 
+class WizbitServer():
 	def getShares(self):
-		tempDirs = self.__sharesData.getShares()
-		return ["%s %s" % (key, value) for key, value in tempDirs.items()]
+		shares = Shares.getShares()
+		return ["%s %s" % (id, directory) for (id, directory) in shares]
 	
 	def getPath(self, uuid):
-		tempDirs = self.__sharesData.getShares()
-		return tempDirs[uuid]
+		shares = Shares.getShares()
+		for id, directory in shares:
+			if uuid == id:
+				break
+		return directory
 
 	def getLastConfSeen(self, uuid):
 		return "Not Implemented"
@@ -26,9 +27,11 @@ class WizbitServer():
 		return "Not Implemented"
 
 	def getConf(self, uuid):
-		tempDirs = self.__sharesData.getShares()
-		dir = tempDirs[uuid]
-		file = open(dir + "/wizbit.conf", "r")
+		shares = Shares.getShares()
+		for id, directory in shares:
+			if uuid == id:
+				break
+		file = open(directory + "/wizbit.conf", "r")
 		conf = file.read()
 		file.close()
 		return conf

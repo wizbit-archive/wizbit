@@ -10,6 +10,8 @@ from wizbit import Conf, Repo, Shares
 import socket
 import xmlrpclib
 
+from lxml import etree
+
 def _addEmpty(dirname, filename):
 	"""
 	Adds an empty git repository to the directory with a particular
@@ -22,15 +24,15 @@ def _addEmpty(dirname, filename):
 		os.mkdir(split(filename)[0])
 	except OSError:
 		pass
-	Repo.create(repoName)
-	Conf.addRepo(wizconf, repoName)
+	relativeFile = filename.lstrip(dirname)
+	Repo.create(repoName, wizconf, relativeFile)
 
 def _pull(dirname, host, path, srcId):
-	wizdir, wizconf = getParams(newdir)
+	wizdir, wizconf = getParams(dirname)
 	repos = Conf.getRepos(wizconf)
 	for r in repos:
 		rpath = path + r
-		Repo.pull(r, wizconf, host, rpath, srcId)
+		Repo.pull(dirname, r, wizconf, host, rpath, srcId)
 
 def add(dirname, filename):
 	"""
@@ -41,7 +43,8 @@ def add(dirname, filename):
 	wizdir, wizconf = getParams(dirname)
 	repoName = getRepoName(dirname, filename)
 	_addEmpty(dirname, filename)
-	Repo.add(repoName, wizconf, filename)
+	relativeFile = filename.lstrip(dirname)
+	Repo.add(repoName, wizconf, dirname, relativeFile)
 
 def update(dirname, dirId, srchost):
 	"""
@@ -62,7 +65,7 @@ def update(dirname, dirId, srchost):
 	srcUrl = getWizUrl(srchost)
 	server = xmlrpclib.ServerProxy(srcUrl)
 	srcpath = server.getPath(dirId)
-	newconf = server.getConf(dirId)
+	new = server.getConf(dirId)
 
 	curconf = etree.XML(current)
 	newconf = etree.XML(new)
@@ -74,6 +77,7 @@ def update(dirname, dirId, srchost):
 	
 	#Add empty repositories for any new files
 	for file in diff:
+		print file
 		_addEmpty(dirname, file.rsplit('.git')[0])
 
 	_pull(dirname, srchost, srcpath, dirId)
@@ -93,10 +97,12 @@ def clone(dirname, dirId, srchost):
 	srcpath = server.getPath(dirId)
 	#Get the conf file from the remote host
 	srcConf = server.getConf(dirId)
-	shareId = Conf.getShareId(srcConf)
+	print srcConf
+	shareId = Conf.getRemoteShareId(srcConf)
 	#Create the empty directory and update it
-	create(dirname, shareId)
-	update(dirname, dirId, srchost, srcpath)
+	cloneId = create(dirname, shareId)
+	update(dirname, dirId, srchost)
+	return cloneId
 
 def create (newdir, shareId=None):
 	newdir = abspath(newdir)

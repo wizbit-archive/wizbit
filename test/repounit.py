@@ -40,22 +40,22 @@ class RepoCase(unittest.TestCase):
 
 	def testCreate(self):
 		self.__createFile()
-		Repo.create(GIT_DIR)
+		Repo.create(GIT_DIR, CONF_FILE, TEST_FILE)
 		self.assertTrue(exists(GIT_DIR))
 		self.__clean()
 
 	def testAdd(self):
 		self.__createFile()
-		Repo.create(GIT_DIR)
+		Repo.create(GIT_DIR, CONF_FILE, TEST_FILE)
 		self.assertTrue(exists(TEST_FILE))
-		Repo.add(abspath(GIT_DIR), CONF_FILE, TEST_FILE)	
+		Repo.add(abspath(GIT_DIR), CONF_FILE, '.', TEST_FILE)	
 		self.__clean()
 
 	def testUpdate(self):
 		self.__createFile()
-		Repo.create(GIT_DIR)
+		Repo.create(GIT_DIR, CONF_FILE, TEST_FILE)
 		self.assertTrue(exists(TEST_FILE))
-		Repo.add(GIT_DIR, CONF_FILE, TEST_FILE)	
+		Repo.add(GIT_DIR, CONF_FILE, '.', TEST_FILE)	
 		file = open(TEST_FILE, 'a')
 		file.write(TEST_STRING_TWO)
 		file.close()
@@ -64,9 +64,9 @@ class RepoCase(unittest.TestCase):
 
 	def testCheckout(self):
 		self.__createFile()
-		Repo.create(GIT_DIR)
+		Repo.create(GIT_DIR, CONF_FILE, TEST_FILE)
 		self.assertTrue(exists(TEST_FILE))
-		Repo.add(GIT_DIR, CONF_FILE, TEST_FILE)	
+		Repo.add(GIT_DIR, CONF_FILE, '.', TEST_FILE)	
 		getoutput('mkdir %s' % TEST_OUT_DIR)
 		Repo.checkout(GIT_DIR, REF, TEST_FILE, TEST_OUT_DIR)
 		self.assertTrue(exists(TEST_OUT_DIR + TEST_FILE))
@@ -76,38 +76,38 @@ class RepoCase(unittest.TestCase):
 
 	def testLog(self):
 		self.__createFile()
-		Repo.create(GIT_DIR)
+		Repo.create(GIT_DIR, CONF_FILE, TEST_FILE)
 		self.assertTrue(exists(TEST_FILE))
-		Repo.add(GIT_DIR, CONF_FILE, TEST_FILE)	
+		Repo.add(GIT_DIR, CONF_FILE, '.', TEST_FILE)	
 		Repo.log(GIT_DIR)
 		self.__clean()
 
 	def testCommitInfo(self):
 		self.__createFile()
-		Repo.create(GIT_DIR)
+		Repo.create(GIT_DIR, CONF_FILE, TEST_FILE)
 		self.assertTrue(exists(TEST_FILE))
-		Repo.add(GIT_DIR, CONF_FILE, TEST_FILE)	
+		Repo.add(GIT_DIR, CONF_FILE, '.', TEST_FILE)	
 		Repo.commitInfo(GIT_DIR, REF, TEST_FILE)
 		self.__clean()
 
 	def testPull(self):
 		self.__createFile()
-		Repo.create(GIT_DIR)
-		Repo.add(GIT_DIR, CONF_FILE, TEST_FILE)	
+		Repo.create(GIT_DIR, CONF_FILE, TEST_FILE)
+		Repo.add(GIT_DIR, CONF_FILE, '.', TEST_FILE)	
 		getoutput('mkdir %s' % TEST_OUT_DIR)
 		Conf.createConf(REMOTE_CONF_FILE, SHARE_ID, REMOTE_DIR_ID, MACHINE)
-		Repo.create(REMOTE_GIT_DIR)
+		Repo.create(REMOTE_GIT_DIR, REMOTE_CONF_FILE, TEST_FILE)
 		Conf.addRepo(REMOTE_CONF_FILE, REMOTE_GIT_DIR)
 		srcId = Conf.getDirId(CONF_FILE)
 		host = 'localhost'
 		path = abspath(GIT_DIR)
-		Repo.pull(REMOTE_GIT_DIR, REMOTE_CONF_FILE, host, path, srcId)
+		Repo.pull('./', REMOTE_GIT_DIR, REMOTE_CONF_FILE, host, path, srcId)
 		Repo.checkout(REMOTE_GIT_DIR, REF, TEST_FILE, TEST_OUT_DIR) 
 		file = open(TEST_FILE, 'a')
 		file.write(TEST_STRING_TWO)
 		file.close()
 		Repo.update(GIT_DIR, CONF_FILE, TEST_FILE)
-		Repo.pull(REMOTE_GIT_DIR, REMOTE_CONF_FILE, host, path, srcId)
+		Repo.pull('./', REMOTE_GIT_DIR, REMOTE_CONF_FILE, host, path, srcId)
 		Repo.checkout(REMOTE_GIT_DIR, REF, TEST_FILE, TEST_OUT_DIR) 
 		file = open(TEST_FILE, 'a')
 		file.write(TEST_STRING_ONE)
@@ -117,7 +117,7 @@ class RepoCase(unittest.TestCase):
 		file.write(TEST_STRING_THREE)
 		file.close()
 		Repo.update(REMOTE_GIT_DIR, REMOTE_CONF_FILE, TEST_FILE)
-		Repo.pull(REMOTE_GIT_DIR, REMOTE_CONF_FILE, host, path, srcId)
+		Repo.pull('./', REMOTE_GIT_DIR, REMOTE_CONF_FILE, host, path, srcId)
 		Repo.checkout(REMOTE_GIT_DIR, REF, TEST_FILE, TEST_OUT_DIR) 
 		getoutput('rm -rf %s' % TEST_OUT_DIR)
 		self.__clean()

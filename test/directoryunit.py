@@ -15,6 +15,7 @@ import xmlrpclib
 import signal
 
 TEST_DIR = 'ATestDir'
+CLONE_DIR = 'ACloneDir'
 TEST_FILE = TEST_DIR + '/atest'
 TEST_STRING_ONE = 'This is a test string'
 GIT_DIR = TEST_DIR + TEST_FILE + '.git'
@@ -36,7 +37,7 @@ class DirectoryCase(unittest.TestCase):
 
 	def __clean(self):
 		getoutput('rm -rf %s' % TEST_DIR)
-
+	"""
 	def testDeamon(self):
 		try:
 			self.__startDeamon()
@@ -80,6 +81,25 @@ class DirectoryCase(unittest.TestCase):
 			print newconf
 		finally:
 			Shares.removeShare(dirId)
+			self.__clean()
+			self.__killDeamon()
+	"""
+
+	def testClone(self):
+		dirId = ""
+		cloneId = ""
+		try:
+			self.__startDeamon()
+			dirId = Directory.create(TEST_DIR)
+			self.__createFile()
+			result = Shares.getShares()
+			srcUrl = getWizUrl(SOURCE_HOST)
+			server = xmlrpclib.ServerProxy(srcUrl)
+			Directory.add(TEST_DIR, TEST_FILE)
+			cloneId = Directory.clone(CLONE_DIR, dirId, SOURCE_HOST)
+		finally:
+			Shares.removeShare(dirId)
+			Shares.removeShare(cloneId)
 			self.__clean()
 			self.__killDeamon()
 
