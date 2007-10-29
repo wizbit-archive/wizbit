@@ -14,19 +14,36 @@ def _waitOnFlock(file):
 			pass
 
 def addShare(uuid, dir):
-	file = open(WIZSHARE_DATA_PATH, "a")
-	_waitOnFlock(file)
-	file.write("%s %s\n" % (uuid, dir))
-	file.close()
+	shareFile = open(WIZSHARE_DATA_PATH, "a")
+	_waitOnFlock(shareFile)
+	try:
+		shareFile.write("%s %s\n" % (uuid, dir))
+	finally:
+		shareFile.close()
 
 def removeShare(uuid):
-	file = open(WIZSHARE_DATA_PATH, "r+")
-	_waitOnFlock(file)
-	input = file.readlines()
-	file.seek(0)
-	for line in input:
-		(lineid, dir) = line.split()[0:2]
-		if lineid != uuid:
-			file.write(line)
-	file.truncate()
-	file.close()
+	shareFile = open(WIZSHARE_DATA_PATH, "r+")
+	_waitOnFlock(shareFile)
+	try:
+		input = shareFile.readlines()
+		shareFile.seek(0)
+		for line in input:
+			(lineid, dir) = line.split()[0:2]
+			if lineid != uuid:
+				shareFile.write(line)
+		shareFile.truncate()
+	finally:
+		shareFile.close()
+
+def getShares():
+	shareFile = open(WIZSHARE_DATA_PATH, "r")
+	_waitOnFlock(shareFile)
+	try:
+		shares = []
+		for line in shareFile:
+			if line:
+				(id, dir) = line.split()[0:2]
+				shares.append((id, dir))
+	finally:
+		shareFile.close()
+	return shares

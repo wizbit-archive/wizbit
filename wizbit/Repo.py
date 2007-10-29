@@ -3,8 +3,7 @@ Represents a wizbit repository.
 This is a git repository that only contains a single file.
 """
 from subprocess import check_call, Popen, PIPE
-from os.path import exists, split, abspath
-from util import getFileName
+from os.path import exists, split, abspath, isabs
 
 import wizbit
 from wizbit import Conf
@@ -24,8 +23,13 @@ def _commit (gitdir, cfile, parents):
 def create(gitdir):
 	check_call (["git-init-db"], env = {"GIT_DIR":gitdir})
 
-def add(gitdir, cfile):
-	check_call (["git-add", getFileName(gitdir)], env = {"GIT_DIR":gitdir})
+def add(gitdir, cfile, filename):
+	#git-add doesn't accept absolute paths. 
+	if isabs(filename):
+		filename = filename.lstrip('/')
+		check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd='/')
+	else:
+		check_call (["git-add", filename], env = {"GIT_DIR":gitdir})
 	Conf.addRepo(cfile, gitdir)
 	_commit(gitdir, cfile, [])
 
@@ -43,20 +47,19 @@ def merge(gitdir, cfile, refs):
 	for h in oldheads:
 		Conf.removeHead(cfile, h)
 
-def update(gitdir, cfile):
+def update(gitdir, cfile, filename):
 	"""
 	Updates the file to its new version.
 	"""
-	check_call (["git-add", getFileName(gitdir)], env = {"GIT_DIR":gitdir})
+	check_call (["git-add", filename], env = {"GIT_DIR":gitdir})
 	oldhead = _getTreeish(gitdir, 'refs/heads/master')
 	_commit (gitdir, cfile, [oldhead])
 
-def checkout(gitdir, ref, codir):
+def checkout(gitdir, ref, filename, codir):
 	treeish = _getTreeish(gitdir, ref)
 	check_call(["git-update-index", "--index-info"],env = {"GIT_DIR":gitdir}, 
 			stdin = Popen(["git-ls-tree", "--full-name", "-r", treeish], 
 				env = {"GIT_DIR":gitdir}, stdout=PIPE).stdout)
-	filename = getFileName(gitdir)
 	gitdir = abspath(gitdir)
         check_call(["git-checkout-index", "-f", "--"] + [filename], env = {"GIT_DIR":gitdir}, cwd=codir)
 
@@ -112,12 +115,12 @@ def pull(gitdir, cfile, host, path, srcId):
 def log(gitdir):
 	return Popen (["git-log", "--pretty=raw", "refs/heads/master"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
 
-def commitInfo(gitdir, commit):
+def commitInfo(gitdir, commit, filename):
 	info = []
 	results = Popen(["git-log", "-n1", "--pretty=format:%an%n%aD", commit],
 			env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
 	info.extend([item.strip() for item in results.split('\n')[:2]])
-	results = Popen(["git-ls-tree", "-l", commit, getFileName(gitdir)],
+	results = Popen(["git-ls-tree", "-l", commit, filename],
 			env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
 	info.append(int(results.split()[3]))
 

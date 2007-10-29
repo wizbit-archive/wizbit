@@ -5,7 +5,7 @@ import os
 from sharedict import WizbitSharesData
 import SimpleXMLRPCServer
 
-WIZBIT_SERVER_PORT = 1221
+WIZBIT_SERVER_PORT = 3492
 
 class WizbitServer():
 	def __init__(self):
@@ -28,7 +28,7 @@ class WizbitServer():
 	def getConf(self, uuid):
 		tempDirs = self.__sharesData.getShares()
 		dir = tempDirs[uuid]
-		file = open(dir + "wizbit.conf", "r")
+		file = open(dir + "/wizbit.conf", "r")
 		conf = file.read()
 		file.close()
 		return conf
