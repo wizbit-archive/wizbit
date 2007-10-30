@@ -44,4 +44,5 @@ class Paths():
 		return filename.lstrip(self.__base)
 
 	def getCODir(self, filename):
+		from os.path import split
 		return split(self.getAbsFilename(filename))[0]

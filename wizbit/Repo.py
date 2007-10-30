@@ -9,7 +9,7 @@ or a string representing the relative path from the base dir.
 from subprocess import check_call, Popen, PIPE
 from os.path import exists, split, abspath, isabs
 
-import wizbit
+from wizbit import *
 from wizbit import Conf
 
 def _makeRefname (id):
@@ -27,10 +27,10 @@ def _commit (gitdir, cfile, parents):
 	commit = pop.communicate()[0].split()[0]
 	check_call (['git-update-ref', 'refs/heads/master', commit], env = {"GIT_DIR":gitdir})
 
-def create(wizpath, cfile, filename):
+def create(wizpath, filename):
 	gitdir = wizpath.getRepoName(filename)
 	check_call (["git-init-db"], env = {"GIT_DIR":gitdir})
-	Conf.addRepo(cfile, filename)
+	Conf.addRepo(wizpath.getWizconf(), filename)
 
 def add(wizpath, filename):
 	gitdir = wizpath.getRepoName(filename)
@@ -63,9 +63,13 @@ def update(wizpath, filename):
 	oldhead = _getTreeish(gitdir, 'refs/heads/master')
 	_commit(gitdir, wizpath.getWizconf(), [oldhead])
 
-def checkout(wizpath, filename, ref):
+def checkout(wizpath, filename, ref, codir=None):
 	gitdir = wizpath.getRepoName(filename)
-	codir = wizpath.getCODir(filename)
+	codir = codir or wizpath.getCODir(filename)
+	print gitdir
+	print codir
+	print filename
+	print ref
 	treeish = _getTreeish(gitdir, ref)
 	check_call(["git-update-index", "--index-info"],env = {"GIT_DIR":gitdir}, 
 			stdin = Popen(["git-ls-tree", "--full-name", "-r", treeish], 
@@ -80,6 +84,7 @@ def pull(wizpath, filename, host, remotepath, srcId):
 	"""
 	gitdir = wizpath.getRepoName(filename)
 	#Get all remote heads
+	remotewizpath = Paths(remotepath)
 	srcUrl = host + ':' + remotewizpath.getRepoName(filename)
 	remotes = Popen(["git-fetch-pack", "--all", srcUrl], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
 	remotes = [r.split() for r in remotes.split('\n') if r and r.split()[1] != 'HEAD']
@@ -125,7 +130,7 @@ def log(wizpath, filename):
 	gitdir = wizpath.getRepoName(filename)
 	return Popen (["git-log", "--pretty=raw", "refs/heads/master"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
 
-def commitInfo(wizpath, commit, filename):
+def commitInfo(wizpath, filename, commit):
 	info = []
 	gitdir = wizpath.getRepoName(filename)
 	results = Popen(["git-log", "-n1", "--pretty=format:%an%n%aD", commit],
