@@ -12,39 +12,38 @@ import xmlrpclib
 
 from lxml import etree
 
-def _addEmpty(dirname, filename):
+# All variables named wizpath are the Path() object initilized to base directory. 
+# Dirname implies a string that is the absolute path to the base directory.
+# Filename implies relative from base directory.
+# Absfilename is absolute name of file.
+
+def _addEmpty(wizpath, filename):
 	"""
 	Adds an empty git repository to the directory with a particular
 	file name. This is needed for adding new files to a directory that
 	are subsequently to be pushed to / pulled from a remote repository.
 	"""
-	wizdir, wizconf = getParams(dirname)
-	repoName = getRepoName(dirname, filename)
 	try:
-		os.mkdir(split(filename)[0])
+		os.mkdir(split(wizpath.getAbsFilename(filename))[0])
 	except OSError:
 		pass
 	relativeFile = filename.lstrip(dirname)
-	Repo.create(repoName, wizconf, relativeFile)
+	Repo.create(wizpath.getRepoName(), wizpath.getWizConf(), filename)
 
-def _pull(dirname, host, path, srcId):
+def _pull(wizpath, host, remotepath, srcId):
 	wizdir, wizconf = getParams(dirname)
-	repos = Conf.getRepos(wizconf)
-	for r in repos:
-		rpath = path + r
-		Repo.pull(dirname, r, wizconf, host, rpath, srcId)
+	repos = Conf.getRepos(wizpath.getWizConf())
+	for filename in repos:
+		Repo.pull(wizpath, filename, host, remotepath, srcId)
 
-def add(dirname, filename):
+def add(dirname, absfilename):
 	"""
 	Adds an existing file to the wizbit directory.
 	"""
-	dirname = abspath(dirname)
-	filename = abspath(filename)
-	wizdir, wizconf = getParams(dirname)
-	repoName = getRepoName(dirname, filename)
-	_addEmpty(dirname, filename)
-	relativeFile = filename.lstrip(dirname)
-	Repo.add(repoName, wizconf, dirname, relativeFile)
+	wizpath = Path(dirname)
+	filename = wizpath.getRelFilename(absfilename)
+	_addEmpty(wizpath, filename)
+	Repo.add(wizpath, filename)
 
 def update(dirname, dirId, srchost):
 	"""
@@ -54,10 +53,9 @@ def update(dirname, dirId, srchost):
 	conf file with the new repositories. 
 	Then pulling from the possibly remote repositories
 	"""
-	dirname = abspath(dirname)
+	wizpath = Path(dirname)
 	#Get the local conf
-	wizdir, wizconf = getParams(dirname)
-	cfile = open(wizconf)
+	cfile = open(wizpath.getWizconf())
 	current = cfile.read()
 	cfile.close()
 
@@ -76,11 +74,10 @@ def update(dirname, dirId, srchost):
 	diff = [r for r in newrepos if r not in currepos]
 	
 	#Add empty repositories for any new files
-	for file in diff:
-		print file
-		_addEmpty(dirname, file.rsplit('.git')[0])
+	for filename in diff:
+		_addEmpty(wizpath, filename)
 
-	_pull(dirname, srchost, srcpath, dirId)
+	_pull(wizpath, srchost, srcpath, dirId)
 
 def clone(dirname, dirId, srchost):
 	"""
@@ -88,8 +85,6 @@ def clone(dirname, dirId, srchost):
 	creating a new repository and updating
 	from a possibly remote one.
 	"""
-	dirname = abspath(dirname)
-	wizdir, wizconf = getParams(dirname)
 	srcUrl = getWizUrl(srchost)
 	server = xmlrpclib.ServerProxy(srcUrl)
 	#Get the path to the directory from the 
@@ -97,19 +92,17 @@ def clone(dirname, dirId, srchost):
 	srcpath = server.getPath(dirId)
 	#Get the conf file from the remote host
 	srcConf = server.getConf(dirId)
-	print srcConf
 	shareId = Conf.getRemoteShareId(srcConf)
 	#Create the empty directory and update it
 	cloneId = create(dirname, shareId)
 	update(dirname, dirId, srchost)
 	return cloneId
 
-def create (newdir, shareId=None):
-	newdir = abspath(newdir)
-	wizdir, wizconf = getParams(newdir)
-	os.makedirs (wizdir)
+def create (dirname, shareId=None):
+	wizpath = Path(dirname)
+	os.makedirs (wizpath.getWizdir())
 	shareId = shareId or uuid.uuid4().hex
 	dirId = uuid.uuid4().hex
-	Conf.createConf(wizconf, shareId, dirId, platform.node())
-	Shares.addShare(dirId, wizdir)
+	Conf.createConf(wizpath.getWizconf(), shareId, dirId, platform.node())
+	Shares.addShare(dirId, wizpath.getWizdir())
 	return dirId

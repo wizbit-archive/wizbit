@@ -3,18 +3,45 @@ WIZBIT_SERVER_PORT = 3492
 def makeRefname (id):
     return "refs/heads/" + id
 
-def getParams(dir):
-	return (dir + '/.wizbit/', dir + '/.wizbit/wizbit.conf')
-
-def getRepoName(directory, filename):
-	"""
-	Takes absolute path to base directory
-	and absolute path to file.
-	Returns the absolute git directory (repository)
-	for the file. 
-	"""
-	filename = filename.lstrip(directory)
-	return directory + '/.wizbit/' + filename + '.git'
-
 def getWizUrl(host):
 	return 'http://%s:%d' % (host, WIZBIT_SERVER_PORT)
+
+class Paths():
+	def __init__(self, base):
+		"""
+		Takes absolute path to base of wizbit directory.
+		"""
+		self.__base = base
+
+	def getBase(self):
+		return self.__base
+
+	def getWizdir(self):
+		return self.__base + '/.wizbit'
+
+	def getWizconf(self):
+		return self.__base + '/.wizbit/wizbit.conf'
+
+	def getAbsFilename(self, filename):
+		"""
+		Takes relative path to file from base directory.
+		Returns absolute path to file.
+		"""
+		return self.__base + '/' + filename
+
+	def getRepoName(self, filename):
+		"""
+		Takes relative path to file from base directory.
+		Returns absolute path to git repository.
+		"""
+		return self.getWizdir() + '/' + filename + '.git'
+
+	def getRelFilename(self, filename):
+		"""
+		Takes absolute path to a file and returns the 
+		relative path to the file from the base directory.
+		"""
+		return filename.lstrip(self.__base)
+
+	def getCODir(self, filename):
+		return split(self.getAbsFilename(filename))[0]

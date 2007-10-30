@@ -37,7 +37,7 @@ class DirectoryCase(unittest.TestCase):
 
 	def __clean(self):
 		getoutput('rm -rf %s' % TEST_DIR)
-	"""
+
 	def testDeamon(self):
 		try:
 			self.__startDeamon()
@@ -83,7 +83,6 @@ class DirectoryCase(unittest.TestCase):
 			Shares.removeShare(dirId)
 			self.__clean()
 			self.__killDeamon()
-	"""
 
 	def testClone(self):
 		dirId = ""
@@ -101,6 +100,7 @@ class DirectoryCase(unittest.TestCase):
 			Shares.removeShare(dirId)
 			Shares.removeShare(cloneId)
 			self.__clean()
+			getoutput('rm -rf %s' % CLONE_DIR)
 			self.__killDeamon()
 
 if __name__ == '__main__':
