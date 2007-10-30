@@ -9,13 +9,13 @@ DBusGMainLoop( set_as_default=True )
 
 """
 Class for publishing a service on DNS-SD using Avahi.
-Creates a thread to handle requests
 """
-class ServicePublisher (threading.Thread):
+class ServicePublisher (gobject.GObject):
+    __gsignals__ = {
+            'error': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE,(gobject.TYPE_STRING,))
+    }
     def __init__(self, name, type, port, txt = "", domain = "", host = ""):
-        threading.Thread.__init__(self)
-
-        gobject.threads_init()
+        self.__gobject_init__()
         self._name = name
         self._type = type
         self._port = port
@@ -25,8 +25,6 @@ class ServicePublisher (threading.Thread):
         self._group = None
         self._rename_count = 12 # Counter so we only rename after collisions a sensible number of times
 
-    def run(self):
-        self._main_loop = gobject.MainLoop()
         self._bus = dbus.SystemBus()
 
         self._server = dbus.Interface(
@@ -36,15 +34,10 @@ class ServicePublisher (threading.Thread):
         self._server.connect_to_signal( "StateChanged", self._server_state_changed )
         print "calling GetState"
         self._server_state_changed( self._server.GetState() )
-        print "calling mainloop run"
 
-        self._main_loop.run()
-
+    def __del__(self):
         if not self._group is None:
             self._group.Free()
-
-    def stop(self):
-        self._main_loop.quit()
 
     def _add_service(self):
         if self._group is None:
@@ -97,45 +90,44 @@ class ServicePublisher (threading.Thread):
             print "Error in group state changed", error
             return
 
-class ServiceBrowser:
-    __
+class ServiceBrowser(gobject.GObject):
+    __gsignals__ = {
+            'service-found': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE,(gobject.TYPE_STRING, gobject.TYPE_STRING)),
+            'service-removed': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE,(gobject.TYPE_STRING, gobject.TYPE_STRING))
+    }
 
-    def __init__(type, domain):
+    def __init__(self, type, domain = ""):
+        self.__gobject_init__()
         bus = dbus.SystemBus()
         server = dbus.Interface(bus.get_object(avahi.DBUS_NAME, avahi.DBUS_PATH_SERVER), avahi.DBUS_INTERFACE_SERVER)
-        b = dbus.Interface(bus.get_object(avahi.DBUS_NAME, server.ServiceBrowserNew(avahi.IF_UNSPEC, avahi.PROTO_INET, type, domain, dbus.UInt32(0))), avahi.DBUS_INTERFACE_SERVICE_BROWSER)
-        b.connect_to_signal('ItemNew', new_service)
-        b.connect_to_signal('ItemRemove', remove_service)
+        print "creating service browser for ",type
+        self._browser = dbus.Interface(bus.get_object(avahi.DBUS_NAME, server.ServiceBrowserNew(avahi.IF_UNSPEC, avahi.PROTO_INET, type, domain, dbus.UInt32(0))), avahi.DBUS_INTERFACE_SERVICE_BROWSER)
+        self._browser.connect_to_signal('ItemNew', self._new_service)
+        self._browser.connect_to_signal('ItemRemove', self._remove_service)
+        self.services = {}
 
 
-    def _new_service(interface, protocol, name, type, domain, flags):
+    def _new_service(self, interface, protocol, name, type, domain, flags):
         print "new service:",interface, protocol, name, type, domain, flags
+        self.services[name]=type
+        self.emit('service-found', name, type)
 
-    def _remove_service(interface, protocol, name, type, domain, flags):
+    def _remove_service(self, interface, protocol, name, type, domain, flags):
         print "remove service:", interface, protocol, name, type, domain, flags
+        self.emit('service-removed', name, type)
+        self.services.remove(name)
 
 if __name__ == "__main__":
-    print "creting servicepublisher"
     if len(sys.argv) > 1:
         name = sys.argv[1]
     else:
         name = "test"
-    sp = ServicePublisher(name,"_test._tcp",1234)
-    print "starting servicepublisher"
-    sp.start()
 
+    sp = ServicePublisher(name,"_test._tcp",1234)
+    sb = ServiceBrowser("_test._tcp")
+
+    mainloop = gobject.MainLoop()
     try:
-        chr = sys.stdin.read(1)
+        mainloop.run()
     except KeyboardInterrupt:
         pass
-    finally:
-        sp.stop()
-
-"""
-    server = dbus.Interface(self.system_bus.get_object(avahi.DBUS_NAME, avahi.DBUS_PATH_SERVER), avahi.DBUS_INTERFACE_SERVER)
-    b = dbus.Interface(self.system_bus.get_object(avahi.DBUS_NAME, server.ServiceBrowserNew(avahi.IF_UNSPEC, avahi.PROTO_INET, "_wizbit._tcp", "", dbus.UInt32(0))), avahi.DBUS_INTERFACE_SERVICE_BROWSER)
-    b.connect_to_signal('ItemNew', new_service)
-    b.connect_to_signal('ItemRemove', remove_service)
-"""
-
-
