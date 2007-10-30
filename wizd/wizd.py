@@ -3,6 +3,7 @@ import sys
 import socket
 import os
 import SimpleXMLRPCServer
+from publish import ServicePublisher
 
 WIZBIT_SERVER_PORT = 3492
 
@@ -40,10 +41,17 @@ class WizbitServer():
 
 def main(args):
 	servinst = WizbitServer()
-	server = SimpleXMLRPCServer.SimpleXMLRPCServer(("localhost", WIZBIT_SERVER_PORT))
-	server.register_instance(servinst)	
+	server = SimpleXMLRPCServer.SimpleXMLRPCServer(("", 0))
+	server.register_instance(servinst)
 	server.register_introspection_functions()
-	server.serve_forever()
+        sp = ServicePublisher("Wizbit", "_wizbit._tcp", server.server_address[1])
+        sp.start()  #just love the race condition... CAN PLZ HAV A MANLOOP??
+        try:
+	    server.serve_forever() #OH RLY?
+        except KeyboardInterrupt:
+            pass
+        finally:
+            sp.stop()
 
 if __name__ == '__main__':
 	sys.exit(main(sys.argv))
