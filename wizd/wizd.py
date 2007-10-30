@@ -7,6 +7,7 @@ import SimpleXMLRPCServer
 WIZBIT_SERVER_PORT = 3492
 
 from wizbit import Shares
+from wizbit import *
 
 class WizbitServer():
 	def getShares(self):
@@ -31,7 +32,8 @@ class WizbitServer():
 		for id, directory in shares:
 			if uuid == id:
 				break
-		file = open(directory + "/wizbit.conf", "r")
+		wizpath = Paths(directory)
+		file = open(wizpath.getWizconf(), "r")
 		conf = file.read()
 		file.close()
 		return conf

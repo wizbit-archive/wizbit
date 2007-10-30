@@ -14,20 +14,19 @@ import socket
 import xmlrpclib
 import signal
 
-TEST_DIR = 'ATestDir'
-CLONE_DIR = 'ACloneDir'
+TEST_DIR = abspath('ATestDir')
+CLONE_DIR = abspath('ACloneDir')
 TEST_FILE = TEST_DIR + '/atest'
 TEST_STRING_ONE = 'This is a test string'
-GIT_DIR = TEST_DIR + TEST_FILE + '.git'
 SOURCE_HOST = 'localhost'
 
 class DirectoryCase(unittest.TestCase):
 	def __startDaemon(self):
-		self.__daemon = subprocess.Popen(['python', '../wizd/wizd.py'])
+		#self.__daemon = subprocess.Popen(['python', '../wizd/wizd.py'])
 		pass
 
 	def __killDaemon(self):
-		os.kill(self.__daemon.pid, signal.SIGKILL)
+		#os.kill(self.__daemon.pid, signal.SIGKILL)
 		pass
 
 	def __createFile(self):
@@ -54,7 +53,7 @@ class DirectoryCase(unittest.TestCase):
 			self.__startDaemon()
 			dirId = Directory.create(TEST_DIR)
 			result = Shares.getShares()
-			self.assertEquals([(dirId, abspath(TEST_DIR) + '/.wizbit/')], result)
+			self.assertEquals([(dirId, TEST_DIR)], result)
 			srcUrl = getWizUrl(SOURCE_HOST)
 			server = xmlrpclib.ServerProxy(srcUrl)
 			newconf = server.getConf(dirId)
@@ -71,7 +70,7 @@ class DirectoryCase(unittest.TestCase):
 			dirId = Directory.create(TEST_DIR)
 			self.__createFile()
 			result = Shares.getShares()
-			self.assertEquals([(dirId, abspath(TEST_DIR) + '/.wizbit/')], result)
+			self.assertEquals([(dirId, TEST_DIR)], result)
 			srcUrl = getWizUrl(SOURCE_HOST)
 			server = xmlrpclib.ServerProxy(srcUrl)
 			newconf = server.getConf(dirId)
@@ -99,8 +98,8 @@ class DirectoryCase(unittest.TestCase):
 		finally:
 			Shares.removeShare(dirId)
 			Shares.removeShare(cloneId)
-			self.__clean()
 			getoutput('rm -rf %s' % CLONE_DIR)
+			self.__clean()
 			self.__killDaemon()
 
 if __name__ == '__main__':
