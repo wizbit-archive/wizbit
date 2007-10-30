@@ -5,7 +5,8 @@ import nautilus
 from lxml import etree
 import gtk, gobject
 
-import wizbit
+from wizbit import *
+from wizbit import Directory, Repo, Conf
 
 WIZ_CONTROLLED = "wiz-controlled"
 WIZ_CONFLICT = "wiz-conflict"
@@ -38,25 +39,13 @@ class WizResolveDialog(gtk.VBox):
 	def getVersionInfo(self, file):
 		(scheme, netloc, path, params, query, fragment) = urlparse(file.get_uri())
 
-		wizpath = wizbit.getwizpath(path)
-		filename = path.rsplit(wizpath + "/")[1]
- 		if wizpath:
-			try:
-				repos = etree.parse (wizpath + "/.wizbit/wizbit.conf")
-			except IOError:
-				pass
-			else:
-				#Find heads of the file
-				for r in repos.getroot().xpath("/wizbit/repo"):
-					if r.get("name") == filename + ".git":
-						heads = [h for h in r if h.tag=="head"]
-				gitdir = wizpath + "/.wizbit/" + filename + ".git"
-				for head in heads:
-					refdir = head.get("ref")
-					ref = open(gitdir + "/" + refdir)
-					id = ref.readline()
-					self.infoStore.append(wizbit.commitinfo(gitdir, id.strip('\n'), filename))
-					ref.close()
+		base = wizbit.getwizpath(path)
+ 		if base:
+			wizpath = Paths(base)
+			filename = wizpath.getRelFilename(path)
+			heads = Conf.getHeads(wizpath.getWizconf(), filename)
+			for head in heads:
+				self.infoStore.append(wizbit.commitInfo(wizpath, filename, head))
 
 gobject.type_register(WizResolveDialog)
 
@@ -85,13 +74,18 @@ class WizbitExtension(nautilus.ColumnProvider, nautilus.InfoProvider, nautilus.M
 
     def create_callback(self, menu, file):
 	(scheme, netloc, path, params, query, fragment) = urlparse(file.get_uri())
-	wizbit.create(path) 
+	Directory.create(path)
+
+    def createall_callback(self, menu, file):
+	(scheme, netloc, path, params, query, fragment) = urlparse(file.get_uri())
+	Directory.createall(path)
 
     def add_callback(self, menu, file):
 	(scheme, netloc, path, params, query, fragment) = urlparse(file.get_uri())
-        wizpath = wizbit.getwizpath(path)
-	#TODO Error if not contained in wizbit directory.
-	wizbit.add(wizpath, path.rsplit(wizpath + "/")[1]) 
+        base = wizbit.getwizpath(path)
+	wizpath = Paths(base)
+	filename = wizpath.getRelFilename(path)
+	Directory.add(base, filename)
 
     def get_file_items(self, window, files):
 	items = []
@@ -112,6 +106,13 @@ class WizbitExtension(nautilus.ColumnProvider, nautilus.InfoProvider, nautilus.M
                                      'Wizbit create...',
                                      'Create a Wizbit controlled directory')
             item.connect('activate', self.create_callback, file)
+            items.append(item)
+	if (file.get_string_attribute(WIZ_CONTROLLED) == NO) and \
+	   (file.is_directory()):
+            item = nautilus.MenuItem('NautilusWizbit:createall',
+                                     'Wizbit create all...',
+                                     'Create a Wizbit controlled directory and add all files')
+            item.connect('activate', self.createall_callback, file)
             items.append(item)
 	if (file.get_string_attribute(WIZ_CONTROLLED) == NO) and \
 	   not (file.is_directory()):
@@ -151,29 +152,19 @@ class WizbitExtension(nautilus.ColumnProvider, nautilus.InfoProvider, nautilus.M
         if scheme != 'file':
             return
         
-        wizpath = wizbit.getwizpath(path)
-        if wizpath:
+        base = wizbit.getwizpath(path)
+        if base:
             if isdir(path):
                 controlled = True
             else:
-                try:
-                    repos = etree.parse (wizpath + "/.wizbit/wizbit.conf")
-                except IOError:
-                    pass
-                else:
-                    #Find if file is controlled
-                    files = [f.get("name") for f in repos.getroot().xpath("/wizbit/repo")]
-                    filename = path.rsplit(wizpath + "/")[1] + ".git"
-                    if filename in files:
-                        controlled = True
-                    
-                        #Find if file is conflicting
-			for r in repos.getroot().xpath("/wizbit/repo"):
-				if r.get("name") == filename:
-					heads = [h for h in r if h.tag=="head"]
+		wizpath = Paths(base)
+		filename = wizpath.getRelFilename(path)
+		repos = Conf.getRepos(wizpath.getWizconf())
+		if filename in repos:
+			controlled = True
+			heads = Conf.getHeads(wizpath.getWizconf(), filename)
 			if len(heads) > 1:
 				conflict = True
-
         if controlled:
             file.add_emblem("cvs-controlled")
             file.add_string_attribute(WIZ_CONTROLLED, YES)
