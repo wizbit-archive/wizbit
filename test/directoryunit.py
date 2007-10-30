@@ -22,12 +22,12 @@ GIT_DIR = TEST_DIR + TEST_FILE + '.git'
 SOURCE_HOST = 'localhost'
 
 class DirectoryCase(unittest.TestCase):
-	def __startDeamon(self):
-		#self.__deamon = subprocess.Popen(['python', '../wizd/wizd.py'])
+	def __startDaemon(self):
+		#self.__daemon = subprocess.Popen(['python', '../wizd/wizd.py'])
 		pass
 
-	def __killDeamon(self):
-		#os.kill(self.__deamon.pid, signal.SIGKILL)
+	def __killDaemon(self):
+		#os.kill(self.__daemon.pid, signal.SIGKILL)
 		pass
 
 	def __createFile(self):
@@ -38,20 +38,20 @@ class DirectoryCase(unittest.TestCase):
 	def __clean(self):
 		getoutput('rm -rf %s' % TEST_DIR)
 	"""
-	def testDeamon(self):
+	def testDaemon(self):
 		try:
-			self.__startDeamon()
+			self.__startDaemon()
 			srcUrl = getWizUrl(SOURCE_HOST)
 			server = xmlrpclib.ServerProxy(srcUrl)
 			methods = server.system.listMethods()
 			print methods
 		finally:
-			self.__killDeamon()
+			self.__killDaemon()
 
 	def testCreate(self):
 		dirId = ""
 		try:
-			self.__startDeamon()
+			self.__startDaemon()
 			dirId = Directory.create(TEST_DIR)
 			result = Shares.getShares()
 			self.assertEquals([(dirId, abspath(TEST_DIR) + '/.wizbit/')], result)
@@ -62,12 +62,12 @@ class DirectoryCase(unittest.TestCase):
 		finally:
 			Shares.removeShare(dirId)
 			self.__clean()
-			self.__killDeamon()
+			self.__killDaemon()
 
 	def testAdd(self):
 		dirId = ""
 		try:
-			self.__startDeamon()
+			self.__startDaemon()
 			dirId = Directory.create(TEST_DIR)
 			self.__createFile()
 			result = Shares.getShares()
@@ -82,14 +82,14 @@ class DirectoryCase(unittest.TestCase):
 		finally:
 			Shares.removeShare(dirId)
 			self.__clean()
-			self.__killDeamon()
+			self.__killDaemon()
 	"""
 
 	def testClone(self):
 		dirId = ""
 		cloneId = ""
 		try:
-			self.__startDeamon()
+			self.__startDaemon()
 			dirId = Directory.create(TEST_DIR)
 			self.__createFile()
 			result = Shares.getShares()
@@ -101,7 +101,7 @@ class DirectoryCase(unittest.TestCase):
 			Shares.removeShare(dirId)
 			Shares.removeShare(cloneId)
 			self.__clean()
-			self.__killDeamon()
+			self.__killDaemon()
 
 if __name__ == '__main__':
 	unittest.main()
