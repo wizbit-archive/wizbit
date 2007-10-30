@@ -2,7 +2,7 @@ import os
 import uuid
 import platform
 
-from os.path import split, abspath
+from os.path import split, abspath, join
 
 from wizbit import *
 from wizbit import Conf, Repo, Shares
@@ -100,3 +100,10 @@ def create (dirname, shareId=None):
 	Conf.createConf(wizpath.getWizconf(), shareId, dirId, platform.node())
 	Shares.addShare(dirId, wizpath.getBase())
 	return dirId
+
+def createall(dirname):
+	create(dirname)
+	for root, dirs files in os.walk(dirname):
+		absfiles = [join(root, name) for name in files]
+		for filename in absfiles:
+			add(dirname, absfiles)

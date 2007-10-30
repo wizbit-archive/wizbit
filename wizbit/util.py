@@ -46,3 +46,17 @@ class Paths():
 	def getCODir(self, filename):
 		from os.path import split
 		return split(self.getAbsFilename(filename))[0]
+
+def getWizPath(path):
+	from os.path import exists, split
+	if exists(path + "/.wizbit"):	 
+		return path
+	else:
+		(head, tail) = split(path)
+		if head != '/':
+			return getwizpath(head)
+		else:
+			if exists("/.wizbit"):
+				return head
+			else:
+				return ""
