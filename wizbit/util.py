@@ -41,7 +41,11 @@ class Paths():
 		Takes absolute path to a file and returns the 
 		relative path to the file from the base directory.
 		"""
-		return filename.lstrip(self.__base)
+		name = filename.split(self.__base)[1]
+		if name[0] == '/':
+			return name[1:]
+		else:
+			return name
 
 	def getCODir(self, filename):
 		from os.path import split
@@ -54,7 +58,7 @@ def getWizPath(path):
 	else:
 		(head, tail) = split(path)
 		if head != '/':
-			return getwizpath(head)
+			return getWizPath(head)
 		else:
 			if exists("/.wizbit"):
 				return head

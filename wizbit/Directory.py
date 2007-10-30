@@ -103,7 +103,9 @@ def create (dirname, shareId=None):
 
 def createall(dirname):
 	create(dirname)
-	for root, dirs files in os.walk(dirname):
+	for root, dirs, files in os.walk(dirname):
 		absfiles = [join(root, name) for name in files]
 		for filename in absfiles:
-			add(dirname, absfiles)
+			add(dirname, filename)
+		if '.wizbit' in dirs:
+			dirs.remove('.wizbit')

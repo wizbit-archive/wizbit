@@ -39,13 +39,13 @@ class WizResolveDialog(gtk.VBox):
 	def getVersionInfo(self, file):
 		(scheme, netloc, path, params, query, fragment) = urlparse(file.get_uri())
 
-		base = wizbit.getwizpath(path)
+        	base = getWizPath(path)
  		if base:
 			wizpath = Paths(base)
 			filename = wizpath.getRelFilename(path)
 			heads = Conf.getHeads(wizpath.getWizconf(), filename)
 			for head in heads:
-				self.infoStore.append(wizbit.commitInfo(wizpath, filename, head))
+				self.infoStore.append(Repo.commitInfo(wizpath, filename, head))
 
 gobject.type_register(WizResolveDialog)
 
@@ -82,10 +82,9 @@ class WizbitExtension(nautilus.ColumnProvider, nautilus.InfoProvider, nautilus.M
 
     def add_callback(self, menu, file):
 	(scheme, netloc, path, params, query, fragment) = urlparse(file.get_uri())
-        base = wizbit.getwizpath(path)
+        base = getWizPath(path)
 	wizpath = Paths(base)
-	filename = wizpath.getRelFilename(path)
-	Directory.add(base, filename)
+	Directory.add(base, path)
 
     def get_file_items(self, window, files):
 	items = []
@@ -152,7 +151,7 @@ class WizbitExtension(nautilus.ColumnProvider, nautilus.InfoProvider, nautilus.M
         if scheme != 'file':
             return
         
-        base = wizbit.getwizpath(path)
+        base = getWizPath(path)
         if base:
             if isdir(path):
                 controlled = True
