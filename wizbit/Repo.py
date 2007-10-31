@@ -35,6 +35,7 @@ def create(wizpath, filename):
 def add(wizpath, filename):
 	gitdir = wizpath.getRepoName(filename)
 	check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+	Conf.addHead(wizpath.getWizconf(), filename, 'refs/heads/master')
 	_commit(gitdir, wizpath.getWizconf(), [])
 
 def merge(wizpath, filename, refs):
@@ -66,10 +67,6 @@ def update(wizpath, filename):
 def checkout(wizpath, filename, ref, codir=None):
 	gitdir = wizpath.getRepoName(filename)
 	codir = codir or wizpath.getCODir(filename)
-	print gitdir
-	print codir
-	print filename
-	print ref
 	treeish = _getTreeish(gitdir, ref)
 	check_call(["git-update-index", "--index-info"],env = {"GIT_DIR":gitdir}, 
 			stdin = Popen(["git-ls-tree", "--full-name", "-r", treeish], 

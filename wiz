@@ -8,8 +8,21 @@ from wizbit import Directory
 
 try:
     if sys.argv[1] == "create":
-	# create directory
-	Directory.create(abspath(sys.argv[2]))
+	if len(argv) < 2:
+		#Assume want to create here
+		Directory.create(abspath('.'))
+	else:
+		#Create in supplied path
+		Directory.create(abspath(sys.argv[2]))
+
+    if sys.argv[1] == "createall":
+	if len(argv) < 2:
+		#Assume want to create here
+		Directory.createall(abspath('.'))
+	else:
+		#Create in supplied path
+		Directory.createall(abspath(sys.argv[2]))
+
     elif sys.argv[1] == "clone":
 	# clone directory remotedirid remotehost
         newwizbit = abspath(sys.argv[2])
@@ -17,10 +30,6 @@ try:
             print "clone: %s already exists!" % (sys.argv[2])
             sys.exit(1)
 	Directory.clone(newwizbit, sys.argv[3], sys.argv[4])	
-    elif sys.argv[1] == "add":
-	Directory.add(sys.argv[2], sys.argv[3])
-    elif sys.argv[1] == "update":
-	Directory.update(sys.argv[2], sys.argv[3], sys.argv[4])	
 
 except CalledProcessError, e:
     print e

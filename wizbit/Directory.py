@@ -2,7 +2,7 @@ import os
 import uuid
 import platform
 
-from os.path import split, abspath
+from os.path import split, abspath, join
 
 from wizbit import *
 from wizbit import Conf, Repo, Shares
@@ -27,12 +27,10 @@ def _addEmpty(wizpath, filename):
 		os.mkdir(split(wizpath.getAbsFilename(filename))[0])
 	except OSError:
 		pass
-	relativeFile = filename.lstrip(dirname)
-	Repo.create(wizpath.getRepoName(), wizpath.getWizConf(), filename)
+	Repo.create(wizpath, filename)
 
 def _pull(wizpath, host, remotepath, srcId):
-	wizdir, wizconf = getParams(dirname)
-	repos = Conf.getRepos(wizpath.getWizConf())
+	repos = Conf.getRepos(wizpath.getWizconf())
 	for filename in repos:
 		Repo.pull(wizpath, filename, host, remotepath, srcId)
 
@@ -40,7 +38,7 @@ def add(dirname, absfilename):
 	"""
 	Adds an existing file to the wizbit directory.
 	"""
-	wizpath = Path(dirname)
+	wizpath = Paths(dirname)
 	filename = wizpath.getRelFilename(absfilename)
 	_addEmpty(wizpath, filename)
 	Repo.add(wizpath, filename)
@@ -53,7 +51,7 @@ def update(dirname, dirId, srchost):
 	conf file with the new repositories. 
 	Then pulling from the possibly remote repositories
 	"""
-	wizpath = Path(dirname)
+	wizpath = Paths(dirname)
 	#Get the local conf
 	cfile = open(wizpath.getWizconf())
 	current = cfile.read()
@@ -87,10 +85,6 @@ def clone(dirname, dirId, srchost):
 	"""
 	srcUrl = getWizUrl(srchost)
 	server = xmlrpclib.ServerProxy(srcUrl)
-	#Get the path to the directory from the 
-	#Remote host
-	srcpath = server.getPath(dirId)
-	#Get the conf file from the remote host
 	srcConf = server.getConf(dirId)
 	shareId = Conf.getRemoteShareId(srcConf)
 	#Create the empty directory and update it
@@ -99,10 +93,19 @@ def clone(dirname, dirId, srchost):
 	return cloneId
 
 def create (dirname, shareId=None):
-	wizpath = Path(dirname)
+	wizpath = Paths(dirname)
 	os.makedirs (wizpath.getWizdir())
 	shareId = shareId or uuid.uuid4().hex
 	dirId = uuid.uuid4().hex
 	Conf.createConf(wizpath.getWizconf(), shareId, dirId, platform.node())
-	Shares.addShare(dirId, wizpath.getWizdir())
+	Shares.addShare(dirId, wizpath.getBase())
 	return dirId
+
+def createall(dirname):
+	create(dirname)
+	for root, dirs, files in os.walk(dirname):
+		absfiles = [join(root, name) for name in files]
+		for filename in absfiles:
+			add(dirname, filename)
+		if '.wizbit' in dirs:
+			dirs.remove('.wizbit')
