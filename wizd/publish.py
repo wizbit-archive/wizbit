@@ -31,7 +31,7 @@ class ServicePublisher (gobject.GObject):
                 self._bus.get_object( avahi.DBUS_NAME, avahi.DBUS_PATH_SERVER ),
                 avahi.DBUS_INTERFACE_SERVER )
 
-        self._server.connect_to_signal( "StateChanged", self._server_state_changed )
+        self._server.connect_to_signal( 'StateChanged', self._server_state_changed )
         print "calling GetState"
         self._server_state_changed( self._server.GetState() )
 
