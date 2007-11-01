@@ -48,15 +48,25 @@ class ServicePublisher (gobject.GObject):
 
         print "Adding service '%s' of type '%s' ..." % (self._name, self._type)
 
-        self._group.AddService(
-                avahi.IF_UNSPEC,    #interface
-                avahi.PROTO_UNSPEC, #protocol
-                0,                  #flags
-                self._name, self._type,
-                self._domain, self._host,
-                dbus.UInt16(self._port),
-                avahi.string_array_to_txt_array(self._txt))
-        self._group.Commit()
+        while self._rename_count > 0:
+            try:
+                self._group.AddService(
+                        avahi.IF_UNSPEC,    #interface
+                        avahi.PROTO_UNSPEC, #protocol
+                        0,                  #flags
+                        self._name, self._type,
+                        self._domain, self._host,
+                        dbus.UInt16(self._port),
+                        avahi.string_array_to_txt_array(self._txt))
+                self._group.Commit()
+                break
+            except dbus.exceptions.DBusException, e:
+                if e.get_dbus_name() == "org.freedesktop.Avahi.CollisionError":
+                    self._name = self._server.GetAlternativeServiceName(self._name)
+                    print "WARNING: Service name collision, changing name to '%s' ..." % self._name
+                else:
+                    throw(e)
+                    break
 
     def _remove_service(self):
         if not self._group is None:
@@ -77,8 +87,8 @@ class ServicePublisher (gobject.GObject):
         elif state == avahi.ENTRY_GROUP_COLLISION:
             self._rename_count = self._rename_count - 1
             if rename_count > 0:
-                name = server.GetAlternativeServiceName(name)
-                print "WARNING: Service name collision, changing name to '%s' ..." % name
+                self._name = name = self._server.GetAlternativeServiceName(self._name)
+                print "WARNING: Service name collision, changing name to '%s' ..." % self._name
                 self._remove_service()
                 self._add_service()
 
