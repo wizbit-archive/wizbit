@@ -8,7 +8,7 @@ from wizbit import Directory
 
 try:
     if sys.argv[1] == "create":
-	if len(argv) < 2:
+	if len(sys.argv) < 2:
 		#Assume want to create here
 		Directory.create(abspath('.'))
 	else:
@@ -16,12 +16,15 @@ try:
 		Directory.create(abspath(sys.argv[2]))
 
     if sys.argv[1] == "createall":
-	if len(argv) < 2:
+	if len(sys.argv) < 2:
 		#Assume want to create here
 		Directory.createall(abspath('.'))
 	else:
 		#Create in supplied path
 		Directory.createall(abspath(sys.argv[2]))
+
+    if sys.argv[1] == "remove":
+	    Directory.remove(abspath(sys.argv[2]))
 
     elif sys.argv[1] == "clone":
 	# clone directory remotedirid remotehost
