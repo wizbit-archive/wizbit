@@ -1,6 +1,7 @@
 import os
 import uuid
 import platform
+from commands import getoutput
 
 from os.path import split, abspath, join
 
@@ -29,11 +30,6 @@ def _addEmpty(wizpath, filename):
 		pass
 	Repo.create(wizpath, filename)
 
-def _pull(wizpath, host, remotepath, srcId):
-	repos = Conf.getRepos(wizpath.getWizconf())
-	for filename in repos:
-		Repo.pull(wizpath, filename, host, remotepath, srcId)
-
 def add(dirname, absfilename):
 	"""
 	Adds an existing file to the wizbit directory.
@@ -43,7 +39,7 @@ def add(dirname, absfilename):
 	_addEmpty(wizpath, filename)
 	Repo.add(wizpath, filename)
 
-def update(dirname, dirId, srchost):
+def pull(dirname, dirId, srchost):
 	"""
 	Merges a wizbit.conf file. This means looking 
 	for the files in the new conf that are not version controlled
@@ -75,7 +71,10 @@ def update(dirname, dirId, srchost):
 	for filename in diff:
 		_addEmpty(wizpath, filename)
 
-	_pull(wizpath, srchost, srcpath, dirId)
+	repos = Conf.getRepos(wizpath.getWizconf())
+	for filename in repos:
+		Repo.pull(wizpath, filename, srchost, srcpath, dirId)
+
 
 def clone(dirname, dirId, srchost):
 	"""
@@ -109,3 +108,9 @@ def createall(dirname):
 			add(dirname, filename)
 		if '.wizbit' in dirs:
 			dirs.remove('.wizbit')
+
+def remove(dirname):
+	wizpath = Paths(dirname)
+	dirId = Conf.getDirId(wizpath.getWizconf())
+	Shares.removeShare(dirId)
+	getoutput('rm -rf %s' % wizpath.getWizdir())
