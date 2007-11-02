@@ -3,7 +3,8 @@ import sys
 import socket
 import os
 import SimpleXMLRPCServer
-from publish import ServicePublisher
+import gobject
+from discovery import ServicePublisher, ServiceBrowser
 
 WIZBIT_SERVER_PORT = 3492
 
@@ -39,19 +40,29 @@ class WizbitServer():
 		file.close()
 		return conf
 
+def server_socket_error():
+	print "RPC server socket was disconnected, exiting"
+	global main_loop
+	main_loop.quit()
+
 def main(args):
 	servinst = WizbitServer()
 	server = SimpleXMLRPCServer.SimpleXMLRPCServer(("", 0))
 	server.register_instance(servinst)
 	server.register_introspection_functions()
-        sp = ServicePublisher("Wizbit", "_wizbit._tcp", server.server_address[1])
-        sp.start()  #just love the race condition... CAN PLZ HAV A MANLOOP??
-        try:
-	    server.serve_forever() #OH RLY?
-        except KeyboardInterrupt:
-            pass
-        finally:
-            sp.stop()
+	gobject.io_add_watch (server.fileno(), gobject.IO_IN, server.handle_request)
+	gobject.io_add_watch (server.fileno(), gobject.IO_HUP | gobject.IO_ERR, server_socket_error)
+
+	sp = ServicePublisher("Wizbit", "_wizbit._tcp", server.server_address[1])
+	sb = ServiceBrowser("_wizbit._tcp")
+
+	global main_loop
+	main_loop = gobject.MainLoop()
+
+	try:
+		main_loop.run()
+	except KeyboardInterrupt:
+		pass
 
 if __name__ == '__main__':
 	sys.exit(main(sys.argv))
