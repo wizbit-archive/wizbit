@@ -64,3 +64,15 @@ def getWizPath(path):
 				return head
 			else:
 				return ""
+
+def isWizdir(path):
+	from os.path import split
+	head, tail = split(path)
+	if head == path:
+		return False
+	elif tail == '.wizbit':
+		return True
+	elif head != '/':
+		return isWizdir(head)
+	else:
+		return False
