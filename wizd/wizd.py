@@ -4,7 +4,7 @@ import socket
 import os
 import SimpleXMLRPCServer
 import gobject
-from discovery import ServicePublisher, ServiceBrowser
+from wizbit import ServicePublisher, ServiceBrowser
 
 WIZBIT_SERVER_PORT = 3492
 
