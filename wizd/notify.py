@@ -1,25 +1,11 @@
 import os
-from fcntl import flock, LOCK_EX, LOCK_SH
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
 
 from wizbit import *
-from wizbit import Repo, Directory
+from wizbit import Repo, Directory, Shares
 import gnotifier
 
 import gobject
-
-READER = LOCK_SH
-WRITER = LOCK_EX
-
-def _waitOnFlock(file, type):
-	# Wait forever to obtain the file lock
-	obtained = False
-	while (not obtained):
-		try:
-			flock(file, type)
-			obtained = True
-		except IOError:
-			pass
 
 class InotifyProcessor(ProcessEvent):
 	def process_IN_CLOSE_WRITE(self, event):
@@ -67,17 +53,16 @@ class SharesObserver():
 			raise SharesObserver.__single
 		SharesObserver.__single = self
 		home = os.environ["HOME"]
-		self.__wizPath = home + "/.wizdirs"
 
 		self.__shares = []
 		self.__wm = WatchManager()
 		self.__loadShares(EventsCodes.IN_MODIFY)
-		self.__wm.add_watch(self.__wizPath, EventsCodes.IN_MODIFY, proc_fun=self.__loadShares)
+		self.__wm.add_watch(Shares.SHARES_PATH, EventsCodes.IN_MODIFY, proc_fun=self.__loadShares)
 		self.__notifier = gnotifier.GNotifier(self.__wm, InotifyProcessor())
 
 	def __loadShares(self, event):
-		file = open(self.__wizPath, 'r')
-		_waitOnFlock(file, READER)
+		file = open(Shares.SHARES_PATH, 'r')
+		Shares.lockFile(file, Shares.READ)
 		tempDirs = []
 		for line in file:
 			(uuid, dir) = line.split()[0:2]

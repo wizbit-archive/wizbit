@@ -1,29 +1,32 @@
 import os
-from fcntl import flock, LOCK_EX 
+from fcntl import flock, LOCK_EX, LOCK_SH
 
-WIZSHARE_DATA_PATH = os.environ["HOME"] + "/.wizdirs"
+READ = LOCK_SH
+WRITE = LOCK_EX
 
-def _waitOnFlock(file):
+SHARES_PATH = os.environ["HOME"] + "/.wizdirs"
+
+def lockFile(fd, type):
 	# Wait forever to obtain the file lock
 	obtained = False
 	while (not obtained):
 		try:
-			flock(file, LOCK_EX)
+			flock(file, type)
 			obtained = True
 		except IOError:
 			pass
 
 def addShare(uuid, dir):
-	shareFile = open(WIZSHARE_DATA_PATH, "a")
-	_waitOnFlock(shareFile)
+	shareFile = open(SHARES_PATH, "a")
+	lockFile(shareFile, WRITE)
 	try:
 		shareFile.write("%s %s\n" % (uuid, dir))
 	finally:
 		shareFile.close()
 
 def removeShare(uuid):
-	shareFile = open(WIZSHARE_DATA_PATH, "r+")
-	_waitOnFlock(shareFile)
+	shareFile = open(SHARES_PATH, "r+")
+	lockFile(shareFile, WRITE)
 	try:
 		input = shareFile.readlines()
 		shareFile.seek(0)
@@ -36,8 +39,8 @@ def removeShare(uuid):
 		shareFile.close()
 
 def getShares():
-	shareFile = open(WIZSHARE_DATA_PATH, "r")
-	_waitOnFlock(shareFile)
+	shareFile = open(SHARES_PATH, "r")
+	lockFile(shareFile, READ)
 	try:
 		shares = []
 		for line in shareFile:
