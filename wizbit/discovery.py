@@ -102,30 +102,44 @@ class ServicePublisher (gobject.GObject):
 
 class ServiceBrowser(gobject.GObject):
     __gsignals__ = {
-            'service-found': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE,(gobject.TYPE_STRING, gobject.TYPE_STRING)),
-            'service-removed': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE,(gobject.TYPE_STRING, gobject.TYPE_STRING))
+            'service-found': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE,(gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_INT, gobject.TYPE_STRING, gobject.TYPE_STRING, gobject.TYPE_INT)),
+            'service-removed': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE,(gobject.TYPE_STRING, ))
     }
 
     def __init__(self, type, domain = ""):
         self.__gobject_init__()
         bus = dbus.SystemBus()
-        server = dbus.Interface(bus.get_object(avahi.DBUS_NAME, avahi.DBUS_PATH_SERVER), avahi.DBUS_INTERFACE_SERVER)
+        self._server = dbus.Interface(bus.get_object(avahi.DBUS_NAME, avahi.DBUS_PATH_SERVER), avahi.DBUS_INTERFACE_SERVER)
         print "creating service browser for ",type
-        self._browser = dbus.Interface(bus.get_object(avahi.DBUS_NAME, server.ServiceBrowserNew(avahi.IF_UNSPEC, avahi.PROTO_INET, type, domain, dbus.UInt32(0))), avahi.DBUS_INTERFACE_SERVICE_BROWSER)
+        self._browser = dbus.Interface(bus.get_object(avahi.DBUS_NAME, self._server.ServiceBrowserNew(avahi.IF_UNSPEC, avahi.PROTO_INET, type, domain, dbus.UInt32(0))), avahi.DBUS_INTERFACE_SERVICE_BROWSER)
         self._browser.connect_to_signal('ItemNew', self._new_service)
         self._browser.connect_to_signal('ItemRemove', self._remove_service)
         self.services = {}
 
+    def _service_resolved (self, interface, protocol, name, type, domain, host, aprotocol, address, port, txt, flags):
+        print "Service data for service '%s' of type '%s' in domain '%s' on %s.%i:" % (name, type, domain, self._siocgifname(interface), protocol)
+        print "\tHost %s (%s), port %i, TXT data: %s" % (host, address, port, avahi.txt_array_to_string_array(txt))
+        self.services[name] = (type, interface, host, address, port)
+        self.emit('service-found', name, type, interface, host, address, port)
 
     def _new_service(self, interface, protocol, name, type, domain, flags):
         print "new service:",interface, protocol, name, type, domain, flags
-        self.services[name]=type
-        self.emit('service-found', name, type)
+        self._server.ResolveService(interface, protocol, name, type, domain, avahi.PROTO_INET, dbus.UInt32(0), reply_handler=self._service_resolved, error_handler=self._print_error)
+
 
     def _remove_service(self, interface, protocol, name, type, domain, flags):
         print "remove service:", interface, protocol, name, type, domain, flags
-        self.emit('service-removed', name, type)
-        self.services.remove(name)
+        self.emit('service-removed', name)
+        del self.services[name]
+
+    def _print_error(self, error):
+        print error
+    def _siocgifname(self, interface):
+        if interface <= 0:
+            return "any"
+        else:
+            return self._server.GetNetworkInterfaceNameByIndex(interface)
+
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
