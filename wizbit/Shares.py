@@ -6,7 +6,7 @@ WRITE = LOCK_EX
 
 SHARES_PATH = os.environ["HOME"] + "/.wizdirs"
 
-def lockFile(fd, type):
+def lockFile(file, type):
 	# Wait forever to obtain the file lock
 	obtained = False
 	while (not obtained):
@@ -16,11 +16,11 @@ def lockFile(fd, type):
 		except IOError:
 			pass
 
-def addShare(uuid, dir):
+def addShare(dirId, shareId, dir):
 	shareFile = open(SHARES_PATH, "a")
 	lockFile(shareFile, WRITE)
 	try:
-		shareFile.write("%s %s\n" % (uuid, dir))
+		shareFile.write("%s %s %s\n" % (dirId, shareId, dir))
 	finally:
 		shareFile.close()
 
@@ -31,7 +31,7 @@ def removeShare(uuid):
 		input = shareFile.readlines()
 		shareFile.seek(0)
 		for line in input:
-			(lineid, dir) = line.split()[0:2]
+			(lineid, shrId, dir) = line.split()[0:3]
 			if lineid != uuid:
 				shareFile.write(line)
 		shareFile.truncate()
@@ -45,8 +45,8 @@ def getShares():
 		shares = []
 		for line in shareFile:
 			if line:
-				(id, dir) = line.split()[0:2]
-				shares.append((id, dir))
+				(id, shrId, dir) = line.split()[0:2]
+				shares.append((id, shrId, dir))
 	finally:
 		shareFile.close()
 	return shares

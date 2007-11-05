@@ -90,7 +90,7 @@ def clone(dirname, dirId, srchost):
 	shareId = Conf.getRemoteShareId(srcConf)
 	#Create the empty directory and update it
 	cloneId = create(dirname, shareId)
-	update(dirname, dirId, srchost)
+	pull(dirname, dirId, srchost)
 	return cloneId
 
 def create (dirname, shareId=None):
