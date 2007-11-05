@@ -8,17 +8,17 @@ from wizbit import ServicePublisher, ServiceBrowser
 
 WIZBIT_SERVER_PORT = 3492
 
-from wizbit import Shares
+from wizbit import Shares, Directory
 from wizbit import *
 
 class WizbitServer():
 	def getShares(self):
 		shares = Shares.getShares()
-		return ["%s %s" % (id, directory) for (id, directory) in shares]
+		return ["%s %s %s" % (id, shrId, directory) for (id, directory) in shares]
 	
 	def getPath(self, uuid):
 		shares = Shares.getShares()
-		for id, directory in shares:
+		for id, shareId, directory in shares:
 			if uuid == id:
 				break
 		return directory
@@ -31,7 +31,7 @@ class WizbitServer():
 
 	def getConf(self, uuid):
 		shares = Shares.getShares()
-		for id, directory in shares:
+		for id, shareId, directory in shares:
 			if uuid == id:
 				break
 		wizpath = Paths(directory)
@@ -39,6 +39,14 @@ class WizbitServer():
 		conf = file.read()
 		file.close()
 		return conf
+
+	def pushNotify(self, dirId, remoteShareId, host):
+		#For every local directory with the same shareId, pull 
+		#from the remote directory
+		shares = Shares.getShares()
+		for id, localShareId, directory in shares:
+			if localShareId == remoteShareId:
+				Directory.pull(directory, dirId, host)
 
 def server_socket_error():
 	print "RPC server socket was disconnected, exiting"

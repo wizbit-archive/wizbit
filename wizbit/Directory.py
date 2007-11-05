@@ -99,7 +99,7 @@ def create (dirname, shareId=None):
 	shareId = shareId or uuid.uuid4().hex
 	dirId = uuid.uuid4().hex
 	Conf.createConf(wizpath.getWizconf(), shareId, dirId, platform.node())
-	Shares.addShare(dirId, wizpath.getBase())
+	Shares.addShare(dirId, shareId, wizpath.getBase())
 	return dirId
 
 def createall(dirname):
