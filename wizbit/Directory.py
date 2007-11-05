@@ -28,7 +28,7 @@ def _addEmpty(wizpath, filename):
 		os.mkdir(split(wizpath.getAbsFilename(filename))[0])
 	except OSError:
 		pass
-	Repo.create(wizpath, filename)
+	return Repo.create(wizpath, filename)
 
 def add(dirname, absfilename):
 	"""
@@ -36,8 +36,10 @@ def add(dirname, absfilename):
 	"""
 	wizpath = Paths(dirname)
 	filename = wizpath.getRelFilename(absfilename)
-	_addEmpty(wizpath, filename)
-	Repo.add(wizpath, filename)
+	if _addEmpty(wizpath, filename):
+		return Repo.add(wizpath, filename)
+	else:
+		return False
 
 def pull(dirname, dirId, srchost):
 	"""
