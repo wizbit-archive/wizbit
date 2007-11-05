@@ -86,7 +86,7 @@ class ServicePublisher (gobject.GObject):
             print "Service established."
         elif state == avahi.ENTRY_GROUP_COLLISION:
             self._rename_count = self._rename_count - 1
-            if rename_count > 0:
+            if self._rename_count > 0:
                 self._name = name = self._server.GetAlternativeServiceName(self._name)
                 print "WARNING: Service name collision, changing name to '%s' ..." % self._name
                 self._remove_service()
