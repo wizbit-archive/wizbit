@@ -16,7 +16,9 @@ class InotifyProcessor(ProcessEvent):
 				base = getWizPath(path)
 				wizpath = Paths(base)
 				filename = wizpath.getRelFilename(path)
-				Repo.update(wizpath, filename)
+				if Repo.update(wizpath, filename):
+					#Push to others of the same shares
+					pass
 
 	def process_IN_CREATE(self, event):
 		if not isWizdir(event.path):
@@ -24,7 +26,9 @@ class InotifyProcessor(ProcessEvent):
 			if event.name:
 				path = os.path.join(event.path, event.name)
 				base = getWizPath(path)
-				Directory.add(base, path)
+				if Directory.add(base, path):
+					#Push to others of the same shares
+					pass
 			#What is going on here? Do we track dirs??
 
 	def process_IN_DELETE(self, event):
@@ -35,7 +39,10 @@ class InotifyProcessor(ProcessEvent):
 				base = getWizPath(path)
 				wizpath = Paths(base)
 				filename = wizpath.getRelFilename(path)
-				Repo.remove(wizpath, filename)
+				if Repo.remove(wizpath, filename):
+					#Push to others of the same shares
+					pass
+
 
 	def process_default(self, event):
 		if not isWizdir(event.path):

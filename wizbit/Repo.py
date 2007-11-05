@@ -26,36 +26,49 @@ def _commit (gitdir, cfile, parents):
 	pop = Popen (command, env = {"GIT_DIR":gitdir}, stdin = Popen(["echo"], stdout=PIPE).stdout, stdout = PIPE)
 	commit = pop.communicate()[0].split()[0]
 	check_call (['git-update-ref', 'refs/heads/master', commit], env = {"GIT_DIR":gitdir})
+	return commit
 
 def create(wizpath, filename):
 	gitdir = wizpath.getRepoName(filename)
-	check_call (["git-init-db"], env = {"GIT_DIR":gitdir})
-	Conf.addRepo(wizpath.getWizconf(), filename)
+	repos = Conf.getRepos(wizpath.getWizconf())
+	if filename not in repos:
+		check_call (["git-init-db"], env = {"GIT_DIR":gitdir})
+		Conf.addRepo(wizpath.getWizconf(), filename)
+		return True
+	else:
+		return False
 
 def add(wizpath, filename):
 	gitdir = wizpath.getRepoName(filename)
 	try:
 		check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
 	except CalledProcessError:
-		return
+		return False
 	try:
-		_commit(gitdir, wizpath.getWizconf(), [])
+		ct = _commit(gitdir, wizpath.getWizconf(), [])
 	except:
 		check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
-		return
+		return False
 	Conf.addHead(wizpath.getWizconf(), filename, 'refs/heads/master')
+	return True
 
 def remove(wizpath, filename):
 	gitdir = wizpath.getRepoName(filename)
+	heads = Conf.getHeads(wizpath.getWizconf(), filename)
+	master = 'refs/heads/master'
+	if master not in heads:
+		return False
 	try:
 		check_call (["git-rm", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
 	except CalledProcessError:
-		return
+		return False
 	try:
-		_commit(gitdir, wizpath.getWizconf(), [])
+		ct = _commit(gitdir, wizpath.getWizconf(), [])
 	except:
 		check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
-		return
+		return False
+	Conf.removeHead(wizpath.getWizconf(), filename, master)
+	return True
 
 def merge(wizpath, filename, refs):
 	"""
@@ -67,7 +80,7 @@ def merge(wizpath, filename, refs):
 	try:
 		check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
 	except CalledProcessError:
-		return
+		return False
 	oldheads = [_getTreeish(gitdir, 'refs/heads/' + r) for r in refs]
 	master = _getTreeish(gitdir, 'refs/heads/master')
 	heads = oldheads + [master]
@@ -76,7 +89,7 @@ def merge(wizpath, filename, refs):
 		ct = _commit(gitdir, wizpath.getWizconf(), heads);
 	except:
 		check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
-		return
+		return False
 	for h in oldheads:
 		Conf.removeHead(wizpath.getWizconf(), h)
 
@@ -85,16 +98,21 @@ def update(wizpath, filename):
 	Updates the file to its new version.
 	"""
 	gitdir = wizpath.getRepoName(filename)
+	diff = Popen(["git-diff"], env = {"GIT_DIR":gitdir}, stdout=PIPE, cwd=wizpath.getBase()).communicate()[0]
+	print diff
+	if not diff:
+		return False
 	try:
 		check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
 	except CalledProcessError:
-		return
+		return False
 	oldhead = _getTreeish(gitdir, 'refs/heads/master')
 	try:
-		_commit(gitdir, wizpath.getWizconf(), [oldhead])
+		ct = _commit(gitdir, wizpath.getWizconf(), [oldhead])
 	except:
 		check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
-		return
+		return False
+	return True
 
 def checkout(wizpath, filename, ref, codir=None):
 	gitdir = wizpath.getRepoName(filename)
