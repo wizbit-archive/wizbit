@@ -16,36 +16,34 @@ def _waitOnFlock(file):
 			pass
 
 class InotifyProcessor(ProcessEvent):
-	def process_IN_MODIFY(self, event):
-		if not isWizdir(event.path):
+	def process_IN_CLOSE_WRITE(self, event):
+		if isWizdir(event.path):
 			print 'MODIFY', os.path.join(event.path, event.name)
-			"""
 			if event.name:
 				path = os.path.join(event.path, event.name)
 				base = getWizPath(path)
 				wizpath = Paths(base)
 				filename = wizpath.getRelFilename(path)
 				Repo.update(wizpath, filename)
-			"""
 
 	def process_IN_CREATE(self, event):
-		if not isWizdir(event.path):
+		if isWizdir(event.path):
 			print 'CREATE', os.path.join(event.path, event.name)
-			"""
 			if event.name:
 				path = os.path.join(event.path, event.name)
 				base = getWizPath(path)
 				Directory.add(base, path)
 			#What is going on here? Do we track dirs??
-			"""
 
 	def process_IN_DELETE(self, event):
-		if not isWizdir(event.path):
+		if isWizdir(event.path):
 			print 'DELETE', os.path.join(event.path, event.name)
 
 	def process_default(self, event):
 		if not isWizdir(event.path):
-			print event.event_name, os.path.join(event.path, event.name)
+			#print event.event_name, os.path.join(event.path, event.name)
+			pass
+
 class SharesObserver():
 	"""
 	Watches all shares directories using pyinotify.
