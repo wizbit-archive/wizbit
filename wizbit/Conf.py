@@ -98,8 +98,10 @@ def addRepo(cfile, file, head=None):
 	along with a file, which the git directory is version controlling. 
 	"""
 	conf = _getConf(cfile)
-	repoElement = etree.SubElement(conf.getroot(), "repo", attrib={"name" : file})
-	_write(cfile, conf)
+	repos = _getRepos(conf)
+	if file not in repos:
+		repoElement = etree.SubElement(conf.getroot(), "repo", attrib={"name" : file})
+		_write(cfile, conf)
 	if head:
 		addHead(cfile, file, head)
 

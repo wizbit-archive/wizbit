@@ -6,7 +6,7 @@ Regarding path issues:
 Paths are passed as two types, a Paths object, called wizpath
 or a string representing the relative path from the base dir.
 """
-from subprocess import check_call, Popen, PIPE
+from subprocess import check_call, Popen, PIPE, CalledProcessError
 from os.path import exists, split, abspath, isabs
 
 from wizbit import *
@@ -34,9 +34,28 @@ def create(wizpath, filename):
 
 def add(wizpath, filename):
 	gitdir = wizpath.getRepoName(filename)
-	check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+	try:
+		check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+	except CalledProcessError:
+		return
+	try:
+		_commit(gitdir, wizpath.getWizconf(), [])
+	except:
+		check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+		return
 	Conf.addHead(wizpath.getWizconf(), filename, 'refs/heads/master')
-	_commit(gitdir, wizpath.getWizconf(), [])
+
+def remove(wizpath, filename):
+	gitdir = wizpath.getRepoName(filename)
+	try:
+		check_call (["git-rm", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+	except CalledProcessError:
+		return
+	try:
+		_commit(gitdir, wizpath.getWizconf(), [])
+	except:
+		check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+		return
 
 def merge(wizpath, filename, refs):
 	"""
@@ -45,12 +64,19 @@ def merge(wizpath, filename, refs):
 	Returns a tuple (New master sha, list of old sha sums ( the parents))
 	"""
 	gitdir = wizpath.getRepoName(filename)
-	#git-add doesn't accept absolute paths. 
-	check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+	try:
+		check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+	except CalledProcessError:
+		return
 	oldheads = [_getTreeish(gitdir, 'refs/heads/' + r) for r in refs]
 	master = _getTreeish(gitdir, 'refs/heads/master')
 	heads = oldheads + [master]
-	ct = _commit(gitdir, wizpath.getWizconf(), heads);
+	ct = ""
+	try:
+		ct = _commit(gitdir, wizpath.getWizconf(), heads);
+	except:
+		check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+		return
 	for h in oldheads:
 		Conf.removeHead(wizpath.getWizconf(), h)
 
@@ -59,10 +85,16 @@ def update(wizpath, filename):
 	Updates the file to its new version.
 	"""
 	gitdir = wizpath.getRepoName(filename)
-	#git-add doesn't accept absolute paths. 
-	check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+	try:
+		check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+	except CalledProcessError:
+		return
 	oldhead = _getTreeish(gitdir, 'refs/heads/master')
-	_commit(gitdir, wizpath.getWizconf(), [oldhead])
+	try:
+		_commit(gitdir, wizpath.getWizconf(), [oldhead])
+	except:
+		check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+		return
 
 def checkout(wizpath, filename, ref, codir=None):
 	gitdir = wizpath.getRepoName(filename)

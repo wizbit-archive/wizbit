@@ -6,6 +6,8 @@ from wizbit import *
 from wizbit import Repo, Directory
 import gnotifier
 
+import gobject
+
 READER = LOCK_SH
 WRITER = LOCK_EX
 
@@ -21,8 +23,8 @@ def _waitOnFlock(file, type):
 
 class InotifyProcessor(ProcessEvent):
 	def process_IN_CLOSE_WRITE(self, event):
-		if isWizdir(event.path):
-			print 'MODIFY', os.path.join(event.path, event.name)
+		if not isWizdir(event.path):
+			print 'CLOSE_WRITE', os.path.join(event.path, event.name)
 			if event.name:
 				path = os.path.join(event.path, event.name)
 				base = getWizPath(path)
@@ -31,7 +33,7 @@ class InotifyProcessor(ProcessEvent):
 				Repo.update(wizpath, filename)
 
 	def process_IN_CREATE(self, event):
-		if isWizdir(event.path):
+		if not isWizdir(event.path):
 			print 'CREATE', os.path.join(event.path, event.name)
 			if event.name:
 				path = os.path.join(event.path, event.name)
@@ -40,8 +42,14 @@ class InotifyProcessor(ProcessEvent):
 			#What is going on here? Do we track dirs??
 
 	def process_IN_DELETE(self, event):
-		if isWizdir(event.path):
+		if not isWizdir(event.path):
 			print 'DELETE', os.path.join(event.path, event.name)
+			if event.name:
+				path = os.path.join(event.path, event.name)
+				base = getWizPath(path)
+				wizpath = Paths(base)
+				filename = wizpath.getRelFilename(path)
+				Repo.remove(wizpath, filename)
 
 	def process_default(self, event):
 		if not isWizdir(event.path):
@@ -65,7 +73,7 @@ class SharesObserver():
 		self.__wm = WatchManager()
 		self.__loadShares(EventsCodes.IN_MODIFY)
 		self.__wm.add_watch(self.__wizPath, EventsCodes.IN_MODIFY, proc_fun=self.__loadShares)
-		self.__notifier = GNotifier(self.__wm, InotifyProcessor())
+		self.__notifier = gnotifier.GNotifier(self.__wm, InotifyProcessor())
 
 	def __loadShares(self, event):
 		file = open(self.__wizPath, 'r')
