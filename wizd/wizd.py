@@ -53,12 +53,15 @@ def server_socket_error():
 	global main_loop
 	main_loop.quit()
 
+def server_callback(source, cb_condition, server):
+    server.handle_request()
+
 def main(args):
 	servinst = WizbitServer()
 	server = SimpleXMLRPCServer.SimpleXMLRPCServer(("", 0))
 	server.register_instance(servinst)
 	server.register_introspection_functions()
-	gobject.io_add_watch (server.fileno(), gobject.IO_IN, server.handle_request)
+	gobject.io_add_watch (server.fileno(), gobject.IO_IN, server_callback, server)
 	gobject.io_add_watch (server.fileno(), gobject.IO_HUP | gobject.IO_ERR, server_socket_error)
 
 	sp = ServicePublisher("Wizbit", "_wizbit._tcp", server.server_address[1])
