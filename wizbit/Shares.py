@@ -45,7 +45,7 @@ def getShares():
 		shares = []
 		for line in shareFile:
 			if line:
-				(id, shrId, dir) = line.split()[0:2]
+				(id, shrId, dir) = line.split()[0:3]
 				shares.append((id, shrId, dir))
 	finally:
 		shareFile.close()
