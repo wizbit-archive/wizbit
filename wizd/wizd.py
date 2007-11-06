@@ -14,7 +14,7 @@ from wizbit import *
 class WizbitServer():
 	def getShares(self):
 		shares = Shares.getShares()
-		return ["%s %s %s" % (id, shrId, directory) for (id, directory) in shares]
+		return ["%s %s %s" % (id, shrId, directory) for (id, shrId, directory) in shares]
 	
 	def getPath(self, uuid):
 		shares = Shares.getShares()
