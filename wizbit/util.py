@@ -3,8 +3,8 @@ WIZBIT_SERVER_PORT = 3492
 def makeRefname (id):
     return "refs/heads/" + id
 
-def getWizUrl(host):
-	return 'http://%s:%d' % (host, WIZBIT_SERVER_PORT)
+def getWizUrl(host,port):
+	return 'http://%s:%d' % (host, port)
 
 class Paths():
 	def __init__(self, base):
