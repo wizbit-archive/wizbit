@@ -13,8 +13,8 @@ try:
 except:
     sys.exit(1)
 
-
-from wizbit import ServiceBrowser
+import xmlrpclib
+from wizbit import ServiceBrowser, getWizUrl
 
 class Wizview:
 
@@ -39,7 +39,12 @@ class Wizview:
     def _service_found(self, widget, name, type, interface, host, address, port):
         print (name, type, interface, host, address, port);
 
-        self.items[name] = self.sharelist.append([self.diricon, host])
+        srcUrl = getWizUrl(address, port)
+        server = xmlrpclib.ServerProxy(srcUrl)
+        shares = server.getShares()
+        print shares
+
+        #self.items[name] = self.sharelist.append([self.diricon, host])
 
     def _service_removed(self, widget, name):
         self.sharelist.remove(self.items[name])
