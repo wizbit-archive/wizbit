@@ -44,7 +44,7 @@ class Wizview:
         shares = server.getShares()
         print shares
 
-        #self.items[name] = self.sharelist.append([self.diricon, host])
+        self.items[name] = self.sharelist.append([self.diricon, host])
 
     def _service_removed(self, widget, name):
         self.sharelist.remove(self.items[name])
