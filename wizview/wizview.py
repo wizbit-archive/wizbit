@@ -28,7 +28,7 @@ class Wizview:
         self.iconview.set_model(self.sharelist)
         self.iconview.set_pixbuf_column(0)
         self.iconview.set_text_column(1)
-        self.sb = ServiceBrowser("_wizbit._tcp")
+        self.sd = WizbitDirectory()
         self.sb.connect ( "service-found", self._service_found)
         self.sb.connect ( "service-removed", self._service_removed)
         self.iconview.show()
