@@ -141,7 +141,7 @@ class ServiceBrowser(gobject.GObject):
             return self._server.GetNetworkInterfaceNameByIndex(interface)
 
 
-def SharesDatabase(gobject.GObject):
+class SharesDatabase(gobject.GObject):
     def __init__(self):
         self.sb =ServiceBrowser("_wizbit._tcp")
         self.sb.connect ( "service-found", self._service_found)
