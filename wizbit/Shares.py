@@ -1,52 +1,67 @@
 import os
 from fcntl import flock, LOCK_EX, LOCK_SH
 
-READ = LOCK_SH
-WRITE = LOCK_EX
 
-SHARES_PATH = os.environ["HOME"] + "/.wizdirs"
+DEFAULT_SHARES_PATH = os.environ["HOME"] + "/.wizdirs"
 
-def lockFile(file, type):
-	# Wait forever to obtain the file lock
-	obtained = False
-	while (not obtained):
-		try:
-			flock(file, type)
-			obtained = True
-		except IOError:
-			pass
+__READ = LOCK_SH
+__WRITE = LOCK_EX
+def __lockFile(file, type):
+    # Wait forever to obtain the file lock
+    obtained = False
+    while (not obtained):
+        try:
+            flock(file, type)
+            obtained = True
+        except IOError:
+            pass
 
-def addShare(dirId, shareId, dir):
-	shareFile = open(SHARES_PATH, "a")
-	lockFile(shareFile, WRITE)
-	try:
-		shareFile.write("%s %s %s\n" % (dirId, shareId, dir))
-	finally:
-		shareFile.close()
 
-def removeShare(uuid):
-	shareFile = open(SHARES_PATH, "r+")
-	lockFile(shareFile, WRITE)
-	try:
-		input = shareFile.readlines()
-		shareFile.seek(0)
-		for line in input:
-			(lineid, shrId, dir) = line.split()[0:3]
-			if lineid != uuid:
-				shareFile.write(line)
-		shareFile.truncate()
-	finally:
-		shareFile.close()
+class Shares:
+    def __init__(self, shares_path = DEFAULT_SHARES_PATH):
+        self._shares_path = shares_path
 
-def getShares():
-	shareFile = open(SHARES_PATH, "r")
-	lockFile(shareFile, READ)
-	try:
-		shares = []
-		for line in shareFile:
-			if line:
-				(id, shrId, dir) = line.split()[0:3]
-				shares.append((id, shrId, dir))
-	finally:
-		shareFile.close()
-	return shares
+    def _open (self, mode):
+        self._share_file = open(self._shares_path, "a")
+        _lockFile(self._share_file, mode)
+
+    def _close (self);
+        self._share_file.close()
+
+    def addShare(self, dirId, shareId, dir):
+        self._open(__WRITE)
+        try:
+            self._share_file.write("%s %s %s\n" % (dirId, shareId, dir))
+        finally:
+            self._close()
+
+    def removeShare(uuid):
+        self._open(__WRITE)
+        try:
+            input = self._share_file.readlines()
+            self._share_file.seek(0)
+            for line in input:
+                (lineid, shrId, dir) = line.split()[0:3]
+                if lineid != uuid:
+                    self._share_file.write(line)
+            shareFile.truncate()
+        finally:
+            self._close()
+
+    def getShares():
+        self._open(__READ)
+        try:
+            shares = []
+            for line in self._share_file:
+                if line:
+                    (id, shrId, dir) = line.split()[0:3]
+                    shares.append((id, shrId, dir))
+        finally:
+            self._close()
+        return shares
+
+def defaultShares():
+    global __default_shares
+    if not __default_shares:
+        __default_shares = Shares();
+    return __default_shares
