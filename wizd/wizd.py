@@ -56,7 +56,8 @@ def server_socket_error():
 def server_callback(source, cb_condition, server):
     server.handle_request()
 
-def main(args):
+
+def start_wizbit_server():
 	servinst = WizbitServer()
 	server = SimpleXMLRPCServer.SimpleXMLRPCServer(("", 0))
 	server.register_instance(servinst)
@@ -67,7 +68,12 @@ def main(args):
 	sp = ServicePublisher("Wizbit", "_wizbit._tcp", server.server_address[1])
 	sb = ServiceBrowser("_wizbit._tcp")
 
+
+def main(args):
 	global main_loop
+
+        start_wizbit_server()
+
 	main_loop = gobject.MainLoop()
 
 	try:
