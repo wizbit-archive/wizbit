@@ -1,5 +1,3 @@
-WIZBIT_SERVER_PORT = 3492
-
 def makeRefname (id):
     return "refs/heads/" + id
 
