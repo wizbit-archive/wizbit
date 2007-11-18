@@ -20,7 +20,7 @@ def _getTreeish(gitdir, ref):
 
 def _commit (gitdir, cfile, parents):
     tree = Popen (["git-write-tree"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
-        command = ["git-commit-tree",tree]
+    command = ["git-commit-tree",tree]
     for parent in parents:
         command = command + ["-p",parent]
     pop = Popen (command, env = {"GIT_DIR":gitdir}, stdin = Popen(["echo"], stdout=PIPE).stdout, stdout = PIPE)
@@ -119,9 +119,9 @@ def checkout(wizpath, filename, ref, codir=None):
     codir = codir or wizpath.getCODir(filename)
     treeish = _getTreeish(gitdir, ref)
     check_call(["git-update-index", "--index-info"],env = {"GIT_DIR":gitdir}, 
-            stdin = Popen(["git-ls-tree", "--full-name", "-r", treeish], 
-                env = {"GIT_DIR":gitdir}, stdout=PIPE).stdout)
-        check_call(["git-checkout-index", "-f", "--"] + [filename], env = {"GIT_DIR":gitdir}, cwd=codir)
+               stdin = Popen(["git-ls-tree", "--full-name", "-r", treeish], 
+               env = {"GIT_DIR":gitdir}, stdout=PIPE).stdout)
+    check_call(["git-checkout-index", "-f", "--"] + [filename], env = {"GIT_DIR":gitdir}, cwd=codir)
 
 def pull(wizpath, filename, host, remotepath, srcId):
     """
@@ -161,14 +161,14 @@ def pull(wizpath, filename, host, remotepath, srcId):
                 refName = _makeRefname(srcId)
             else:
                 refName = newRemoteHead
-                        check_call(["git-update-ref", refName, remotesha], env = {"GIT_DIR":gitdir})
+                check_call(["git-update-ref", refName, remotesha], env = {"GIT_DIR":gitdir})
             Conf.addHead(wizpath.getWizconf(), filename, refName)
     #Special case of an empty repository
     if not heads:
         for r in remotes:
             remoteref = r[1]
             remotesha = r[0]
-                        check_call(["git-update-ref", remoteref, remotesha], env = {"GIT_DIR":gitdir})
+            check_call(["git-update-ref", remoteref, remotesha], env = {"GIT_DIR":gitdir})
             Conf.addHead(wizpath.getWizconf(), filename, remoteref)
     if checkoutFile:
         checkout(wizpath, filename, 'refs/heads/master') 
@@ -181,10 +181,10 @@ def commitInfo(wizpath, filename, commit):
     info = []
     gitdir = wizpath.getRepoName(filename)
     results = Popen(["git-log", "-n1", "--pretty=format:%an%n%aD", commit],
-            env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
+                    env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
     info.extend([item.strip() for item in results.split('\n')[:2]])
     results = Popen(["git-ls-tree", "-l", commit, filename],
-            env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
+                    env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
     info.append(int(results.split()[3]))
 
     return tuple(info)

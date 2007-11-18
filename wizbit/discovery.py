@@ -157,19 +157,19 @@ class SharesDatabase(gobject.GObject):
         server = xmlrpclib.ServerProxy(srcUrl)
         shares = server.getShares()
         print shares
-    for dirId, shareId, dir in shares:
-        if shareId not in self.shares:
-            self.shares[shareId] = {}
-        self.shares[shareId][dirId] = (interface, address, port, dir)
-        if name not in self.names:
-            self.names[name] = []
-        self.names[name].append((shrId,dirId))
+        for dirId, shareId, dir in shares:
+            if shareId not in self.shares:
+                self.shares[shareId] = {}
+            self.shares[shareId][dirId] = (interface, address, port, dir)
+            if name not in self.names:
+                self.names[name] = []
+            self.names[name].append((shrId,dirId))
 
     def _service_removed(self, widget, name):
         for shrId, dirId in self.names[name]:
-        del self.shares[shareId][dirId]
-        if self.shares[shareId] == {}:
-                    del self.shares[shareId]
+            del self.shares[shrId][dirId]
+            if self.shares[shrId] == {}:
+                    del self.shares[shrId]
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
