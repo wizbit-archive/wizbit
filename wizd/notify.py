@@ -2,7 +2,7 @@ import os
 from pyinotify import WatchManager, Notifier, ThreadedNotifier, EventsCodes, ProcessEvent
 
 from wizbit import *
-from wizbit import Repo, Directory, Shares
+from wizbit import Repo, Directory, defaultShares
 import gnotifier
 
 import gobject
@@ -55,35 +55,31 @@ class SharesObserver():
 	"""
 	__single = None
 
-	def __init__(self):
-		if SharesObserver.__single:
-			raise SharesObserver.__single
-		SharesObserver.__single = self
-		home = os.environ["HOME"]
-
-		self.__shares = []
+	def __init__(self, shares = defaultShares()):
+                self.__shares = shares
+		self.__directories = []
 		self.__wm = WatchManager()
-		self.__loadShares(EventsCodes.IN_MODIFY)
-		self.__wm.add_watch(Shares.SHARES_PATH, EventsCodes.IN_MODIFY, proc_fun=self.__loadShares)
-		self.__notifier = gnotifier.GNotifier(self.__wm, InotifyProcessor())
+		self.__loadShares(EventsCodes.IN_CLOSE_WRITE)
+                print "watching", shares.shares_path
+		self.__wm.add_watch(shares.shares_path, EventsCodes.IN_CLOSE_WRITE, proc_fun=self.__loadShares)
+		self.__notifier = gnotifier.GNotifier(self.__wm)
 
 	def __loadShares(self, event):
-		file = open(Shares.SHARES_PATH, 'r')
-		Shares.lockFile(file, Shares.READ)
-		tempDirs = []
-		for line in file:
-			(uuid, dir) = line.split()[0:2]
-			tempDirs.append((uuid, dir))
-		file.close()
-		added = [directory for id, directory in tempDirs if directory not in self.__shares]
-		tempDirs = [directory for id, directory in tempDirs]
-		removed = [directory for directory in self.__shares if directory not in tempDirs]
+                print "loadshares"
+		shares = self.__shares.getShares()
+		added = [directory for id, shrId, directory in shares if directory not in self.__directories]
+		tempDirs = [directory for id, shrId, directory in shares]
+		removed = [directory for directory in self.__directories if directory not in tempDirs]
 		for directory in added:
+                        print "adding directory:", directory
 			self.__wm.add_watch(directory, EventsCodes.ALL_EVENTS, rec=True, auto_add=True)
-			self.__shares.append(directory)
+			self.__directories.append(directory)
 		for directory in removed:
+                        print "removing directory:", directory
 			self.__wm.rm_watch(directory, rec=True)
-			self.__shares.remove(directory)
+			self.__directories.remove(directory)
+                print self.__directories
+                return True
 
 if __name__ == '__main__':
 	obs = SharesObserver()
