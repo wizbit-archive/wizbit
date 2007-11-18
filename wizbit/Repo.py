@@ -13,178 +13,178 @@ from wizbit import *
 from wizbit import Conf
 
 def _makeRefname (id):
-	return "refs/heads/" + id
+    return "refs/heads/" + id
 
 def _getTreeish(gitdir, ref):
-	return Popen (["git-show-ref", ref], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
+    return Popen (["git-show-ref", ref], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
 
 def _commit (gitdir, cfile, parents):
-	tree = Popen (["git-write-tree"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
-    	command = ["git-commit-tree",tree]
-	for parent in parents:
-		command = command + ["-p",parent]
-	pop = Popen (command, env = {"GIT_DIR":gitdir}, stdin = Popen(["echo"], stdout=PIPE).stdout, stdout = PIPE)
-	commit = pop.communicate()[0].split()[0]
-	check_call (['git-update-ref', 'refs/heads/master', commit], env = {"GIT_DIR":gitdir})
-	return commit
+    tree = Popen (["git-write-tree"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0].split()[0]
+        command = ["git-commit-tree",tree]
+    for parent in parents:
+        command = command + ["-p",parent]
+    pop = Popen (command, env = {"GIT_DIR":gitdir}, stdin = Popen(["echo"], stdout=PIPE).stdout, stdout = PIPE)
+    commit = pop.communicate()[0].split()[0]
+    check_call (['git-update-ref', 'refs/heads/master', commit], env = {"GIT_DIR":gitdir})
+    return commit
 
 def create(wizpath, filename):
-	gitdir = wizpath.getRepoName(filename)
-	repos = Conf.getRepos(wizpath.getWizconf())
-	if filename not in repos:
-		check_call (["git-init-db"], env = {"GIT_DIR":gitdir})
-		Conf.addRepo(wizpath.getWizconf(), filename)
-		return True
-	else:
-		return False
+    gitdir = wizpath.getRepoName(filename)
+    repos = Conf.getRepos(wizpath.getWizconf())
+    if filename not in repos:
+        check_call (["git-init-db"], env = {"GIT_DIR":gitdir})
+        Conf.addRepo(wizpath.getWizconf(), filename)
+        return True
+    else:
+        return False
 
 def add(wizpath, filename):
-	gitdir = wizpath.getRepoName(filename)
-	try:
-		check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
-	except CalledProcessError:
-		return False
-	try:
-		ct = _commit(gitdir, wizpath.getWizconf(), [])
-	except:
-		check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
-		return False
-	Conf.addHead(wizpath.getWizconf(), filename, 'refs/heads/master')
-	return True
+    gitdir = wizpath.getRepoName(filename)
+    try:
+        check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+    except CalledProcessError:
+        return False
+    try:
+        ct = _commit(gitdir, wizpath.getWizconf(), [])
+    except:
+        check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+        return False
+    Conf.addHead(wizpath.getWizconf(), filename, 'refs/heads/master')
+    return True
 
 def remove(wizpath, filename):
-	gitdir = wizpath.getRepoName(filename)
-	heads = Conf.getHeads(wizpath.getWizconf(), filename)
-	master = 'refs/heads/master'
-	if master not in heads:
-		return False
-	try:
-		check_call (["git-rm", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
-	except CalledProcessError:
-		return False
-	try:
-		ct = _commit(gitdir, wizpath.getWizconf(), [])
-	except:
-		check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
-		return False
-	Conf.removeHead(wizpath.getWizconf(), filename, master)
-	return True
+    gitdir = wizpath.getRepoName(filename)
+    heads = Conf.getHeads(wizpath.getWizconf(), filename)
+    master = 'refs/heads/master'
+    if master not in heads:
+        return False
+    try:
+        check_call (["git-rm", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+    except CalledProcessError:
+        return False
+    try:
+        ct = _commit(gitdir, wizpath.getWizconf(), [])
+    except:
+        check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+        return False
+    Conf.removeHead(wizpath.getWizconf(), filename, master)
+    return True
 
 def merge(wizpath, filename, refs):
-	"""
-	Takes a list of references, and commits a file from the index
-	that has the parents pointed to by those references. 
-	Returns a tuple (New master sha, list of old sha sums ( the parents))
-	"""
-	gitdir = wizpath.getRepoName(filename)
-	try:
-		check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
-	except CalledProcessError:
-		return False
-	oldheads = [_getTreeish(gitdir, 'refs/heads/' + r) for r in refs]
-	master = _getTreeish(gitdir, 'refs/heads/master')
-	heads = oldheads + [master]
-	ct = ""
-	try:
-		ct = _commit(gitdir, wizpath.getWizconf(), heads);
-	except:
-		check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
-		return False
-	for h in oldheads:
-		Conf.removeHead(wizpath.getWizconf(), h)
+    """
+    Takes a list of references, and commits a file from the index
+    that has the parents pointed to by those references. 
+    Returns a tuple (New master sha, list of old sha sums ( the parents))
+    """
+    gitdir = wizpath.getRepoName(filename)
+    try:
+        check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+    except CalledProcessError:
+        return False
+    oldheads = [_getTreeish(gitdir, 'refs/heads/' + r) for r in refs]
+    master = _getTreeish(gitdir, 'refs/heads/master')
+    heads = oldheads + [master]
+    ct = ""
+    try:
+        ct = _commit(gitdir, wizpath.getWizconf(), heads);
+    except:
+        check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+        return False
+    for h in oldheads:
+        Conf.removeHead(wizpath.getWizconf(), h)
 
 def update(wizpath, filename):
-	"""
-	Updates the file to its new version.
-	"""
-	gitdir = wizpath.getRepoName(filename)
-	diff = Popen(["git-diff"], env = {"GIT_DIR":gitdir}, stdout=PIPE, cwd=wizpath.getBase()).communicate()[0]
-	print diff
-	if not diff:
-		return False
-	try:
-		check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
-	except CalledProcessError:
-		return False
-	oldhead = _getTreeish(gitdir, 'refs/heads/master')
-	try:
-		ct = _commit(gitdir, wizpath.getWizconf(), [oldhead])
-	except:
-		check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
-		return False
-	return True
+    """
+    Updates the file to its new version.
+    """
+    gitdir = wizpath.getRepoName(filename)
+    diff = Popen(["git-diff"], env = {"GIT_DIR":gitdir}, stdout=PIPE, cwd=wizpath.getBase()).communicate()[0]
+    print diff
+    if not diff:
+        return False
+    try:
+        check_call (["git-add", filename], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+    except CalledProcessError:
+        return False
+    oldhead = _getTreeish(gitdir, 'refs/heads/master')
+    try:
+        ct = _commit(gitdir, wizpath.getWizconf(), [oldhead])
+    except:
+        check_call (["git-reset", "mixed", "HEAD"], env = {"GIT_DIR":gitdir}, cwd=wizpath.getBase())
+        return False
+    return True
 
 def checkout(wizpath, filename, ref, codir=None):
-	gitdir = wizpath.getRepoName(filename)
-	codir = codir or wizpath.getCODir(filename)
-	treeish = _getTreeish(gitdir, ref)
-	check_call(["git-update-index", "--index-info"],env = {"GIT_DIR":gitdir}, 
-			stdin = Popen(["git-ls-tree", "--full-name", "-r", treeish], 
-				env = {"GIT_DIR":gitdir}, stdout=PIPE).stdout)
+    gitdir = wizpath.getRepoName(filename)
+    codir = codir or wizpath.getCODir(filename)
+    treeish = _getTreeish(gitdir, ref)
+    check_call(["git-update-index", "--index-info"],env = {"GIT_DIR":gitdir}, 
+            stdin = Popen(["git-ls-tree", "--full-name", "-r", treeish], 
+                env = {"GIT_DIR":gitdir}, stdout=PIPE).stdout)
         check_call(["git-checkout-index", "-f", "--"] + [filename], env = {"GIT_DIR":gitdir}, cwd=codir)
 
 def pull(wizpath, filename, host, remotepath, srcId):
-	"""
-	Pulls from a remote repository, 
-	returns any new heads that have to be added to the conf file
+    """
+    Pulls from a remote repository, 
+    returns any new heads that have to be added to the conf file
 
-	"""
-	gitdir = wizpath.getRepoName(filename)
-	#Get all remote heads
-	remotewizpath = Paths(remotepath)
-	srcUrl = host + ':' + remotewizpath.getRepoName(filename)
-	remotes = Popen(["git-fetch-pack", "--all", srcUrl], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
-	remotes = [r.split() for r in remotes.split('\n') if r and r.split()[1] != 'HEAD']
-	#Get all local heads
-	heads = Conf.getHeads(wizpath.getWizconf(), filename)
-	checkoutFile = True
-	for h in heads:
-		headish = _getTreeish(gitdir, h)
-		newRemoteHead = ""
-		for r in remotes:
-			remoteref = r[1]
-			remotesha = r[0]
-			treeish = Popen(["git-merge-base", "--all", headish, remotesha], 
-					env = {"GIT_DIR":gitdir}, 
-					stdout=PIPE).communicate()[0].strip()
-			if treeish == remotesha:
-				#Do nothing, our tree already contains this object
-				checkoutFile = False
-			elif treeish == headish:
-				#Head and merge base are the same, 
-				#Just update ref
-				check_call(["git-update-ref", h, remotesha], env = {"GIT_DIR":gitdir})
-			else:
-				newRemoteHead = remoteref
-		if newRemoteHead:
-			if newRemoteHead == 'refs/heads/master':
-				refName = _makeRefname(srcId)
-			else:
-				refName = newRemoteHead
+    """
+    gitdir = wizpath.getRepoName(filename)
+    #Get all remote heads
+    remotewizpath = Paths(remotepath)
+    srcUrl = host + ':' + remotewizpath.getRepoName(filename)
+    remotes = Popen(["git-fetch-pack", "--all", srcUrl], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
+    remotes = [r.split() for r in remotes.split('\n') if r and r.split()[1] != 'HEAD']
+    #Get all local heads
+    heads = Conf.getHeads(wizpath.getWizconf(), filename)
+    checkoutFile = True
+    for h in heads:
+        headish = _getTreeish(gitdir, h)
+        newRemoteHead = ""
+        for r in remotes:
+            remoteref = r[1]
+            remotesha = r[0]
+            treeish = Popen(["git-merge-base", "--all", headish, remotesha], 
+                    env = {"GIT_DIR":gitdir}, 
+                    stdout=PIPE).communicate()[0].strip()
+            if treeish == remotesha:
+                #Do nothing, our tree already contains this object
+                checkoutFile = False
+            elif treeish == headish:
+                #Head and merge base are the same, 
+                #Just update ref
+                check_call(["git-update-ref", h, remotesha], env = {"GIT_DIR":gitdir})
+            else:
+                newRemoteHead = remoteref
+        if newRemoteHead:
+            if newRemoteHead == 'refs/heads/master':
+                refName = _makeRefname(srcId)
+            else:
+                refName = newRemoteHead
                         check_call(["git-update-ref", refName, remotesha], env = {"GIT_DIR":gitdir})
-			Conf.addHead(wizpath.getWizconf(), filename, refName)
-	#Special case of an empty repository
-	if not heads:
-		for r in remotes:
-			remoteref = r[1]
-			remotesha = r[0]
+            Conf.addHead(wizpath.getWizconf(), filename, refName)
+    #Special case of an empty repository
+    if not heads:
+        for r in remotes:
+            remoteref = r[1]
+            remotesha = r[0]
                         check_call(["git-update-ref", remoteref, remotesha], env = {"GIT_DIR":gitdir})
-			Conf.addHead(wizpath.getWizconf(), filename, remoteref)
-	if checkoutFile:
-		checkout(wizpath, filename, 'refs/heads/master') 
+            Conf.addHead(wizpath.getWizconf(), filename, remoteref)
+    if checkoutFile:
+        checkout(wizpath, filename, 'refs/heads/master') 
 
 def log(wizpath, filename):
-	gitdir = wizpath.getRepoName(filename)
-	return Popen (["git-log", "--pretty=raw", "refs/heads/master"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
+    gitdir = wizpath.getRepoName(filename)
+    return Popen (["git-log", "--pretty=raw", "refs/heads/master"], env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
 
 def commitInfo(wizpath, filename, commit):
-	info = []
-	gitdir = wizpath.getRepoName(filename)
-	results = Popen(["git-log", "-n1", "--pretty=format:%an%n%aD", commit],
-			env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
-	info.extend([item.strip() for item in results.split('\n')[:2]])
-	results = Popen(["git-ls-tree", "-l", commit, filename],
-			env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
-	info.append(int(results.split()[3]))
+    info = []
+    gitdir = wizpath.getRepoName(filename)
+    results = Popen(["git-log", "-n1", "--pretty=format:%an%n%aD", commit],
+            env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
+    info.extend([item.strip() for item in results.split('\n')[:2]])
+    results = Popen(["git-ls-tree", "-l", commit, filename],
+            env = {"GIT_DIR":gitdir}, stdout=PIPE).communicate()[0]
+    info.append(int(results.split()[3]))
 
-	return tuple(info)
+    return tuple(info)

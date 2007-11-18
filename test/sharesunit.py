@@ -20,25 +20,25 @@ DIR3 = 'a/test/dir/three'
 DIR4 = 'a/test/dir/four'
 
 answer = [(DIRID1, SHRID, DIR1),
-	  (DIRID2, SHRID, DIR2),
-	  (DIRID3, SHRID, DIR3),
-	  (DIRID4, SHRID, DIR4)]
+      (DIRID2, SHRID, DIR2),
+      (DIRID3, SHRID, DIR3),
+      (DIRID4, SHRID, DIR4)]
 
 class SharesCase(unittest.TestCase):
-	def testAdd(self):
-		handle, path = mkstemp ("wizbit-test")
-		close(handle)
-		s = Shares(path)
-		s.addShare(DIRID1, SHRID, DIR1)
-		s.addShare(DIRID2, SHRID, DIR2)
-		s.addShare(DIRID3, SHRID, DIR3)
-		s.addShare(DIRID4, SHRID, DIR4)
-		result = s.getShares()
-		self.assertEquals(result, answer)
-		s.removeShare(DIRID1)
-		s.removeShare(DIRID2)
-		s.removeShare(DIRID3)
-		s.removeShare(DIRID4)
+    def testAdd(self):
+        handle, path = mkstemp ("wizbit-test")
+        close(handle)
+        s = Shares(path)
+        s.addShare(DIRID1, SHRID, DIR1)
+        s.addShare(DIRID2, SHRID, DIR2)
+        s.addShare(DIRID3, SHRID, DIR3)
+        s.addShare(DIRID4, SHRID, DIR4)
+        result = s.getShares()
+        self.assertEquals(result, answer)
+        s.removeShare(DIRID1)
+        s.removeShare(DIRID2)
+        s.removeShare(DIRID3)
+        s.removeShare(DIRID4)
 
 if __name__ == '__main__':
-	unittest.main()
+    unittest.main()
