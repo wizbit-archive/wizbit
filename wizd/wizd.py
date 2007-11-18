@@ -4,20 +4,18 @@ import socket
 import os
 import SimpleXMLRPCServer
 import gobject
-from wizbit import ServicePublisher, ServiceBrowser
-
-WIZBIT_SERVER_PORT = 3492
-
-from wizbit import Shares, Directory
+from wizbit import ServicePublisher, ServiceBrowser, defaultShares, Directory
 from wizbit import *
 
 class WizbitServer():
+    def __init__(self, shares = defaultShares()):
+        self._shares = shares
+
     def getShares(self):
-        shares = Shares.getShares()
-        return shares
-    
+        return self._shares.getShares()
+
     def getPath(self, uuid):
-        shares = Shares.getShares()
+        shares = self._shares.getShares()
         for id, shareId, directory in shares:
             if uuid == id:
                 break
@@ -30,7 +28,7 @@ class WizbitServer():
         return "Not Implemented"
 
     def getConf(self, uuid):
-        shares = Shares.getShares()
+        shares = self._shares.getShares()
         for id, shareId, directory in shares:
             if uuid == id:
                 break
@@ -43,7 +41,7 @@ class WizbitServer():
     def pushNotify(self, dirId, remoteShareId, host):
         #For every local directory with the same shareId, pull 
         #from the remote directory
-        shares = Shares.getShares()
+        shares = self._shares.getShares()
         for id, localShareId, directory in shares:
             if localShareId == remoteShareId:
                 Directory.pull(directory, dirId, host)
@@ -57,8 +55,8 @@ def server_callback(source, cb_condition, server):
     server.handle_request()
 
 
-def start_wizbit_server():
-    servinst = WizbitServer()
+def start_wizbit_server(shares = defaultShares()):
+    servinst = WizbitServer(shares)
     server = SimpleXMLRPCServer.SimpleXMLRPCServer(("", 0))
     server.register_instance(servinst)
     server.register_introspection_functions()
@@ -72,7 +70,7 @@ def start_wizbit_server():
 def main(args):
     global main_loop
 
-        start_wizbit_server()
+    start_wizbit_server()
 
     main_loop = gobject.MainLoop()
 
