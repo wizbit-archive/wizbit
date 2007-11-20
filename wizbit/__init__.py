@@ -3,4 +3,4 @@ from util import *
 from discovery import *
 from shares import *
 from server import *
-del util
+from sharesdb import *

@@ -141,36 +141,6 @@ class ServiceBrowser(gobject.GObject):
             return self._server.GetNetworkInterfaceNameByIndex(interface)
 
 
-class SharesDatabase(gobject.GObject):
-    def __init__(self):
-        self.sb =ServiceBrowser("_wizbit._tcp")
-        self.sb.connect ( "service-found", self._service_found)
-        self.sb.connect ( "service-removed", self._service_removed)
-
-        self.shares = {}
-        self.names = {}
-
-    def _service_found(self, widget, name, type, interface, host, address, port):
-        print (name, type, interface, host, address, port);
-
-        srcUrl = getWizUrl(address, port)
-        server = xmlrpclib.ServerProxy(srcUrl)
-        shares = server.getShares()
-        print shares
-        for dirId, shareId, dir in shares:
-            if shareId not in self.shares:
-                self.shares[shareId] = {}
-            self.shares[shareId][dirId] = (interface, address, port, dir)
-            if name not in self.names:
-                self.names[name] = []
-            self.names[name].append((shrId,dirId))
-
-    def _service_removed(self, widget, name):
-        for shrId, dirId in self.names[name]:
-            del self.shares[shrId][dirId]
-            if self.shares[shrId] == {}:
-                    del self.shares[shrId]
-
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         name = sys.argv[1]
