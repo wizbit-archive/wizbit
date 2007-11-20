@@ -56,18 +56,26 @@ def server_callback(source, cb_condition, server):
     server.handle_request()
     return True
 
+running_servers = []
 
 def start_wizbit_server(shares = defaultShares()):
     servinst = WizbitServer(shares)
     server = SimpleXMLRPCServer.SimpleXMLRPCServer(("", 0))
+    server.instance = servinst
     server.register_instance(servinst)
     server.register_introspection_functions()
     gobject.io_add_watch (server.fileno(), gobject.IO_IN, server_callback, server)
     gobject.io_add_watch (server.fileno(), gobject.IO_HUP | gobject.IO_ERR, server_socket_error)
 
-    sp = ServicePublisher("Wizbit", "_wizbit._tcp", server.server_address[1])
-    sb = ServiceBrowser("_wizbit._tcp")
+    server.sp = ServicePublisher("Wizbit", "_wizbit._tcp", server.server_address[1])
+    server.sb = ServiceBrowser("_wizbit._tcp")
+    running_servers.append(server)
+    return server
 
+def find_running_server_by_name (name):
+    for i in running_servers:
+        if i.sp.name == name:
+            return i
 
 def main(args):
     global main_loop
