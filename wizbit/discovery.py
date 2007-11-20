@@ -16,7 +16,7 @@ class ServicePublisher (gobject.GObject):
     }
     def __init__(self, name, type, port, txt = "", domain = "", host = ""):
         self.__gobject_init__()
-        self._name = name
+        self.name = name
         self._type = type
         self._port = port
         self._txt = txt
@@ -46,7 +46,7 @@ class ServicePublisher (gobject.GObject):
                     avahi.DBUS_INTERFACE_ENTRY_GROUP)
             self._group.connect_to_signal('StateChanged', self._entry_group_state_changed)
 
-        print "Adding service '%s' of type '%s' ..." % (self._name, self._type)
+        print "Adding service '%s' of type '%s' ..." % (self.name, self._type)
 
         while self._rename_count > 0:
             try:
@@ -54,7 +54,7 @@ class ServicePublisher (gobject.GObject):
                         avahi.IF_UNSPEC,    #interface
                         avahi.PROTO_UNSPEC, #protocol
                         0,                  #flags
-                        self._name, self._type,
+                        self.name, self._type,
                         self._domain, self._host,
                         dbus.UInt16(self._port),
                         avahi.string_array_to_txt_array(self._txt))
@@ -62,8 +62,8 @@ class ServicePublisher (gobject.GObject):
                 break
             except dbus.exceptions.DBusException, e:
                 if e.get_dbus_name() == "org.freedesktop.Avahi.CollisionError":
-                    self._name = self._server.GetAlternativeServiceName(self._name)
-                    print "WARNING: Service name collision, changing name to '%s' ..." % self._name
+                    self.name = self._server.GetAlternativeServiceName(self.name)
+                    print "WARNING: Service name collision, changing name to '%s' ..." % self.name
                 else:
                     throw(e)
                     break
@@ -87,8 +87,8 @@ class ServicePublisher (gobject.GObject):
         elif state == avahi.ENTRY_GROUP_COLLISION:
             self._rename_count = self._rename_count - 1
             if self._rename_count > 0:
-                self._name = name = self._server.GetAlternativeServiceName(self._name)
-                print "WARNING: Service name collision, changing name to '%s' ..." % self._name
+                self.name = name = self._server.GetAlternativeServiceName(self.name)
+                print "WARNING: Service name collision, changing name to '%s' ..." % self.name
                 self._remove_service()
                 self._add_service()
 
@@ -118,7 +118,7 @@ class ServiceBrowser(gobject.GObject):
 
     def _service_resolved (self, interface, protocol, name, type, domain, host, aprotocol, address, port, txt, flags):
         print "Service data for service '%s' of type '%s' in domain '%s' on %s.%i:" % (name, type, domain, self._siocgifname(interface), protocol)
-        print "\tHost %s (%s), port %i, TXT data: %s" % (host, address, port, avahi.txt_array_to_string_array(txt))
+        print "\tHost %s (%s), port %i, interface %d, TXT data: %s" % (host, address, port, interface, avahi.txt_array_to_string_array(txt))
         self.services[name] = (type, interface, host, address, port)
         self.emit('service-found', name, type, interface, host, address, port)
 
