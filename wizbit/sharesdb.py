@@ -25,7 +25,7 @@ class SharesDatabase(gobject.GObject):
 
 
     def _get_shares_done(self, deferred, name, interface, address, port, dir):
-        self._update_shares(deferred.value, name, interface, address, port, dir)
+        self._update_shares(deferred.value[0], name, interface, address, port, dir)
 
     def _service_found(self, object, name, type, interface, host, address, port):
         print "service found",name, type, interface, host, address, port;
