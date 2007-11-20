@@ -50,9 +50,11 @@ def server_socket_error():
     print "RPC server socket was disconnected, exiting"
     global main_loop
     main_loop.quit()
+    return False
 
 def server_callback(source, cb_condition, server):
     server.handle_request()
+    return True
 
 
 def start_wizbit_server(shares = defaultShares()):
