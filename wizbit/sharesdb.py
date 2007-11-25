@@ -6,7 +6,14 @@ from xmlrpcdeferred import GXMLRPCTransport
 from server import find_running_server_by_name
 
 class SharesDatabase(gobject.GObject):
+    __gsignals__ = {
+            'got-new-share': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE,(gobject.TYPE_STRING,)),
+            'got-new-dir': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE,(gobject.TYPE_STRING,)),
+            'updated': (gobject.SIGNAL_RUN_FIRST, gobject.TYPE_NONE,())
+            }
+
     def __init__(self):
+        self.__gobject_init__()
         self.sb = ServiceBrowser("_wizbit._tcp")
         self.sb.connect ( "service-found", self._service_found)
         self.sb.connect ( "service-removed", self._service_removed)
@@ -18,10 +25,14 @@ class SharesDatabase(gobject.GObject):
         for dirId, shareId, dir in shares:
             if shareId not in self.shares:
                 self.shares[shareId] = {}
+                self.emit("got-new-share", shareId)
+            if dirId in self.shares[shareId]:
+                self.emit("got-new-dir", dirId)
             self.shares[shareId][dirId] = (interface, address, port, dir)
             if name not in self.names:
                 self.names[name] = []
             self.names[name].append((shareId,dirId))
+        self.emit("updated")
 
 
     def _get_shares_done(self, deferred, name, interface, address, port, dir):
