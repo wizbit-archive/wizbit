@@ -49,18 +49,17 @@ class InotifyProcessor(ProcessEvent):
             #print event.event_name, os.path.join(event.path, event.name)
             pass
 
-class SharesObserver():
+class SharesObserver(gobject.GObject):
     """
     Watches all shares directories using pyinotify.
     """
-    __single = None
 
     def __init__(self, shares = defaultShares()):
                 self.__shares = shares
         self.__directories = []
         self.__wm = WatchManager()
         self.__loadShares(EventsCodes.IN_CLOSE_WRITE)
-                print "watching", shares.shares_path
+        print "watching", shares.shares_path
         self.__wm.add_watch(shares.shares_path, EventsCodes.IN_CLOSE_WRITE, proc_fun=self.__loadShares)
         self.__notifier = gnotifier.GNotifier(self.__wm)
 
