@@ -1,20 +1,33 @@
 import tempfile
 import sys
 import gobject
-
+from pprint import pprint
+from uuid import uuid4
 from wizbit import SharesDatabase, Shares, start_wizbit_server
 
-SHRID = 'e3a361cc-1710-44d3-8582-ac7ff13fd7c0'
-DIRID1 = '114a6a70-ff79-4cbb-8b91-6203eaef6afb'
-DIRID2 = '94b47f79-53ed-4958-8a01-60bb65feac6d'
-DIRID3 = 'f3e3e605-20ed-4200-b061-bfd75351e328'
-DIRID4 = 'de92b93d-a274-456a-b484-efb0427beae7'
+SHRID = uuid4().hex
+DIRID1 = uuid4().hex
+DIRID2 = uuid4().hex
+DIRID3 = uuid4().hex
+DIRID4 = uuid4().hex
 
 DIR1 = 'a/test/dir/one'
 DIR2 = 'a/test/dir/two'
 DIR3 = 'a/test/dir/three'
 DIR4 = 'a/test/dir/four'
 
+def updated(sdb):
+    pprint(sdb.shares, width=160)
+    print SHRID, sdb.shares.keys()
+    assert(sdb.shares.has_key(SHRID))
+    assert(sdb.shares[SHRID].has_key(DIRID1))
+    assert(sdb.shares[SHRID][DIRID1][3] == DIR1)
+    assert(sdb.shares[SHRID].has_key(DIRID2))
+    assert(sdb.shares[SHRID][DIRID2][3] == DIR2)
+    assert(sdb.shares[SHRID].has_key(DIRID3))
+    assert(sdb.shares[SHRID][DIRID3][3] == DIR3)
+    assert(sdb.shares[SHRID].has_key(DIRID4))
+    assert(sdb.shares[SHRID][DIRID4][3] == DIR4)
 
 def main(args):
     tempdir = tempfile.mktemp("wizbit-test")
@@ -27,6 +40,7 @@ def main(args):
     start_wizbit_server(shares)
 
     sdb = SharesDatabase();
+    sdb.connect ("updated", updated)
     main_loop = gobject.MainLoop()
 
     try:
