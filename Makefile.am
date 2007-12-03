@@ -1,4 +1,4 @@
-SUBDIRS = wizbit
+SUBDIRS = wizbit test
 DIST_SUBDIRS = git
 
 git/libgit.a:
