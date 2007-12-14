@@ -105,18 +105,23 @@ create_file_store (FileId new_fileid /*out*/ )
 static int
 add_tree_entry_to_index(struct index_state *index, sha1 treeish, const char* name, int namelen)
 {
-	sha1 blob_sha1;
 	unsigned int mode, size;
 	struct cache_entry *ce;
 
-	if (get_tree_entry(treeish, name, blob_sha1, &mode) == 0) {
-		size = cache_entry_size(namelen);
-		ce = calloc (1, size);
+	size = cache_entry_size(namelen);
+	ce = calloc (1, size);
+	if (!ce)
+		return ENOMEM;
+
+	if (get_tree_entry(treeish, name, ce->sha1, &mode) == 0) {
+		printf("Resolved tree entry to %s\n", sha1_to_hex(ce->sha1));
 		memcpy(ce->name, name, namelen);
 		ce->ce_flags = htons(namelen);
 		ce->ce_mode = mode;
 		if (add_index_entry(index, ce, ADD_CACHE_OK_TO_ADD|ADD_CACHE_OK_TO_REPLACE))
 			return ENOMEM;
+	} else {
+		free(ce);
 	}
 	return 0;
 }
@@ -155,16 +160,20 @@ update_file_store(const FileId fileid, int file, int meta)
 	printf("%s\n", path);
 
 	if (file) {
+		printf("adding %s to index\n", path);
 		add_file_to_index(&index, path, 1);
 	} else if (!first_commit) {
+		printf("adding tree entry %s on %s to index\n", path, sha1_to_hex(treeish));
 		add_tree_entry_to_index (&index, treeish, path, namelen);
 	}
 	
 	strcpy(path + FILEID_LEN_AS_STRING, ".meta");
 
 	if (meta) {
+		printf("adding %s to index\n", path);
 		add_file_to_index(&index, path, 1);
 	} else if (!first_commit) {
+		printf("adding tree entry %s on %s to index\n", path, sha1_to_hex(treeish));
 		add_tree_entry_to_index (&index, treeish, path, namelen);
 	}
 	
