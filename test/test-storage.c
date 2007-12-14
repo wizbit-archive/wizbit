@@ -73,6 +73,21 @@ test_update_file_store()
 	close(fd);
 
 	update_file_store(fileid, 1, 0);
+	strbuf_release (&buf);
+
+	strbuf_init(&buf, 100);
+	strbuf_addstr(&buf, work_dir);
+	strbuf_addstr(&buf, "/");
+	strbuf_addstr(&buf, fid);
+	strbuf_addstr(&buf, ".meta");
+
+	printf("writing 4096 consecutive ints to %s\n",buf.buf);
+	fd = open(buf.buf, O_WRONLY | O_CREAT, 0666);
+	for (i=0; i < 4096; i++)
+		write(fd, &i, sizeof(i));
+	close(fd);
+
+	update_file_store(fileid, 0, 1);
 }
 
 int main()
