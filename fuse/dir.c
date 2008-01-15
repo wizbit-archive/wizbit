@@ -26,11 +26,11 @@ static int wiz_insert_dirent(FILE *file, uuid_t fsuid, int ftype, char* name)
 	nlen = strlen(name) + 1;
 
 	fwrite(fsuid, 1, 16, file);
-	ent = htons(ftype);
-	fwrite(&ent, sizeof(uint16_t), 1, file);
-	ent = htons(nlen);
-	fwrite(&ent, sizeof(uint16_t), 1, file );
 	ent = htons(nlen + WIZ_DIRENT_FIXED);
+	fwrite(&ent, sizeof(uint16_t), 1, file );
+	ent = htons(nlen);
+	fwrite(&ent, sizeof(uint16_t), 1, file);
+	ent = htons(ftype);
 	fwrite(&ent, sizeof(uint16_t), 1, file);
 	fwrite(name, 1, nlen, file);
 
@@ -64,7 +64,7 @@ int wiz_add_entry(char* fstore, uuid_t uuide, int ftype, char* name)
 		return -errno;
 
 	wiz_insert_dirent(file, uuide, ftype, name);
-	wiz_insert_dirent(file, 0, WIZ_FT_UNKNOWN, "");
+	wiz_insert_dirent(file, "", WIZ_FT_UNKNOWN, "");
 
 	fclose(file);
 

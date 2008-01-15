@@ -19,7 +19,7 @@ main(int argc, char* argv[])
 		printf("\nError: Could not create directory");
 	}
 
-	wiz_uuidtofs_file(fstore, n);
+	wiz_uuidtofs_file(n, fstore);
 	uuid_generate(p);
 	res = wiz_init_dir(fstore, n, p);
 	if (res != 0)
