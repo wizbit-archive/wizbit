@@ -1,7 +1,10 @@
+#include <stdlib.h>
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <fcntl.h>
+
 #include <string.h>
 #include <errno.h>
 
@@ -12,16 +15,20 @@
 
 char *work_dir = "/tmp/wizbittest";
 
-int main()
+
+static void
+test_create_file_store()
 {
 	FileId fileid;
-	char fid[FILEID_LEN_AS_STRING];
-	char path;
+	char fid[FILEID_LEN_AS_STRING+1];
 	struct stat st;
 	struct strbuf buf;
 
-	mkdir (work_dir,0700);
-	create_file_store(&fileid);
+	printf("%s\n", __func__);
+	if (create_file_store(fileid)) {
+		printf("failed to create file store\n");
+		exit(1);
+	}
 
 	fileid_to_string(fileid, fid);
 	printf("created file id %s\n", fid);
@@ -36,8 +43,62 @@ int main()
 		printf("%s not found: %s\n", buf.buf, strerror(errno));
 		exit(1);
 	}
-	exit (0);
+
 }
 
-int
-commit_
+static void
+test_update_file_store()
+{
+	FileId fileid;
+	char fid[FILEID_LEN_AS_STRING+1];
+	struct strbuf buf;
+	int fd, i;
+
+	printf("%s\n", __func__);
+	if (create_file_store(fileid))
+		exit(1);
+
+	fileid_to_string(fileid, fid);
+	printf("created file id %s\n", fid);
+	strbuf_init(&buf, 100);
+	strbuf_addstr(&buf, work_dir);
+	strbuf_addstr(&buf, "/");
+	strbuf_addstr(&buf, fid);
+	strbuf_addstr(&buf, ".file");
+
+	printf("writing 4096 consecutive ints to %s\n",buf.buf);
+	fd = open(buf.buf, O_WRONLY | O_CREAT, 0666);
+	for (i=0; i < 4096; i++)
+		write(fd, &i, sizeof(i));
+	close(fd);
+
+	update_file_store(fileid, 1, 0);
+	strbuf_release (&buf);
+
+	strbuf_init(&buf, 100);
+	strbuf_addstr(&buf, work_dir);
+	strbuf_addstr(&buf, "/");
+	strbuf_addstr(&buf, fid);
+	strbuf_addstr(&buf, ".meta");
+
+	printf("writing 4096 consecutive ints to %s\n",buf.buf);
+	fd = open(buf.buf, O_WRONLY | O_CREAT, 0666);
+	for (i=0; i < 4096; i++)
+		write(fd, &i, sizeof(i));
+	close(fd);
+
+	update_file_store(fileid, 0, 1);
+}
+
+int main()
+{
+	system ("rm -rf /tmp/wizbittest");
+	mkdir (work_dir,0700);
+	chdir (work_dir);
+
+	test_create_file_store();
+	test_create_file_store();
+	test_update_file_store();
+	return 0;
+}
+
