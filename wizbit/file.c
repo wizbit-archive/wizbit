@@ -2,22 +2,22 @@
 
 struct wiz_file *wiz_file_new()
 {
-	return NULL;
+	return 0;
 }
 
-struct wiz_file *wiz_file_open(wiz_vref ref, int flags, mode_t mode)
+struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
 {
-	return NULL;
+	return 0;
 }
 
 void wiz_file_add_parent(struct wiz_file *file, wiz_vref ref)
 {
 }
 
-const wiz_vref *wiz_file_snapshot(struct wiz_file *file, refs)
+const wiz_vref *wiz_file_snapshot(struct wiz_file *file)
 {
 	wiz_vref vref;
-	return vref;
+	return (const wiz_vref *)vref;
 }
 
 void wiz_file_close(struct wiz_file *file)
