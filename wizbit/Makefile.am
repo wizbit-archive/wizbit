@@ -1,8 +1,6 @@
 noinst_LTLIBRARIES=libwizbit.la
 
 libwizbit_la_SOURCES = \
-	storage.c \
-	storage.h \
 	file.c \
 	file.h
 
