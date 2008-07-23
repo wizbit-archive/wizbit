@@ -7,7 +7,7 @@ struct wiz_file;
 
 struct wiz_file *wiz_file_new();
 
-struct wiz_file *wiz_file_open(wiz_vref ref);
+struct wiz_file *wiz_file_open(wiz_vref ref, int flags, mode_t mode);
 
 void wiz_file_add_parent(wiz_file *file, wiz_vref ref);
 

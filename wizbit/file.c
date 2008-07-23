@@ -5,7 +5,7 @@ struct wiz_file *wiz_file_new()
 	return NULL;
 }
 
-struct wiz_file *wiz_file_open(wiz_vref ref)
+struct wiz_file *wiz_file_open(wiz_vref ref, int flags, mode_t mode)
 {
 	return NULL;
 }
