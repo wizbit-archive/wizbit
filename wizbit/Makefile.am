@@ -2,7 +2,9 @@ noinst_LTLIBRARIES=libwizbit.la
 
 libwizbit_la_SOURCES = \
 	storage.c \
-	storage.h
+	storage.h \
+	file.c \
+	file.h
 
 #evil hack to get around git's internal headers being pants
 
