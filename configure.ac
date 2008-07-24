@@ -21,7 +21,7 @@ else
   PKG_CHECK_MODULES(SSL, libssl)
 fi
 
-GIT_LIBS="$SSL_LIBS \$(top_builddir)/git/libgit.a"
+GIT_LIBS="$SSL_LIBS \$(top_builddir)/git/libgitcore/.libs/libgitcore.a"
 GIT_CFLAGS='-I$(top_srcdir)'
 AC_SUBST(GIT_LIBS)
 AC_SUBST(GIT_CFLAGS)

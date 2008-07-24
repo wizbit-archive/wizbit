@@ -15,7 +15,7 @@ struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
 
 void wiz_file_add_parent(struct wiz_file *file, wiz_vref ref);
 
-const wiz_vref *wiz_file_snapshot(struct wiz_file *file);
+void wiz_file_snapshot(struct wiz_file *file, wiz_vref ref);
 
 void wiz_file_close(struct wiz_file *file);
 

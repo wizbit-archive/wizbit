@@ -1,7 +1,7 @@
 SUBDIRS = wizbit test
 DIST_SUBDIRS = git
 
-git/libgit.a:
-	$(MAKE) -C $(top_srcdir)/git libgit.a
+git/libgitcore/.libs/libgitcore.a:
+	$(MAKE) -C $(top_srcdir)/git
 
-all-local: git/libgit.a
+all-local: git/libgitcore/.libs/libgitcore.a

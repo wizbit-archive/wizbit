@@ -14,10 +14,8 @@ void wiz_file_add_parent(struct wiz_file *file, wiz_vref ref)
 {
 }
 
-const wiz_vref *wiz_file_snapshot(struct wiz_file *file)
+void wiz_file_snapshot(struct wiz_file *file, wiz_vref ref)
 {
-	wiz_vref vref;
-	return (const wiz_vref *)vref;
 }
 
 void wiz_file_close(struct wiz_file *file)
