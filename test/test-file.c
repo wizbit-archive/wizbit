@@ -10,7 +10,7 @@
 
 #include <uuid/uuid.h>
 
-#include "wizbit/file.h"
+#include <wizbit/file.h>
 
 char *work_dir = "/tmp/wizbittest";
 
