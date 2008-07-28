@@ -1,7 +1,7 @@
 #ifndef WIZBIT_FILE_H
 #define WIZBIT_FILE_H
 
-typedef unsigned char wiz_vref[20];
+#include "vref.h"
 
 enum wiz_file_mode {
 	WIZ_FILE_MODE_LAST

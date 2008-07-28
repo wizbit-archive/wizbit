@@ -1,8 +1,13 @@
 noinst_LTLIBRARIES=libwizbit.la
 
+INCLUDES= \
+	$(GLIB_CFLAGS)
+
 libwizbit_la_SOURCES = \
 	file.c \
-	file.h
+	file.h \
+	vref.c \
+	vref.h
 
 #evil hack to get around git's internal headers being pants
 
