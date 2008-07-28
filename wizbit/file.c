@@ -18,11 +18,11 @@ struct wiz_file {
 struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
 {
 	struct wiz_file *file;
-	GError *gerror;
+	GError *gerror = NULL;
 
 	file = (struct wiz_file *)g_new0(struct wiz_file, 1);
 
-	if (wiz_vref_compare(ref, WIZ_FILE_NEW)) {
+	if (wiz_vref_compare(ref, WIZ_FILE_NEW) == 0) {
 		file->gfile = g_mapped_file_new("/tmp/foo", TRUE, &gerror);
 	} else {
 		struct git_object_loader *loader;
@@ -42,7 +42,7 @@ struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
 		commit = git_object_cache_lookup_commit(store, ref, &error);
 		git_object_cache_parse_commit(store, commit, &error);
 
-		tree = git_object_cache_lookup_tree(store, git_commit_get_tree(commit), &error);
+		tree = git_commit_get_tree(commit);
 		git_object_cache_parse_tree(store, tree, &error);
 
 		git_tree_get_iterator(tree, &iter, &error);
