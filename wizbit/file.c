@@ -82,11 +82,11 @@ void wiz_file_snapshot(struct wiz_file *file, wiz_vref ref)
         blob_writer = git_blob_writer_new();
         git_blob_writer_set_contents(blob_writer, g_mapped_file_get_contents(file->gfile),
                                      g_mapped_file_get_length(file->gfile));
-        git_blob_writer_write(blob_writer, writer, &error);
+        git_blob_writer_write(blob_writer, writer, blob, &error);
 
         tree_writer = git_tree_writer_new();
         git_tree_writer_add_sha1(tree_writer, 0, "path", blob);
-        git_tree_writer_write(tree_writer, writer, &error);
+        git_tree_writer_write(tree_writer, writer, tree, &error);
 
         commit_writer = git_commit_writer_new();
         git_commit_writer_set_tree_sha1(commit_writer, tree);
@@ -94,7 +94,10 @@ void wiz_file_snapshot(struct wiz_file *file, wiz_vref ref)
         git_commit_writer_set_author(commit_writer, "John Carr <john.carr@unrouted.co.uk>", 0);
         git_commit_writer_set_committer(commit_writer, "John Carr <john.carr@unrouted.co.uk>", 0);
         git_commit_writer_set_message(commit_writer, "Loreum Ipsum");
-        git_commit_writer_write(commit_writer, writer, &error);
+        git_commit_writer_write(commit_writer, writer, commit, &error);
+
+	/* wiz_vref_copy(ref, commit); */
+	memcpy(ref, commit, sizeof(wiz_vref));
 }
 
 void wiz_file_close(struct wiz_file *file)
