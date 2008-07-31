@@ -104,6 +104,7 @@ void wiz_file_close(struct wiz_file *file)
 {
 }
 
-int wiz_file_get_fd(struct wiz_file *file)
+GMappedFile *wiz_file_get_g_mapped_file(struct wiz_file *file)
 {
+	return file->gfile;
 }

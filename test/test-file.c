@@ -1,12 +1,5 @@
-#include <stdlib.h>
-#include <stdio.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <unistd.h>
-#include <fcntl.h>
-
-#include <string.h>
-#include <errno.h>
+#include <glib.h>
+#include <glib/gstdio.h>
 
 #include <uuid/uuid.h>
 
@@ -23,10 +16,10 @@ int main()
 	{
 		struct wiz_file *file;
 		wiz_vref vref;
-		int fd;
+		GMappedFile *gfile;
 
 		file = wiz_file_open(WIZ_FILE_NEW, 0, 0);
-		fd = wiz_file_get_fd(file);
+		gfile = wiz_file_get_g_mapped_file(file);
 		wiz_file_snapshot(file, vref);
 		wiz_file_close(file);
 	}
