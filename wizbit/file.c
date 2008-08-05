@@ -27,6 +27,7 @@ struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
 	if (wiz_vref_compare(ref, WIZ_FILE_NEW) == 0) {
 		file->gfile = g_mapped_file_new("/tmp/foo", TRUE, &gerror);
 	} else {
+		GMappedFile *tmpfile;
 		struct git_object_loader *loader;
 		struct git_object_cache *store;
 		struct git_commit *commit;
@@ -53,8 +54,9 @@ struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
 
 		data = git_object_loader_load(loader, blob, &type, &size, &error);
 
-		file->gfile = g_mapped_file_new("/tmp/foo", TRUE, &gerror);
-		memcpy(g_mapped_file_get_contents(file->gfile), data, size);
+		tmpfile = g_mapped_file_new("/tmp/foo", TRUE, &gerror);
+		memcpy(g_mapped_file_get_contents(tmpfile), data, size);
+		g_mapped_file_close(tmpfile);
 	}
 
 	return file;
