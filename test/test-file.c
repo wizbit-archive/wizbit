@@ -3,11 +3,13 @@
 
 #include <uuid/uuid.h>
 
+#include <wizbit/vref.h>
 #include <wizbit/file.h>
 
 int main()
 {
 	{
+		wiz_vref_hexbuffer buffer;
 		struct wiz_file *file;
 		wiz_vref vref;
 		FILE *fp;
@@ -30,6 +32,8 @@ int main()
 		fprintf(fp, "\nI CAN HAS BELIEVE!?");
 		wiz_file_add_parent(file, vref);
 		wiz_file_snapshot(file, vref);
+
+		printf("%s\n", wiz_vref_to_hex(vref, buffer));
 
 		wiz_file_close(file);
 	}
