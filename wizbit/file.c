@@ -29,7 +29,6 @@ struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
 	file = (struct wiz_file *)g_new0(struct wiz_file, 1);
 
 	if (wiz_vref_compare(ref, WIZ_FILE_NEW) == 0) {
-		printf("%s\n", WIZ_WORKING"foo");
 		file->fp = g_fopen(WIZ_WORKING"foo", "w");
 	} else {
 		GMappedFile *tmpfile;
