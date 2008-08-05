@@ -19,6 +19,7 @@
 
 struct wiz_file {
 	FILE *fp;
+	struct git_commit_writer *commit_writer;
 };
 
 struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
@@ -65,11 +66,14 @@ struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
 		file->fp = g_fopen(WIZ_WORKING"foo", "w");
 	}
 
+	file->commit_writer = git_commit_writer_new();
+
 	return file;
 }
 
 void wiz_file_add_parent(struct wiz_file *file, wiz_vref ref)
 {
+	git_commit_writer_add_parent_sha1(file->commit_writer, ref);
 }
 
 void wiz_file_snapshot(struct wiz_file *file, wiz_vref ref)
@@ -80,7 +84,6 @@ void wiz_file_snapshot(struct wiz_file *file, wiz_vref ref)
         git_sha1 blob;
         struct git_tree_writer *tree_writer;
         git_sha1 tree;
-        struct git_commit_writer *commit_writer;
         git_sha1 commit;
         struct git_error *error;
 
@@ -95,13 +98,11 @@ void wiz_file_snapshot(struct wiz_file *file, wiz_vref ref)
         git_tree_writer_add_sha1(tree_writer, 0, "path", blob);
         git_tree_writer_write(tree_writer, writer, tree, &error);
 
-        commit_writer = git_commit_writer_new();
-        git_commit_writer_set_tree_sha1(commit_writer, tree);
-        /* git_commit_writer_add_parent_sha1(commit_writer, parent); */
-        git_commit_writer_set_author(commit_writer, "John Carr <john.carr@unrouted.co.uk>", 0);
-        git_commit_writer_set_committer(commit_writer, "John Carr <john.carr@unrouted.co.uk>", 0);
-        git_commit_writer_set_message(commit_writer, "Loreum Ipsum");
-        git_commit_writer_write(commit_writer, writer, commit, &error);
+        git_commit_writer_set_tree_sha1(file->commit_writer, tree);
+        git_commit_writer_set_author(file->commit_writer, "John Carr <john.carr@unrouted.co.uk>", 0);
+        git_commit_writer_set_committer(file->commit_writer, "John Carr <john.carr@unrouted.co.uk>", 0);
+        git_commit_writer_set_message(file->commit_writer, "Loreum Ipsum");
+        git_commit_writer_write(file->commit_writer, writer, commit, &error);
 
 	/* wiz_vref_copy(ref, commit); */
 	memcpy(ref, commit, sizeof(wiz_vref));
