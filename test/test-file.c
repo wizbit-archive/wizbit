@@ -5,14 +5,8 @@
 
 #include <wizbit/file.h>
 
-char *work_dir = "/tmp/wizbittest";
-
 int main()
 {
-	system ("rm -rf /tmp/wizbittest");
-	mkdir (work_dir,0700);
-	chdir (work_dir);
-
 	{
 		struct wiz_file *file;
 		wiz_vref vref;
