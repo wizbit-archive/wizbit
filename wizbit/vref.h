@@ -1,6 +1,8 @@
 #ifndef WIZBIT_VREF_H
 #define WIZBIT_VREF_H
 
+#include <string.h>
+
 typedef unsigned char wiz_vref[20];
 typedef char wiz_vref_hexbuffer[41];
 

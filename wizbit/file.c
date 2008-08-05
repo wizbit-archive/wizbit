@@ -13,7 +13,7 @@
 #include "file.h"
 #include "vref.h"
 
-#define WIZ_BASE "~/.wizbit/"
+#define WIZ_BASE "/home/john/.wizbit/"
 #define WIZ_OBJECTS WIZ_BASE"objects/"
 #define WIZ_WORKING WIZ_BASE"wc/"
 
