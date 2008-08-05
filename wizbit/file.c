@@ -104,6 +104,9 @@ void wiz_file_snapshot(struct wiz_file *file, wiz_vref ref)
         git_commit_writer_set_message(file->commit_writer, "Loreum Ipsum");
         git_commit_writer_write(file->commit_writer, writer, commit, &error);
 
+	git_commit_writer_free(file->commit_writer);
+	file->commit_writer = git_commit_writer_new();
+
 	/* wiz_vref_copy(ref, commit); */
 	memcpy(ref, commit, sizeof(wiz_vref));
 }
