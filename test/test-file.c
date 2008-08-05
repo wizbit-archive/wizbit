@@ -16,10 +16,10 @@ int main()
 	{
 		struct wiz_file *file;
 		wiz_vref vref;
-		GMappedFile *gfile;
+		FILE *fp;
 
 		file = wiz_file_open(WIZ_FILE_NEW, 0, 0);
-		gfile = wiz_file_get_g_mapped_file(file);
+		fp = wiz_file_get_handle(file);
 		wiz_file_snapshot(file, vref);
 		wiz_file_close(file);
 	}

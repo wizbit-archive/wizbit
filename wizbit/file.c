@@ -14,7 +14,7 @@
 #include "vref.h"
 
 struct wiz_file {
-	GMappedFile *gfile;
+	FILE *fp;
 };
 
 struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
@@ -25,7 +25,7 @@ struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
 	file = (struct wiz_file *)g_new0(struct wiz_file, 1);
 
 	if (wiz_vref_compare(ref, WIZ_FILE_NEW) == 0) {
-		file->gfile = g_mapped_file_new("/tmp/foo", TRUE, &gerror);
+		file->fp = g_fopen("/tmp/foo", "w");
 	} else {
 		GMappedFile *tmpfile;
 		struct git_object_loader *loader;
@@ -56,7 +56,9 @@ struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
 
 		tmpfile = g_mapped_file_new("/tmp/foo", TRUE, &gerror);
 		memcpy(g_mapped_file_get_contents(tmpfile), data, size);
-		g_mapped_file_close(tmpfile);
+		g_mapped_file_free(tmpfile);
+
+		file->fp = g_fopen("/tmp/foo", "w");
 	}
 
 	return file;
@@ -82,9 +84,8 @@ void wiz_file_snapshot(struct wiz_file *file, wiz_vref ref)
         writer = git_loose_object_writer_new(loader,"/tmp/wizbit");
 
         blob_writer = git_blob_writer_new();
-        git_blob_writer_set_contents(blob_writer, g_mapped_file_get_contents(file->gfile),
-                                     g_mapped_file_get_length(file->gfile));
-        git_blob_writer_write(blob_writer, writer, blob, &error);
+	git_blob_writer_set_contents_from_file(blob_writer, "/tmp/foo");
+	git_blob_writer_write(blob_writer, writer, blob, &error);
 
         tree_writer = git_tree_writer_new();
         git_tree_writer_add_sha1(tree_writer, 0, "path", blob);
@@ -106,7 +107,7 @@ void wiz_file_close(struct wiz_file *file)
 {
 }
 
-GMappedFile *wiz_file_get_g_mapped_file(struct wiz_file *file)
+FILE *wiz_file_get_handle(struct wiz_file *file)
 {
-	return file->gfile;
+	return file->fp;
 }

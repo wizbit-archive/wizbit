@@ -22,6 +22,6 @@ void wiz_file_snapshot(struct wiz_file *file, wiz_vref ref);
 
 void wiz_file_close(struct wiz_file *file);
 
-GMappedFile *wiz_file_get_g_mapped_file(struct wiz_file *file);
+FILE *wiz_file_get_handle(struct wiz_file *file);
 
 #endif /* WIZBIT_FILE_H */
