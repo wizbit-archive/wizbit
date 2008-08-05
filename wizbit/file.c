@@ -13,6 +13,10 @@
 #include "file.h"
 #include "vref.h"
 
+#define WIZ_BASE "~/.wizbit/"
+#define WIZ_OBJECTS WIZ_BASE"objects/"
+#define WIZ_WORKING WIZ_BASE"wc/"
+
 struct wiz_file {
 	FILE *fp;
 };
@@ -25,7 +29,8 @@ struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
 	file = (struct wiz_file *)g_new0(struct wiz_file, 1);
 
 	if (wiz_vref_compare(ref, WIZ_FILE_NEW) == 0) {
-		file->fp = g_fopen("/tmp/foo", "w");
+		printf("%s\n", WIZ_WORKING"foo");
+		file->fp = g_fopen(WIZ_WORKING"foo", "w");
 	} else {
 		GMappedFile *tmpfile;
 		struct git_object_loader *loader;
@@ -39,7 +44,7 @@ struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
 		unsigned long size;
 		struct git_error *error;
 
-		loader = git_object_loader_new("/tmp/wizbit");
+		loader = git_object_loader_new(WIZ_OBJECTS);
 		store = git_object_cache_new(loader);
 
 		commit = git_object_cache_lookup_commit(store, ref, &error);
@@ -54,11 +59,11 @@ struct wiz_file *wiz_file_open(wiz_vref ref, int flags, enum wiz_file_mode mode)
 
 		data = git_object_loader_load(loader, blob, &type, &size, &error);
 
-		tmpfile = g_mapped_file_new("/tmp/foo", TRUE, &gerror);
+		tmpfile = g_mapped_file_new(WIZ_WORKING"foo", TRUE, &gerror);
 		memcpy(g_mapped_file_get_contents(tmpfile), data, size);
 		g_mapped_file_free(tmpfile);
 
-		file->fp = g_fopen("/tmp/foo", "w");
+		file->fp = g_fopen(WIZ_WORKING"foo", "w");
 	}
 
 	return file;
@@ -80,8 +85,8 @@ void wiz_file_snapshot(struct wiz_file *file, wiz_vref ref)
         git_sha1 commit;
         struct git_error *error;
 
-        loader = git_object_loader_new("/tmp/wizbit");
-        writer = git_loose_object_writer_new(loader,"/tmp/wizbit");
+        loader = git_object_loader_new(WIZ_OBJECTS);
+        writer = git_loose_object_writer_new(loader, WIZ_OBJECTS);
 
         blob_writer = git_blob_writer_new();
 	git_blob_writer_set_contents_from_file(blob_writer, "/tmp/foo");
