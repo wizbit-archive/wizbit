@@ -87,11 +87,16 @@ void wiz_file_snapshot(struct wiz_file *file, wiz_vref ref)
         git_sha1 commit;
         struct git_error *error;
 
+	/* Its early days. While we are writing to this temporary file, we need to
+	   fflush our changes to disk before we can do a snapshot
+	*/
+	fflush(file->fp);
+
         loader = git_object_loader_new(WIZ_OBJECTS);
         writer = git_loose_object_writer_new(loader, WIZ_OBJECTS);
 
         blob_writer = git_blob_writer_new();
-	git_blob_writer_set_contents_from_file(blob_writer, "/tmp/foo");
+	git_blob_writer_set_contents_from_file(blob_writer, WIZ_WORKING"foo");
 	git_blob_writer_write(blob_writer, writer, blob, &error);
 
         tree_writer = git_tree_writer_new();
