@@ -20,6 +20,7 @@ int main()
 
 		file = wiz_file_open(WIZ_FILE_NEW, 0, 0);
 		fp = wiz_file_get_handle(file);
+		fprintf(fp, "I BELIEVE");
 		wiz_file_snapshot(file, vref);
 		wiz_file_close(file);
 	}
