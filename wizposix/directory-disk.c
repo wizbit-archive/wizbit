@@ -1,5 +1,5 @@
 /*
-  WizBit : Git based fuse file system
+  WizBit : Git based file system
   Copyright (C) 2008  Mark Doffman <mark.doffman@codethink.co.uk>
 
   This program can be distributed under the terms of the GNU GPL.
@@ -16,8 +16,21 @@
 #include <stdio.h>
 #include <string.h>
 #include <uuid/uuid.h>
+#include <inttypes.h>
 
-#include <wiz-fs.h>
+#include <wizbit/file-store.h>
+
+#include "directory-entry.h"
+
+/* wiz_dir_entry - The on disk format of a directory entry*/
+typedef struct
+{
+  uuid_t f_uuid;
+  uint16_t rec_len;
+  char name_len;
+  char file_type;
+  char name [];
+} wiz_dir_entry;
 
 static int
 match (char *name, int len, DEntry *entry)
@@ -34,40 +47,40 @@ match (char *name, int len, DEntry *entry)
   @parent: File containing parent directory structure.
  */
 int
-make_empty (uuid_t dir, uuid_t parent)
+wiz_dir_make_empty (char *dir, DEntry *parent, mode_t mode)
 {
-  char *fn;
   int err;
   int rec_len;
   wiz_dir_entry *entry;
 
+  int fd;
   FILE *f;
 
-  err = uuidtofn(dir, &fn);
-  if (err)
-     return err;
-
-  f = fopen(fn, "w");
+  fd = open(dir, O_WRONLY | O_TRUNC, mode);
+  free(fn);
+  if (fd < 0)
+      return -errno;
+  f = (FILE*) fdopen(fd, "w");
 
   entry = (wiz_dir_entry*) malloc(sizeof(wiz_dir_entry) + 2);
-  entry->file_type = WIZ_FT_DIR;
 
   rec_len = sizeof(wiz_dir_entry) + 1;
   memcpy(entry->f_uuid, dir, sizeof(uuid_t));
   entry->name_len = 1;
   entry->rec_len = htons(rec_len);
+  entry->file_type = WIZ_FT_DIR;
   memcpy(entry->name, ".", entry->name_len);
   fwrite(entry, rec_len, 1, f);
 
   rec_len = sizeof(wiz_dir_entry) + 2;
-  memcpy(entry->f_uuid, parent, sizeof(uuid_t));
+  memcpy(entry->f_uuid, parent->f_uuid, sizeof(uuid_t));
   entry->name_len = 2;
   entry->rec_len = htons(rec_len);
+  entry->file_type = WIZ_FT_DIR;
   memcpy(entry->name, "..", entry->name_len);
   fwrite(entry, rec_len, 1, f);
 
   fclose(f);
-  free(fn);
   return 0;
 }
 
@@ -78,11 +91,10 @@ make_empty (uuid_t dir, uuid_t parent)
   @de: Entry to place into the directory.
  */
 int
-add_link (uuid_t dir, DEntry* de)
+wiz_dir_add_link (char *dir, DEntry* de)
 {
   int err = 0;
   int fd;
-  char *fn;
   char *buf;
   char *f;
   char *end;
@@ -92,18 +104,14 @@ add_link (uuid_t dir, DEntry* de)
   wiz_dir_entry *entry;
   wiz_dir_entry *new_entry;
 
-  err = uuidtofn(dir, &fn);
-  if (err)
-     return err;
-
-  fd = open(fn, O_RDWR);
+  fd = open(dir, O_RDWR);
   if (fd < 0)
-     return -EIO;
+     return -errno;
 
   err = fstat (fd, &statbuf);
   if (err < 0)
     {
-      err = -EIO;
+      err = -errno;
       goto out;
     }
 
@@ -130,11 +138,11 @@ add_link (uuid_t dir, DEntry* de)
         }
       room_left = ntohs(entry->rec_len)
                   -sizeof(wiz_dir_entry) - entry->name_len;
-      if (room_left > rec_len)
+      if (room_left >= rec_len)
         {
 
            prev_rec_len = sizeof(wiz_dir_entry) + entry->name_len;
-           new_entry = (wiz_dir_entry*) f + prev_rec_len;
+           new_entry = (wiz_dir_entry*) (f + prev_rec_len);
            memcpy(new_entry->f_uuid, de->f_uuid, sizeof(uuid_t));
            new_entry->name_len = de->name_len;
            new_entry->rec_len = htons(ntohs(entry->rec_len) - prev_rec_len);
@@ -153,13 +161,13 @@ add_link (uuid_t dir, DEntry* de)
   munmap(buf, statbuf.st_size);
   if (lseek (fd, rec_len - 1, SEEK_END) == -1)
     {
-      err = -EIO;
+      err = -errno;
       goto out;
     }
   /* write a dummy byte at the last location */
   if (write (fd, "", 1) != 1)
     {
-      err = -EIO;
+      err = -errno;
       goto out;
     }
   buf = f = mmap(0, statbuf.st_size + rec_len, PROT_READ | PROT_WRITE,
@@ -191,29 +199,24 @@ out:
   @de: Directory entry containing name of link to be removed.
  */
 int
-remove_link (uuid_t dir, DEntry *de)
+wiz_dir_remove_link (char *dir, DEntry *de)
 {
   int err = 0;
   int fd;
-  char *fn;
   char *buf, *f;
   char *end;
   struct stat statbuf;
   wiz_dir_entry *entry = NULL;
   wiz_dir_entry *prev_entry = NULL;
 
-  err = uuidtofn(dir, &fn);
-  if (err)
-     return err;
-
-  fd = open(fn, O_RDWR);
+  fd = open(dir, O_RDWR);
   if (fd < 0)
-     return -EIO;
+     return -errno;
 
   err = fstat (fd, &statbuf);
   if (err < 0)
     {
-      err = -EIO;
+      err = -errno;
       goto out;
     }
 
@@ -251,6 +254,7 @@ remove_link (uuid_t dir, DEntry *de)
                                  sizeof(wiz_dir_entry) -
                                  prev_entry->name_len;
                err = truncate (fn, statbuf.st_size - to_remove);
+               prev_entry->rec_len = htons(sizeof(wiz_dir_entry) + prev_entry->name_len);
              }
            goto out;
         }
@@ -261,8 +265,7 @@ remove_link (uuid_t dir, DEntry *de)
     If we have reached this point then no record was
     found that matches.
    */
-  /* TODO what error if any is returned when file not found.*/
-  err = -EIO;
+  err = -ENOENT;
 
 out:
   close(fd);
@@ -277,8 +280,7 @@ out:
   @de: Directory entry with name of link to modify.
   @file: New UUID to set the directory entry to.
  */
-int
-set_link (uuid_t dir, DEntry *de, uuid_t file)
+int wiz_dir_set_link (char *dir, DEntry *de, uuid_t file)
 {
   int err = 0;
   int fd;
@@ -288,18 +290,18 @@ set_link (uuid_t dir, DEntry *de, uuid_t file)
   struct stat statbuf;
   wiz_dir_entry *entry = NULL;
 
-  err = uuidtofn(dir, &fn);
+  err = wiz_uuidtofn(base, dir, &fn);
   if (err)
      return err;
 
   fd = open(fn, O_RDWR);
   if (fd < 0)
-     return -EIO;
+     return -errno;
 
   err = fstat (fd, &statbuf);
   if (err < 0)
     {
-      err = -EIO;
+      err = -errno;
       goto out;
     }
 
@@ -328,8 +330,7 @@ set_link (uuid_t dir, DEntry *de, uuid_t file)
     If we have reached this point then no record was
     found that matches.
    */
-  /* TODO what error if any is returned when file not found.*/
-  err = -EIO;
+  err = -ENOENT;
 
 out:
   close(fd);
@@ -344,29 +345,23 @@ out:
   @de: Directory entry containing name of entry to search for.
   @res: Returns the directory entry if found, NULL otherwise.
  */
-int
-find_entry (uuid_t dir, DEntry *de, DEntry **res)
+int wiz_dir_find_entry (char *dir, DEntry *de, DEntry **res)
 {
   int err = 0;
   int fd;
-  char *fn;
   char *buf, *f;
   char *end;
   struct stat statbuf;
   wiz_dir_entry *entry = NULL;
 
-  err = uuidtofn(dir, &fn);
-  if (err)
-     return err;
-
-  fd = open(fn, O_RDWR);
+  fd = open(dir, O_RDWR);
   if (fd < 0)
-     return -EIO;
+     return -errno;
 
   err = fstat (fd, &statbuf);
   if (err < 0)
     {
-      err = -EIO;
+      err = -errno;
       goto out;
     }
 
@@ -395,7 +390,7 @@ find_entry (uuid_t dir, DEntry *de, DEntry **res)
            (*res)->name_len = entry->name_len;
            (*res)->file_type = entry->file_type;
            (*res)->name = malloc(entry->name_len + 1);
-           ((*res)->name)[entry->name_len] = '\0';
+           ((*res)->name)[(int) entry->name_len] = '\0';
            memcpy((*res)->name, entry->name, entry->name_len);
            goto out;
         }
@@ -407,6 +402,7 @@ find_entry (uuid_t dir, DEntry *de, DEntry **res)
     found that matches.
    */
   *res = NULL;
+  err = -ENOENT;
 
 out:
   close(fd);
@@ -414,9 +410,10 @@ out:
   return err;
 }
 
-#if 1
-int
-print_entries (uuid_t dir)
+/*
+  wiz_dir_list_entries - Returns a list of all the direcory entries.
+ */
+int wiz_dir_list_entries (char *dir, DEntry ***list)
 {
   int err = 0;
   int fd;
@@ -425,24 +422,24 @@ print_entries (uuid_t dir)
   char *end;
   struct stat statbuf;
   wiz_dir_entry *entry = NULL;
+  int num_entries = 0;
+  int i;
+  int clear = 0;
 
-  err = uuidtofn(dir, &fn);
+  err = wiz_uuidtofn(base, dir, &fn);
   if (err)
      return err;
-  printf("\n-------------------------------------\n");
-  printf("Directory - %s\n\n", fn);
 
   fd = open(fn, O_RDWR);
   if (fd < 0)
-     return -EIO;
+     return -errno;
 
   err = fstat (fd, &statbuf);
   if (err < 0)
     {
-      err = -EIO;
+      err = -errno;
       goto out;
     }
-  printf("Size - %d\n", statbuf.st_size);
 
   buf = f = mmap(0, statbuf.st_size, PROT_READ | PROT_WRITE,
                  MAP_SHARED, fd, 0);
@@ -457,28 +454,68 @@ print_entries (uuid_t dir)
   while (f < end)
     {
       entry = (wiz_dir_entry*) f;
-      char *uuids;
-      char *name;
-
-      err = uuidtofn(entry->f_uuid, &uuids);
-      if (err)
-          goto out;
-      name = malloc(entry->name_len + 1);
-      memcpy(name, entry->name, entry->name_len);
-      name[entry->name_len] = '\0';
-      printf("uuid: %s\nname_len: %d\nfile_type: %d\nname: %s\n\n",
-             uuids,
-             entry->name_len,
-             entry->file_type,
-             name);
-      free(uuids);
-      free(name);
+      num_entries++;
       f += ntohs(entry->rec_len);
     }
 
+  *list = NULL;
+  *list = calloc(num_entries + 1, sizeof(DEntry*));
+  if (*list == NULL)
+    {
+      err = -ENOMEM;
+      goto out;
+    }
+
+  /* Reset to start of file */
+  f = buf;
+  i = 0;
+  while (f < end && i < num_entries)
+    {
+      DEntry *new = NULL;
+
+      entry = (wiz_dir_entry*) f;
+      new = malloc(sizeof(DEntry));
+      if (new == NULL)
+        {
+          err = -ENOMEM;
+          clear = 1;
+          goto out;
+        }
+      new->name = NULL;
+      new->name = malloc(sizeof(entry->name_len) + 1);
+      if (new->name == NULL)
+        {
+          err = -ENOMEM;
+          clear = 1;
+          goto out;
+        }
+
+      new->name_len = entry->name_len;
+      new->file_type = entry->file_type;
+      memcpy(new->name, entry->name, entry->name_len);
+      new->name[(int) entry->name_len] = '\0';
+      memcpy(new->f_uuid, entry->f_uuid, sizeof(uuid_t));
+      (*list)[i] = new;
+
+      f += ntohs(entry->rec_len);
+      i++;
+    }
+
 out:
+  if (clear)
+    {
+      int i;
+      for (i=0; (*list)[i]!=NULL; i++)
+        {
+          if (((*list)[i])->name != NULL)
+            {
+              free(((*list)[i])->name);
+            }
+          free((*list)[i]);
+        }
+      free(*list);
+    }
   close(fd);
   free(fn);
   return err;
 }
-#endif
