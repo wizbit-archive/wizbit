@@ -21,7 +21,7 @@ libwizbit_la_SOURCES = \
 	$(NULL)
 
 libwizbit.vala.stamp: $(libwizbit_la_VALASOURCES)
-	$(VALAC) -C --library libwizbit --basedir $(top_srcdir) --pkg glib-2.0 --pkg gio-2.0 --pkg gio-unix-2.0 --pkg zlib $^
+	$(VALAC) -C --library libwizbit --basedir $(top_srcdir) --pkg glib-2.0 --pkg gio-2.0 --pkg gio-unix-2.0 $^
 	touch $@
 
 libwizbit_la_CFLAGS=@WIZBIT_CFLAGS@
