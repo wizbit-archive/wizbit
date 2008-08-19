@@ -1,5 +1,4 @@
 using GLib;
-using ZLib;
 
 /* FIXME:
  *
@@ -11,9 +10,6 @@ using ZLib;
  *
  * 2. Trees don't support subtrees. We don't actually need trees within trees for wizbit so i said
  * stuff it.
- *
- * 3. Multiple parents. We /will/ need this but i don't like thinking about API on empty stomach. Or
- * without whisky.
  *
  */
 
@@ -74,6 +70,18 @@ namespace Git {
 		}
 
 		public virtual void serialize(OutputStream stream) { }
+
+		protected bool matches (char* begin, string keyword) {
+			char* keyword_array = keyword;
+			long len = keyword.len ();
+			for (int i = 0; i < len; i++) {
+				if (begin[i] != keyword_array[i]) {
+					return false;
+				}
+			}
+			return true;
+		}
+
 	}
 
 	public class Blob : Object {
@@ -103,7 +111,8 @@ namespace Git {
 	}
 
 	public class Tree : Object {
-		public Blob blob { get; set; }
+		public List<Blob> blobs;
+		public List<Tree> trees;
 
 		/* Duplicated because vala won't use the ones in Object yet */
 		public Tree(Store store) {
@@ -116,15 +125,47 @@ namespace Git {
 			this.parsed = false;
 		}
 
+		construct {
+			this.blobs = new List<Blob>();
+			this.trees = new List<Tree>();
+		}
+
 		public void unserialize() {
 			char *bufptr;
 			long size;
+			long mark, pos;
 
 			if (!this.store.read(this.uuid, out bufptr, out size))
 				return;
+
+			while (pos < size) {
+				if (matches(&bufptr[pos], "tree ")) {
+					mark = pos = pos + 5;
+					while (bufptr[pos] != '\n')
+						pos ++;
+					this.trees.append( new Git.Tree.from_uuid(this.store, ((string)bufptr[pos]).substring(mark, pos-mark)) );
+				}
+				else if (matches(&bufptr[pos], "blob ")) {
+					mark = pos = pos + 5;
+					while (bufptr[pos] != '\n')
+						pos ++;
+					this.blobs.append( new Git.Blob.from_uuid(this.store, ((string)bufptr[pos]).substring(mark, pos-mark)) );
+				}
+				else {
+					/* Throw an error */
+					return;
+				}
+			}
 		}
 
 		public void serialize(OutputStream stream) {
+			StringBuilder tree = new StringBuilder();
+			
+			foreach (Blob blob in this.blobs)
+				tree.printf("blob %s", blob.uuid);
+
+			foreach (Tree obj in this.trees)
+				tree.printf("tree %s", obj.uuid);
 		}
 	}
 
@@ -140,6 +181,7 @@ namespace Git {
 				this._tree = value;
 			}
 		}
+		public List<Commit> parents;
 		public string author { get; set; }
 		public string committer { get; set; }
 		public string message { get; set; }
@@ -155,6 +197,10 @@ namespace Git {
 			this.parsed = false;
 		}
 
+		construct {
+			this.parents = new List<Commit>();
+		}
+
 		public void unserialize() {
 			char *bufptr;
 			long size;
@@ -164,50 +210,57 @@ namespace Git {
 			if (!this.store.read(this.uuid, out bufptr, out size))
 				return;
 
-			if (!matches(bufptr, "tree"))
+			if (!matches(bufptr, "tree "))
 				return;
 
 			mark = pos = 6;
-			while (bufptr[pos] != '\n')
+			while (bufptr[pos] != '\n' && pos < size)
 				pos ++;
 
 			this.tree = new Git.Tree.from_uuid(this.store, ((string)bufptr).substring(mark, pos-mark));
-
 			mark = pos = pos+1;
-			while (bufptr[pos] != '\n')
+
+			while (matches(&bufptr[pos], "parent ")) {
+				while (bufptr[pos] != '\n' && pos < size)
+					pos ++;
+				
+				this.parents.append(new Git.Commit.from_uuid(this.store, ((string)bufptr).substring(mark, pos-mark)));
+				mark = pos = pos+1;
+			}
+
+			if (!matches(&bufptr[pos], "author "))
+				return;
+
+			mark = pos = pos+7;
+			while (bufptr[pos] != '\n' && pos < size)
 				pos ++;
 
 			this.author = ((string)bufptr).substring(mark, pos-mark);
-
 			mark = pos = pos+1;
-			while (bufptr[pos] != '\n')
+
+			if (!matches(&bufptr[pos], "committer "))
+				return;
+
+			mark = pos = pos+10;
+			while (bufptr[pos] != '\n' && pos < size)
 				pos ++;
 
 			this.committer = ((string)bufptr).substring(mark, pos-mark);
-			
 			mark = pos = pos+1;
+
 			this.message = ((string)bufptr).substring(mark, size-mark);
 		}
 
 		public void serialize(OutputStream stream) {
 			StringBuilder commit = new StringBuilder();
 			commit.printf("tree %s\n", this.tree.uuid);
+			foreach (Commit parent in this.parents)
+				commit.printf("parent %s\n", parent.uuid);
 			commit.printf("author %s\n", this.author);
 			commit.printf("committer %s\n", this.committer);
 			commit.printf("%s\n", this.message);
 			
 			stdout.printf(commit.str);
-		}
-
-		private bool matches (char* begin, string keyword) {
-			char* keyword_array = keyword;
-			long len = keyword.len ();
-			for (int i = 0; i < len; i++) {
-				if (begin[i] != keyword_array[i]) {
-					return false;
-				}
-			}
-			return true;
 		}
 	}
 

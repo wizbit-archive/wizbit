@@ -33,11 +33,12 @@ namespace Wiz {
 			blob.write();
 
 			Git.Tree tree = new Git.Tree(store);
-			tree.blob = blob;
+			tree.blobs.append(blob);
 			tree.write();
 
 			Git.Commit commit = new Git.Commit(store);
 			commit.tree = tree;
+			commit.parents.append( new Git.Commit.from_uuid(store, "some random uuid") );
 			commit.author = "John Carr <john.carr@unrouted.co.uk>";
 			commit.committer = "John Carr <john.carr@unrouted.co.uk>";
 			commit.message = "Foo bar foo bar";
