@@ -1,9 +1,10 @@
 using GLib;
 using Wiz;
+using Git;
 
 namespace Wiz {
 	class Test : GLib.Object {
-		static int main(string[] args) {
+		public void test_wizbit_1() {
 			GLib.Cancellable c;
 			OutputStream stream;
 
@@ -20,7 +21,30 @@ namespace Wiz {
 			stream = obj.create_next_version();
 			stream.write("testing sucks", 13, c);
 			stream.close(c);
+		}
 
+		public void test_git_reader() {
+			Git.Store store = new Git.Store("../../wizbit/.git/objects");
+
+			Git.Blob blob = new Git.Blob();
+			blob.set_contents_from_file("/tmp/foo");
+			blob.write();
+
+			Git.Tree tree = new Git.Tree();
+			tree.blob = blob;
+			tree.write();
+
+			Git.Commit commit = new Git.Commit();
+			commit.tree = tree;
+			commit.author = "John Carr <john.carr@unrouted.co.uk>";
+			commit.committer = "John Carr <john.carr@unrouted.co.uk>";
+			commit.message = "Foo bar foo bar";
+			commit.write();
+		}
+
+		static int main(string[] args) {
+			Test test = new Test();
+			test.test_git_reader();
 			return 0;
 		}
 	}
