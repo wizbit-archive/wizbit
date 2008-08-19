@@ -26,15 +26,15 @@ namespace Wiz {
 		public void test_git_reader() {
 			Git.Store store = new Git.Store("../../wizbit/.git/objects");
 
-			Git.Blob blob = new Git.Blob();
+			Git.Blob blob = new Git.Blob(store);
 			blob.set_contents_from_file("/tmp/foo");
 			blob.write();
 
-			Git.Tree tree = new Git.Tree();
+			Git.Tree tree = new Git.Tree(store);
 			tree.blob = blob;
 			tree.write();
 
-			Git.Commit commit = new Git.Commit();
+			Git.Commit commit = new Git.Commit(store);
 			commit.tree = tree;
 			commit.author = "John Carr <john.carr@unrouted.co.uk>";
 			commit.committer = "John Carr <john.carr@unrouted.co.uk>";
