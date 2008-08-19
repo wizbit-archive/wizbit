@@ -1,0 +1,33 @@
+lib_LTLIBRARIES=libwizbit.la
+
+INCLUDES= \
+	$(GLIB_CFLAGS) \
+	$(LIBGITCORE_CFLAGS) \
+	$(NULL)
+
+BUILT_SOURCES = libwizbit.vala.stamp
+
+libwizbit_la_VALASOURCES = \
+	stores/git.vala \
+	object.vala \
+	version.vala \
+	reader.vala \
+	writer.vala \
+	$(NULL)
+
+libwizbit_la_SOURCES = \
+	$(libwizbit_la_VALASOURCES:.vala=.c) \
+	$(libwizbit_la_VALASOURCES:.vala=.h) \
+	$(NULL)
+
+libwizbit.vala.stamp: $(libwizbit_la_VALASOURCES)
+	$(VALAC) -C --library libwizbit --basedir $(top_srcdir) --pkg glib-2.0 --pkg gio-2.0 --pkg gio-unix-2.0 --pkg zlib $^
+	touch $@
+
+libwizbit_la_CFLAGS=@WIZBIT_CFLAGS@
+libwizbit_la_LIBS=@WIZBIT_LIBS@
+
+EXTRA_DIST = \
+	libwizbit_la_VALASOURCES \
+	libwizbit.vala.stamp \
+	$(NULL)
