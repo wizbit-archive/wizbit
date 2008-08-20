@@ -5,11 +5,7 @@ using GLib;
  * In order to get things moving as quickly as possible i am just vommiting code. As such there are
  * at *least* the following inconsistencies:
  *
- * 1. Sha1 is passed around as a string. In the tree this should definitely be a binary sha1 
- * (for Git compatibility)
- *
- * 2. Trees don't support subtrees. We don't actually need trees within trees for wizbit so i said
- * stuff it.
+ * 1. This list of fixmes is out of date.
  *
  */
 
@@ -125,88 +121,10 @@ namespace Git {
 		}
 	}
 
-	public class Tree : Object {
-		private StringBuilder builder;
-
-		public List<Blob> blobs;
-		public List<Tree> trees;
-
-		/* Duplicated because vala won't use the ones in Object yet */
-		public Tree(Store store) {
-			this.store = store;
-			this.parsed = true;
-		}
-		public Tree.from_uuid(Store store, string uuid) {
-			this.store = store;
-			this.uuid = uuid;
-			this.parsed = false;
-		}
-
-		construct {
-			this.blobs = new List<Blob>();
-			this.trees = new List<Tree>();
-		}
-
-		public void unserialize() {
-			MappedFile obj;
-			char *bufptr;
-			long size;
-			long mark, pos;
-
-			if (!this.store.read(this.uuid, out obj))
-				return;
-
-			bufptr = obj.get_contents();
-			size = obj.get_length();
-
-			while (pos < size) {
-				if (matches(&bufptr[pos], "tree ")) {
-					mark = pos = pos + 5;
-					while (bufptr[pos] != '\n')
-						pos ++;
-					this.trees.append( new Git.Tree.from_uuid(this.store, ((string)bufptr[pos]).substring(mark, pos-mark)) );
-				}
-				else if (matches(&bufptr[pos], "blob ")) {
-					mark = pos = pos + 5;
-					while (bufptr[pos] != '\n')
-						pos ++;
-					this.blobs.append( new Git.Blob.from_uuid(this.store, ((string)bufptr[pos]).substring(mark, pos-mark)) );
-				}
-				else {
-					/* Throw an error */
-					return;
-				}
-			}
-		}
-
-		public override void serialize(out void *bufptr, out long size) {
-			this.builder = new StringBuilder();
-			
-			foreach (Blob blob in this.blobs)
-				this.builder.printf("blob %s\n", blob.uuid);
-
-			foreach (Tree obj in this.trees)
-				this.builder.printf("tree %s\n", obj.uuid);
-
-			bufptr = this.builder.str;
-			size = this.builder.str.len();
-		}
-	}
-
 	public class Commit : Object {
 		private StringBuilder builder;
-
-		private Tree _tree;
-		public Tree tree {
-			get {
-				if (!this._tree.parsed)
-					this._tree.unserialize();
-				return this._tree;
-			}
-			set {
-				this._tree = value;
-			}
-		}
+	
+		public Blob blob { get; set; }
 		public List<Commit> parents;
 		public string author { get; set; }
 		public string committer { get; set; }
@@ -247,7 +165,7 @@ namespace Git {
 			while (bufptr[pos] != '\n' && pos < size)
 				pos ++;
 
-			this.tree = new Git.Tree.from_uuid(this.store, ((string)bufptr).substring(mark, pos-mark));
+			this.blob = new Git.Blob.from_uuid(this.store, ((string)bufptr).substring(mark, pos-mark));
 			mark = pos = pos+1;
 
 			while (matches(&bufptr[pos], "parent ")) {
@@ -283,7 +201,7 @@ namespace Git {
 
 		public override void serialize(out void *bufptr, out long size) {
 			this.builder = new StringBuilder();
-			this.builder.printf("tree %s\n", this.tree.uuid);
+			this.builder.printf("blob %s\n", this.blob.uuid);
 			foreach (Commit parent in this.parents)
 				this.builder.printf("parent %s\n", parent.uuid);
 			this.builder.printf("author %s\n", this.author);
@@ -292,46 +210,6 @@ namespace Git {
 
 			bufptr = this.builder.str;
 			size = this.builder.str.len();
-		}
-	}
-
-	public class Tag : Object {
-		private Commit _commit;
-		public Commit commit { 
-			get {
-				if (!this._commit.parsed)
-					this._commit.unserialize();
-				return this._commit;
-			}
-			set {
-				this._commit = value;
-			}
-		}
-
-		/* Duplicated because vala won't use the ones in Object yet */
-		public Tag(Store store) {
-			this.store = store;
-			this.parsed = true;
-		}
-		public Tag.from_uuid(Store store, string uuid) {
-			this.store = store;
-			this.uuid = uuid;
-			this.parsed = false;
-		}
-
-		public void unserialize() {
-			MappedFile obj;
-			char *bufptr;
-			long size;
-
-			if (!this.store.read(this.uuid, out obj))
-				return;
-
-			bufptr = obj.get_contents();
-			size = obj.get_length();
-		}
-
-		public override void serialize(out void *bufptr, out long size) {
 		}
 	}
 }

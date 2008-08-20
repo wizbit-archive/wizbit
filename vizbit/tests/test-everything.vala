@@ -34,14 +34,8 @@ namespace Wiz {
 			
 			stdout.printf("blob: %s\n", blob.uuid);
 
-			Git.Tree tree = new Git.Tree(store);
-			tree.blobs.append(blob);
-			tree.write();
-
-			stdout.printf("tree: %s\n", tree.uuid);
-
 			Git.Commit commit = new Git.Commit(store);
-			commit.tree = tree;
+			commit.blob = blob;
 			commit.parents.append( new Git.Commit.from_uuid(store, "some random uuid") );
 			commit.author = "John Carr <john.carr@unrouted.co.uk>";
 			commit.committer = "John Carr <john.carr@unrouted.co.uk>";
