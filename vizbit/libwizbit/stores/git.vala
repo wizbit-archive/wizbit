@@ -33,7 +33,9 @@ namespace Git {
 		}
 
 		private string get_path_for_uuid(string uuid) {
-			return this.directory + "/" + uuid.substring(1,2) + "/" + uuid.substring(3,40);
+			string folder = this.directory + "/" + uuid.substring(1,2);
+			DirUtils.create_with_parents(folder,666);
+			return folder + "/" + uuid.substring(3,40);
 		}
 
 		public bool read(string uuid, out char *bufptr, out long size) {
