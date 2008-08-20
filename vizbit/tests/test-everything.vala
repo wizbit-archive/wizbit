@@ -45,7 +45,7 @@ namespace Wiz {
 			stdout.printf("commit: %s\n", commit.uuid);
 
 			/* OK, lets try and read 'stuff' back. */
-			Git.Commit c = new Git.Commit.from_uuid(store, "8f7ca0b44d649b866bc5e1a410bae1d229ef6cba");
+			Git.Commit c = new Git.Commit.from_uuid(store, "883890044204a87754df21840841bfb39d265eaa");
 			c.unserialize();
 			stdout.printf("author:%s\n", c.author);
 		}
