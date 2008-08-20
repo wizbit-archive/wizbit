@@ -45,9 +45,12 @@ namespace Wiz {
 			stdout.printf("commit: %s\n", commit.uuid);
 
 			/* OK, lets try and read 'stuff' back. */
-			Git.Commit c = new Git.Commit.from_uuid(store, "883890044204a87754df21840841bfb39d265eaa");
+			Git.Commit c = new Git.Commit.from_uuid(store, commit.uuid);
 			c.unserialize();
-			stdout.printf("author:%s\n", c.author);
+
+			assert( c.author == "John Carr <john.carr@unrouted.co.uk>" );
+			assert( c.committer == "John Carr <john.carr@unrouted.co.uk>" );
+			assert( c.message == "Foo bar foo bar" );
 		}
 
 		static int main(string[] args) {

@@ -206,7 +206,7 @@ namespace Git {
 				this.builder.append("parent %s\n".printf(parent.uuid));
 			this.builder.append("author %s\n".printf(this.author));
 			this.builder.append("committer %s\n".printf(this.committer));
-			this.builder.append("%s\n".printf(this.message));
+			this.builder.append(this.message);
 
 			bufptr = this.builder.str;
 			size = this.builder.str.len();
