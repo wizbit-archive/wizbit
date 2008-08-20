@@ -45,14 +45,21 @@ namespace Git {
 		}
 
 		public string write(Object obj) {
-			return "somesha1";
+			void *bufptr;
+			long size;
+			obj.serialize(out bufptr, out size);
+			Checksum sha1 = new Checksum(ChecksumType.SHA1);
+			sha1.update((uchar [])bufptr, size);
+			string uuid = sha1.get_string();
+			FileUtils.set_contents(this.get_path_for_uuid(uuid), (string)bufptr, size);
+			return uuid;
 		}
 	}
 
 	public class Object : GLib.Object {
 		public bool parsed { get; set; }
 		public Store store { get; construct; }
-		public string uuid { get; construct; }
+		public string uuid { get; set; }
 
 		public Object(Store store) {
 			this.store = store;
@@ -65,11 +72,11 @@ namespace Git {
 			this.parsed = false;
 		}
 
-		public string write() {
-			return this.store.write(this);
+		public void write() {
+			this.uuid = this.store.write(this);
 		}
 
-		public virtual void serialize(OutputStream stream) { }
+		public virtual void serialize(out void *bufptr, out long size) {}
 
 		protected bool matches (char* begin, string keyword) {
 			char* keyword_array = keyword;
@@ -85,6 +92,10 @@ namespace Git {
 	}
 
 	public class Blob : Object {
+		private MappedFile file;
+		private void *bufptr;
+		private long size;
+
 		GLib.InputStream read() {
 			char *bufptr;
 			long size;
@@ -104,9 +115,14 @@ namespace Git {
 		}
 
 		public void set_contents_from_file(string path) {
+			this.file = new MappedFile(path, false);
+			this.bufptr = file.get_contents();
+			this.size = file.get_length();
 		}
 
-		public void serialize(OutputStream stream) {
+		public override void serialize(out void *bufptr, out long size) {
+			bufptr = this.bufptr;
+			size = this.size;
 		}
 	}
 
@@ -158,14 +174,17 @@ namespace Git {
 			}
 		}
 
-		public void serialize(OutputStream stream) {
+		public override void serialize(out void *bufptr, out long size) {
 			StringBuilder tree = new StringBuilder();
 			
 			foreach (Blob blob in this.blobs)
-				tree.printf("blob %s", blob.uuid);
+				tree.printf("blob %s\n", blob.uuid);
 
 			foreach (Tree obj in this.trees)
-				tree.printf("tree %s", obj.uuid);
+				tree.printf("tree %s\n", obj.uuid);
+
+			bufptr = tree.str;
+			size = tree.str.len();
 		}
 	}
 
@@ -251,7 +270,7 @@ namespace Git {
 			this.message = ((string)bufptr).substring(mark, size-mark);
 		}
 
-		public void serialize(OutputStream stream) {
+		public override void serialize(out void *bufptr, out long size) {
 			StringBuilder commit = new StringBuilder();
 			commit.printf("tree %s\n", this.tree.uuid);
 			foreach (Commit parent in this.parents)
@@ -259,8 +278,9 @@ namespace Git {
 			commit.printf("author %s\n", this.author);
 			commit.printf("committer %s\n", this.committer);
 			commit.printf("%s\n", this.message);
-			
-			stdout.printf(commit.str);
+
+			bufptr = commit.str;
+			size = commit.str.len();
 		}
 	}
 
@@ -297,7 +317,7 @@ namespace Git {
 
 		}
 
-		public void serialize(OutputStream stream) {
+		public override void serialize(out void *bufptr, out long size) {
 		}
 	}
 }

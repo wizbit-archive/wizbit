@@ -26,7 +26,7 @@ namespace Wiz {
 		}
 
 		public void test_git_reader() {
-			Git.Store store = new Git.Store("../../wizbit/.git/objects");
+			Git.Store store = new Git.Store("tests/data");
 
 			Git.Blob blob = new Git.Blob(store);
 			blob.set_contents_from_file("/tmp/foo");
