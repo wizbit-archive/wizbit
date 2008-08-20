@@ -31,10 +31,14 @@ namespace Wiz {
 			Git.Blob blob = new Git.Blob(store);
 			blob.set_contents_from_file("/tmp/foo");
 			blob.write();
+			
+			stdout.printf("blob: %s\n", blob.uuid);
 
 			Git.Tree tree = new Git.Tree(store);
 			tree.blobs.append(blob);
 			tree.write();
+
+			stdout.printf("tree: %s\n", tree.uuid);
 
 			Git.Commit commit = new Git.Commit(store);
 			commit.tree = tree;
@@ -44,7 +48,12 @@ namespace Wiz {
 			commit.message = "Foo bar foo bar";
 			commit.write();
 
-			stdout.printf("test_git_reader [OK]\n");
+			stdout.printf("commit: %s\n", commit.uuid);
+
+			/* OK, lets try and read 'stuff' back. */
+			Git.Commit c = new Git.Commit.from_uuid(store, "8f7ca0b44d649b866bc5e1a410bae1d229ef6cba");
+			c.unserialize();
+			stdout.printf("author:%s\n", c.author);
 		}
 
 		static int main(string[] args) {

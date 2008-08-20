@@ -34,15 +34,13 @@ namespace Git {
 
 		private string get_path_for_uuid(string uuid) {
 			string folder = this.directory + "/" + uuid.substring(1,2);
-			DirUtils.create_with_parents(folder,666);
+			DirUtils.create_with_parents(folder,0755);
 			return folder + "/" + uuid.substring(3,40);
 		}
 
-		public bool read(string uuid, out char *bufptr, out long size) {
+		public bool read(string uuid, out MappedFile obj) {
 			string path = this.get_path_for_uuid(uuid);
-			MappedFile obj = new MappedFile(path, false);
-			bufptr = obj.get_contents();
-			size = obj.get_length();
+			obj = new MappedFile(path, false);
 			return true;
 		}
 
@@ -98,11 +96,10 @@ namespace Git {
 		private void *bufptr;
 		private long size;
 
-		GLib.InputStream read() {
-			char *bufptr;
-			long size;
-			this.store.read(this.uuid, out bufptr, out size);
-			return new MemoryInputStream.from_data(bufptr, size, null);
+		MappedFile read() {
+			MappedFile obj;
+			this.store.read(this.uuid, out obj);
+			return obj;
 		}
 
 		/* Duplicated because vala won't use the ones in Object yet */
@@ -129,6 +126,8 @@ namespace Git {
 	}
 
 	public class Tree : Object {
+		private StringBuilder builder;
+
 		public List<Blob> blobs;
 		public List<Tree> trees;
 
@@ -149,12 +148,16 @@ namespace Git {
 		}
 
 		public void unserialize() {
+			MappedFile obj;
 			char *bufptr;
 			long size;
 			long mark, pos;
 
-			if (!this.store.read(this.uuid, out bufptr, out size))
+			if (!this.store.read(this.uuid, out obj))
 				return;
+
+			bufptr = obj.get_contents();
+			size = obj.get_length();
 
 			while (pos < size) {
 				if (matches(&bufptr[pos], "tree ")) {
@@ -177,20 +180,22 @@ namespace Git {
 		}
 
 		public override void serialize(out void *bufptr, out long size) {
-			StringBuilder tree = new StringBuilder();
+			this.builder = new StringBuilder();
 			
 			foreach (Blob blob in this.blobs)
-				tree.printf("blob %s\n", blob.uuid);
+				this.builder.printf("blob %s\n", blob.uuid);
 
 			foreach (Tree obj in this.trees)
-				tree.printf("tree %s\n", obj.uuid);
+				this.builder.printf("tree %s\n", obj.uuid);
 
-			bufptr = tree.str;
-			size = tree.str.len();
+			bufptr = this.builder.str;
+			size = this.builder.str.len();
 		}
 	}
 
 	public class Commit : Object {
+		private StringBuilder builder;
+
 		private Tree _tree;
 		public Tree tree {
 			get {
@@ -223,13 +228,17 @@ namespace Git {
 		}
 
 		public void unserialize() {
+			MappedFile obj;
 			char *bufptr;
 			long size;
 			long mark;
 			long pos;
 
-			if (!this.store.read(this.uuid, out bufptr, out size))
+			if (!this.store.read(this.uuid, out obj))
 				return;
+
+			bufptr = obj.get_contents();
+			size = obj.get_length();
 
 			if (!matches(bufptr, "tree "))
 				return;
@@ -273,16 +282,16 @@ namespace Git {
 		}
 
 		public override void serialize(out void *bufptr, out long size) {
-			StringBuilder commit = new StringBuilder();
-			commit.printf("tree %s\n", this.tree.uuid);
+			this.builder = new StringBuilder();
+			this.builder.printf("tree %s\n", this.tree.uuid);
 			foreach (Commit parent in this.parents)
-				commit.printf("parent %s\n", parent.uuid);
-			commit.printf("author %s\n", this.author);
-			commit.printf("committer %s\n", this.committer);
-			commit.printf("%s\n", this.message);
+				this.builder.printf("parent %s\n", parent.uuid);
+			this.builder.printf("author %s\n", this.author);
+			this.builder.printf("committer %s\n", this.committer);
+			this.builder.printf("%s\n", this.message);
 
-			bufptr = commit.str;
-			size = commit.str.len();
+			bufptr = this.builder.str;
+			size = this.builder.str.len();
 		}
 	}
 
@@ -311,12 +320,15 @@ namespace Git {
 		}
 
 		public void unserialize() {
+			MappedFile obj;
 			char *bufptr;
 			long size;
 
-			if (!this.store.read(this.uuid, out bufptr, out size))
+			if (!this.store.read(this.uuid, out obj))
 				return;
 
+			bufptr = obj.get_contents();
+			size = obj.get_length();
 		}
 
 		public override void serialize(out void *bufptr, out long size) {
