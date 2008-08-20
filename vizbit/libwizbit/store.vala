@@ -9,7 +9,7 @@ using GLib;
  *
  */
 
-namespace Git {
+namespace Store {
 
 	public class Store : GLib.Object {
 		/* The store just provides a way to read or write from the store.
@@ -165,14 +165,14 @@ namespace Git {
 			while (bufptr[pos] != '\n' && pos < size)
 				pos ++;
 
-			this.blob = new Git.Blob.from_uuid(this.store, ((string)bufptr).substring(mark, pos-mark));
+			this.blob = new Blob.from_uuid(this.store, ((string)bufptr).substring(mark, pos-mark));
 			mark = pos = pos+1;
 
 			while (matches(&bufptr[pos], "parent ")) {
 				while (bufptr[pos] != '\n' && pos < size)
 					pos ++;
 				
-				this.parents.append(new Git.Commit.from_uuid(this.store, ((string)bufptr).substring(mark, pos-mark)));
+				this.parents.append(new Commit.from_uuid(this.store, ((string)bufptr).substring(mark, pos-mark)));
 				mark = pos = pos+1;
 			}
 
