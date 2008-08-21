@@ -79,8 +79,6 @@ namespace Wiz {
 			this._primary_tip = new Version(this.store, contents.substring(mark, pos-mark));
 			this._tips.append(this._primary_tip);
 
-			stdout.printf("%d", (int)size);
-
 			while (pos < size) {
 				mark = pos = pos+1;
 
