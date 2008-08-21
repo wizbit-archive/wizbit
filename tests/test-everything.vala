@@ -53,9 +53,17 @@ namespace Wiz {
 			assert( c.message == "Foo bar foo bar" );
 		}
 
+		public void test_wizbit_2() {
+			Wiz.Object obj = new Wiz.Object("SOMENAME");
+
+			obj.create_next_version_from_string("FOOBAR", null);
+			obj.create_next_version_from_string("BARFOO", null);
+		}
+
 		static int main(string[] args) {
 			Test test = new Test();
 			test.test_store();
+			test.test_wizbit_2();
 			return 0;
 		}
 	}

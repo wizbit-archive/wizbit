@@ -109,6 +109,11 @@ namespace Store {
 			this.parsed = false;
 		}
 
+		public void set_contents(void *bufptr, long size) {
+			this.bufptr = bufptr;
+			this.size = size;
+		}
+
 		public void set_contents_from_file(string path) {
 			this.file = new MappedFile(path, false);
 			this.bufptr = file.get_contents();

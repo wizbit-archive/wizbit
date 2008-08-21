@@ -29,7 +29,7 @@ namespace Wiz {
 
 		private MappedFile file;
 
-		Version(Store.Store store, string version_uuid) {
+		public Version(Store.Store store, string version_uuid) {
 			this.store = store;
 			this.version_uuid = version_uuid;
 		}

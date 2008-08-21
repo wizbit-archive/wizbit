@@ -36,14 +36,34 @@ namespace Wiz {
 
 			assert( this.uuid.len() > 0 );
 
-			this.unserialize();
+			this.read_tips();
 		}
 
-		Object(string uuid) {
+		public Object(string uuid) {
 			this.uuid = uuid;
 		}
 
-		private void unserialize() {
+		private void write_tips() {
+			/* This should be replaced with Sqlite or some uber on disk format we have yet to imagine.
+			 * Sod that for a pack of bourbonds, I want it to work already
+			 */
+
+			StringBuilder builder;
+
+			builder.append(this._primary_tip.version_uuid);
+			builder.append("\n");
+
+			foreach (Version v in this._tips) {
+				if (v != this._primary_tip) {
+					builder.append(v.version_uuid);
+					builder.append("\n");
+				}
+			}
+
+			FileUtils.set_contents(this.refs_path + "/" + this.uuid, builder.str, builder.str.len());
+		}
+
+		private void read_tips() {
 			/* This should be replaced with Sqlite or some uber on disk format we have yet to imagine.
 			 *  Sod that for a game of soldiers, I want a demo already
 			 */
@@ -54,15 +74,17 @@ namespace Wiz {
 			FileUtils.get_contents(this.refs_path + "/" + this.uuid, out contents, out size);
 
 			mark = pos = 0;
-			while (contents[pos] != '\n')
+			while (contents[pos] != '\n' && pos < size)
 				pos ++;
 			this._primary_tip = new Version(this.store, contents.substring(mark, pos-mark));
 			this._tips.append(this._primary_tip);
 
+			stdout.printf("%d", (int)size);
+
 			while (pos < size) {
 				mark = pos = pos+1;
 
-				while (contents[pos] != '\n')
+				while (contents[pos] != '\n' && pos < size)
 					pos ++;
 
 				this._tips.append(new Version(this.store, contents.substring(mark, pos-mark)));
@@ -72,6 +94,21 @@ namespace Wiz {
 
 		public OutputStream create_next_version() {
 			return new OutputStream();
+		}
+
+		public Version create_next_version_from_string(string data, Version ?parent) {
+			Store.Blob blob = new Store.Blob(this.store);
+			blob.set_contents((void *)data, data.len());
+			blob.write();
+
+			Store.Commit commit = new Store.Commit(this.store);
+			commit.blob = blob;
+			commit.author = "John Carr <john.carr@unrouted.co.uk>";
+			commit.committer = "John Carr <john.carr@unrouted.co.uk>";
+			commit.message = "I don't like Mondays";
+			commit.write();
+
+			return new Version(this.store, commit.uuid);
 		}
 	}
 }
