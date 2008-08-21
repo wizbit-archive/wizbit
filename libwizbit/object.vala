@@ -101,6 +101,8 @@ namespace Wiz {
 
 			Store.Commit commit = new Store.Commit(this.store);
 			commit.blob = blob;
+			if (parent != null)
+				commit.parents.append( parent.commit );
 			commit.author = "John Carr <john.carr@unrouted.co.uk>";
 			commit.committer = "John Carr <john.carr@unrouted.co.uk>";
 			commit.message = "I don't like Mondays";

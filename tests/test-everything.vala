@@ -56,8 +56,8 @@ namespace Wiz {
 		public void test_wizbit_2() {
 			Wiz.Object obj = new Wiz.Object("SOMENAME");
 
-			obj.create_next_version_from_string("FOOBAR", null);
-			obj.create_next_version_from_string("BARFOO", null);
+			Wiz.Version v1 = obj.create_next_version_from_string("FOOBAR", null);
+			Wiz.Version v2 = obj.create_next_version_from_string("BARFOO", v1);
 		}
 
 		static int main(string[] args) {

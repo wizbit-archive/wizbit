@@ -24,7 +24,7 @@ namespace Wiz {
 			}
 		}
 
-		private Store.Commit commit;
+		protected Store.Commit commit;
 		private Store.Blob blob;
 
 		private MappedFile file;
