@@ -92,7 +92,7 @@ namespace Store {
 		private void *bufptr;
 		private long size;
 
-		MappedFile read() {
+		public MappedFile read() {
 			MappedFile obj;
 			this.store.read(this.uuid, out obj);
 			return obj;
