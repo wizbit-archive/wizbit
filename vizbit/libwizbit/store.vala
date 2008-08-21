@@ -9,7 +9,7 @@ using GLib;
  *
  */
 
-namespace Git {
+namespace Store {
 
 	public class Store : GLib.Object {
 		/* The store just provides a way to read or write from the store.
@@ -158,21 +158,21 @@ namespace Git {
 			bufptr = obj.get_contents();
 			size = obj.get_length();
 
-			if (!matches(bufptr, "tree "))
+			if (!matches(bufptr, "blob "))
 				return;
 
 			mark = pos = 6;
 			while (bufptr[pos] != '\n' && pos < size)
 				pos ++;
 
-			this.blob = new Git.Blob.from_uuid(this.store, ((string)bufptr).substring(mark, pos-mark));
+			this.blob = new Blob.from_uuid(this.store, ((string)bufptr).substring(mark, pos-mark));
 			mark = pos = pos+1;
 
 			while (matches(&bufptr[pos], "parent ")) {
 				while (bufptr[pos] != '\n' && pos < size)
 					pos ++;
 				
-				this.parents.append(new Git.Commit.from_uuid(this.store, ((string)bufptr).substring(mark, pos-mark)));
+				this.parents.append(new Commit.from_uuid(this.store, ((string)bufptr).substring(mark, pos-mark)));
 				mark = pos = pos+1;
 			}
 
@@ -201,12 +201,12 @@ namespace Git {
 
 		public override void serialize(out void *bufptr, out long size) {
 			this.builder = new StringBuilder();
-			this.builder.printf("blob %s\n", this.blob.uuid);
+			this.builder.append("blob %s\n".printf(this.blob.uuid));
 			foreach (Commit parent in this.parents)
-				this.builder.printf("parent %s\n", parent.uuid);
-			this.builder.printf("author %s\n", this.author);
-			this.builder.printf("committer %s\n", this.committer);
-			this.builder.printf("%s\n", this.message);
+				this.builder.append("parent %s\n".printf(parent.uuid));
+			this.builder.append("author %s\n".printf(this.author));
+			this.builder.append("committer %s\n".printf(this.committer));
+			this.builder.append(this.message);
 
 			bufptr = this.builder.str;
 			size = this.builder.str.len();

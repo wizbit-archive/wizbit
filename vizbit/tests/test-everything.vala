@@ -1,6 +1,6 @@
 using GLib;
 using Wiz;
-using Git;
+using Store;
 
 namespace Wiz {
 	class Test : GLib.Object {
@@ -25,18 +25,18 @@ namespace Wiz {
 			*/
 		}
 
-		public void test_git_reader() {
-			Git.Store store = new Git.Store("tests/data");
+		public void test_store() {
+			Store.Store store = new Store.Store("tests/data");
 
-			Git.Blob blob = new Git.Blob(store);
+			Store.Blob blob = new Store.Blob(store);
 			blob.set_contents_from_file("/tmp/foo");
 			blob.write();
 			
 			stdout.printf("blob: %s\n", blob.uuid);
 
-			Git.Commit commit = new Git.Commit(store);
+			Store.Commit commit = new Store.Commit(store);
 			commit.blob = blob;
-			commit.parents.append( new Git.Commit.from_uuid(store, "some random uuid") );
+			commit.parents.append( new Store.Commit.from_uuid(store, "some random uuid") );
 			commit.author = "John Carr <john.carr@unrouted.co.uk>";
 			commit.committer = "John Carr <john.carr@unrouted.co.uk>";
 			commit.message = "Foo bar foo bar";
@@ -45,14 +45,17 @@ namespace Wiz {
 			stdout.printf("commit: %s\n", commit.uuid);
 
 			/* OK, lets try and read 'stuff' back. */
-			Git.Commit c = new Git.Commit.from_uuid(store, "8f7ca0b44d649b866bc5e1a410bae1d229ef6cba");
+			Store.Commit c = new Store.Commit.from_uuid(store, commit.uuid);
 			c.unserialize();
-			stdout.printf("author:%s\n", c.author);
+
+			assert( c.author == "John Carr <john.carr@unrouted.co.uk>" );
+			assert( c.committer == "John Carr <john.carr@unrouted.co.uk>" );
+			assert( c.message == "Foo bar foo bar" );
 		}
 
 		static int main(string[] args) {
 			Test test = new Test();
-			test.test_git_reader();
+			test.test_store();
 			return 0;
 		}
 	}

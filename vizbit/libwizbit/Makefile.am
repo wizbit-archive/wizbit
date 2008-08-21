@@ -8,7 +8,7 @@ INCLUDES= \
 BUILT_SOURCES = libwizbit.vala.stamp
 
 libwizbit_la_VALASOURCES = \
-	stores/git.vala \
+	store.vala \
 	object.vala \
 	version.vala \
 	reader.vala \
