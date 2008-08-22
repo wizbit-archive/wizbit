@@ -172,6 +172,7 @@ namespace Store {
 			mark = pos = pos+1;
 
 			while (matches(&bufptr[pos], "parent ")) {
+				mark = pos = pos + 7;
 				while (bufptr[pos] != '\n' && pos < size)
 					pos ++;
 				
