@@ -1,9 +1,9 @@
 using GLib;
-using Store;
+using Graph;
 
 namespace Wiz {
 	public class Version : GLib.Object {
-		public Store.Store store { get; construct; }
+		public Graph.Store store { get; construct; }
 		public string version_uuid { get; construct; }
 
 		public string author {
@@ -23,25 +23,25 @@ namespace Wiz {
 				if (this.commit.parents.length() == 0)
 					return (Version)null;
 
-				Store.Commit c = this.commit.parents.nth_data(0);
+				Graph.Commit c = this.commit.parents.nth_data(0);
 				if (!c.parsed)
 					c.unserialize();
 				return new Version(this.store, c.uuid);
 			}
 		}
 
-		protected Store.Commit commit;
-		private Store.Blob blob;
+		protected Graph.Commit commit;
+		private Graph.Blob blob;
 
 		private MappedFile file;
 
-		public Version(Store.Store store, string version_uuid) {
+		public Version(Graph.Store store, string version_uuid) {
 			this.store = store;
 			this.version_uuid = version_uuid;
 		}
 
 		construct {
-			this.commit = new Store.Commit.from_uuid(store, this.version_uuid);
+			this.commit = new Graph.Commit.from_uuid(store, this.version_uuid);
 			this.commit.unserialize();
 		}
 

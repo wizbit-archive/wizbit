@@ -9,7 +9,7 @@ using GLib;
  *
  */
 
-namespace Store {
+namespace Graph {
 
 	public class Store : GLib.Object {
 		/* The store just provides a way to read or write from the store.

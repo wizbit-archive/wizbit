@@ -1,6 +1,6 @@
 using GLib;
 using Wiz;
-using Store;
+using Graph;
 
 namespace Wiz {
 	class Test : GLib.Object {
@@ -26,17 +26,17 @@ namespace Wiz {
 		}
 
 		public void test_store() {
-			Store.Store store = new Store.Store("tests/data");
+			Graph.Store store = new Graph.Store("tests/data");
 
-			Store.Blob blob = new Store.Blob(store);
+			Graph.Blob blob = new Graph.Blob(store);
 			blob.set_contents_from_file("/tmp/foo");
 			blob.write();
 			
 			stdout.printf("blob: %s\n", blob.uuid);
 
-			Store.Commit commit = new Store.Commit(store);
+			Graph.Commit commit = new Graph.Commit(store);
 			commit.blob = blob;
-			commit.parents.append( new Store.Commit.from_uuid(store, "some random uuid") );
+			commit.parents.append( new Graph.Commit.from_uuid(store, "some random uuid") );
 			commit.author = "John Carr <john.carr@unrouted.co.uk>";
 			commit.committer = "John Carr <john.carr@unrouted.co.uk>";
 			commit.message = "Foo bar foo bar";
@@ -45,7 +45,7 @@ namespace Wiz {
 			stdout.printf("commit: %s\n", commit.uuid);
 
 			/* OK, lets try and read 'stuff' back. */
-			Store.Commit c = new Store.Commit.from_uuid(store, commit.uuid);
+			Graph.Commit c = new Graph.Commit.from_uuid(store, commit.uuid);
 			c.unserialize();
 
 			assert( c.author == "John Carr <john.carr@unrouted.co.uk>" );

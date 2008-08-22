@@ -1,5 +1,5 @@
 using GLib;
-using Store;
+using Graph;
 
 namespace Wiz {
 	public class Object : GLib.Object {
@@ -8,7 +8,7 @@ namespace Wiz {
 		private string refs_path;
 		private string objects_path;
 		private string wc_path;
-		private Store.Store store;
+		private Graph.Store store;
 
 		public string uuid { get; construct; }
 
@@ -32,7 +32,7 @@ namespace Wiz {
 			this.objects_path = "%s/objects".printf(this.store_path);
 			this.wc_path = "%s/wc".printf(this.store_path);
 
-			this.store = new Store.Store(this.objects_path);
+			this.store = new Graph.Store(this.objects_path);
 
 			assert( this.uuid.len() > 0 );
 
@@ -95,11 +95,11 @@ namespace Wiz {
 		}
 
 		public Version create_next_version_from_string(string data, Version ?parent) {
-			Store.Blob blob = new Store.Blob(this.store);
+			Graph.Blob blob = new Graph.Blob(this.store);
 			blob.set_contents((void *)data, data.len());
 			blob.write();
 
-			Store.Commit commit = new Store.Commit(this.store);
+			Graph.Commit commit = new Graph.Commit(this.store);
 			commit.blob = blob;
 			if (parent != null)
 				commit.parents.append( parent.commit );
