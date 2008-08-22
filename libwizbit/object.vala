@@ -48,7 +48,7 @@ namespace Wiz {
 			 * Sod that for a pack of bourbonds, I want it to work already
 			 */
 
-			StringBuilder builder;
+			StringBuilder builder = new StringBuilder();
 
 			builder.append(this._primary_tip.version_uuid);
 			builder.append("\n");
@@ -108,7 +108,12 @@ namespace Wiz {
 			commit.message = "I don't like Mondays";
 			commit.write();
 
-			return new Version(this.store, commit.uuid);
+			Version new_version = new Version(this.store, commit.uuid);
+
+			this._primary_tip = new_version;
+			this.write_tips();
+
+			return new_version;
 		}
 	}
 }

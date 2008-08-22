@@ -36,6 +36,7 @@ namespace Wiz {
 
 		construct {
 			this.commit = new Store.Commit.from_uuid(store, this.version_uuid);
+			this.commit.unserialize();
 		}
 
 		public GLib.InputStream read() {
