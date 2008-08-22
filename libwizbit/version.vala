@@ -20,7 +20,7 @@ namespace Wiz {
 
 		public Version #previous {
 			get {
-				return new Version(this.store, this.commit.uuid);
+				return new Version(this.store, this.commit.parents.nth_data(0).uuid);
 			}
 		}
 
