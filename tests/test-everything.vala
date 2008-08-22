@@ -73,6 +73,10 @@ namespace Wiz {
 			assert( v1.previous == null);
 		}
 
+		public void test_wizbit_4() {
+			var store = new Wiz.Store("repo_uuid", "tests/data/wiz_4");
+		}
+
 		static int main(string[] args) {
 			Test test = new Test();
 			test.test_store();

@@ -1,7 +1,7 @@
 using GLib;
 
 namespace Wiz {
-	class Store : GLib.Object {
+	public class Store : GLib.Object {
 		public string uuid { get; construct; }
 		public string directory { get; construct; }
 
