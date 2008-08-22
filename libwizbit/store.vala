@@ -34,10 +34,9 @@ namespace Store {
 			return folder + "/" + uuid.substring(3,40);
 		}
 
-		public bool read(string uuid, out MappedFile obj) {
+		public MappedFile read(string uuid) {
 			string path = this.get_path_for_uuid(uuid);
-			obj = new MappedFile(path, false);
-			return true;
+			return new MappedFile(path, false);
 		}
 
 		public string write(Object obj) {
@@ -93,9 +92,7 @@ namespace Store {
 		private long size;
 
 		public MappedFile read() {
-			MappedFile obj;
-			this.store.read(this.uuid, out obj);
-			return obj;
+			return this.store.read(this.uuid);
 		}
 
 		/* Duplicated because vala won't use the ones in Object yet */
@@ -157,7 +154,8 @@ namespace Store {
 			long mark;
 			long pos;
 
-			if (!this.store.read(this.uuid, out obj))
+			obj = this.store.read(this.uuid);
+			if (obj == null)
 				return;
 
 			bufptr = obj.get_contents();
