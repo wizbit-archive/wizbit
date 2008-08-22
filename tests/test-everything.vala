@@ -57,19 +57,20 @@ namespace Wiz {
 			Wiz.Object obj = new Wiz.Object("SOMENAME");
 
 			Wiz.Version v1 = obj.create_next_version_from_string("FOOBAR", null);
-			assert( v1.author != null );
-			assert (v1.previous != null );
-
 			Wiz.Version v2 = obj.create_next_version_from_string("BARFOO", v1);
-			assert( v2.author != null );
-			assert( v2.previous == null );
 		}
 
 		public void test_wizbit_3() {
 			Wiz.Object obj = new Wiz.Object("SOMENAME");
-
+			
 			Wiz.Version v2 = obj.primary_tip;
+			assert( v2 != null );
+			assert( v2.author != null );
+			assert( v2.previous != null );
+
 			Wiz.Version v1 = v2.previous;
+			assert( v1.author != null);
+			assert( v1.previous == null);
 		}
 
 		static int main(string[] args) {
