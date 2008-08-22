@@ -23,7 +23,7 @@ namespace Wiz {
 				if (this.commit.parents.length() == 0)
 					return (Version)null;
 
-				Graph.Commit c = this.commit.parents.nth_data(0);
+				var c = this.commit.parents.nth_data(0);
 				if (!c.parsed)
 					c.unserialize();
 				return new Version(this.store, c.uuid);

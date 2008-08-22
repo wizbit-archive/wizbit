@@ -26,15 +26,15 @@ namespace Wiz {
 		}
 
 		public void test_store() {
-			Graph.Store store = new Graph.Store("tests/data");
+			var store = new Graph.Store("tests/data");
 
-			Graph.Blob blob = new Graph.Blob(store);
+			var blob = new Graph.Blob(store);
 			blob.set_contents_from_file("/tmp/foo");
 			blob.write();
 			
 			stdout.printf("blob: %s\n", blob.uuid);
 
-			Graph.Commit commit = new Graph.Commit(store);
+			var commit = new Graph.Commit(store);
 			commit.blob = blob;
 			commit.parents.append( new Graph.Commit.from_uuid(store, "some random uuid") );
 			commit.author = "John Carr <john.carr@unrouted.co.uk>";
@@ -45,7 +45,7 @@ namespace Wiz {
 			stdout.printf("commit: %s\n", commit.uuid);
 
 			/* OK, lets try and read 'stuff' back. */
-			Graph.Commit c = new Graph.Commit.from_uuid(store, commit.uuid);
+			var c = new Graph.Commit.from_uuid(store, commit.uuid);
 			c.unserialize();
 
 			assert( c.author == "John Carr <john.carr@unrouted.co.uk>" );
@@ -54,21 +54,21 @@ namespace Wiz {
 		}
 
 		public void test_wizbit_2() {
-			Wiz.Object obj = new Wiz.Object("SOMENAME");
+			var obj = new Wiz.Object("SOMENAME");
 
-			Wiz.Version v1 = obj.create_next_version_from_string("FOOBAR", null);
-			Wiz.Version v2 = obj.create_next_version_from_string("BARFOO", v1);
+			var v1 = obj.create_next_version_from_string("FOOBAR", null);
+			var v2 = obj.create_next_version_from_string("BARFOO", v1);
 		}
 
 		public void test_wizbit_3() {
-			Wiz.Object obj = new Wiz.Object("SOMENAME");
+			var obj = new Wiz.Object("SOMENAME");
 			
-			Wiz.Version v2 = obj.primary_tip;
+			var v2 = obj.primary_tip;
 			assert( v2 != null );
 			assert( v2.author != null );
 			assert( v2.previous != null );
 
-			Wiz.Version v1 = v2.previous;
+			var v1 = v2.previous;
 			assert( v1.author != null);
 			assert( v1.previous == null);
 		}
@@ -78,7 +78,7 @@ namespace Wiz {
 		}
 
 		static int main(string[] args) {
-			Test test = new Test();
+			var test = new Test();
 			test.test_store();
 			test.test_wizbit_2();
 			test.test_wizbit_3();

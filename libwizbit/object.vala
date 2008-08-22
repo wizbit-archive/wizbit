@@ -48,12 +48,12 @@ namespace Wiz {
 			 * Sod that for a pack of bourbonds, I want it to work already
 			 */
 
-			StringBuilder builder = new StringBuilder();
+			var builder = new StringBuilder();
 
 			builder.append(this._primary_tip.version_uuid);
 			builder.append("\n");
 
-			foreach (Version v in this._tips) {
+			foreach (var v in this._tips) {
 				if (v != this._primary_tip) {
 					builder.append(v.version_uuid);
 					builder.append("\n");
@@ -95,11 +95,11 @@ namespace Wiz {
 		}
 
 		public Version create_next_version_from_string(string data, Version ?parent) {
-			Graph.Blob blob = new Graph.Blob(this.store);
+			var blob = new Graph.Blob(this.store);
 			blob.set_contents((void *)data, data.len());
 			blob.write();
 
-			Graph.Commit commit = new Graph.Commit(this.store);
+			var commit = new Graph.Commit(this.store);
 			commit.blob = blob;
 			if (parent != null)
 				commit.parents.append( parent.commit );
@@ -108,7 +108,7 @@ namespace Wiz {
 			commit.message = "I don't like Mondays";
 			commit.write();
 
-			Version new_version = new Version(this.store, commit.uuid);
+			var new_version = new Version(this.store, commit.uuid);
 
 			this._primary_tip = new_version;
 			this.write_tips();
