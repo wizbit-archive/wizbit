@@ -77,6 +77,10 @@ namespace Wiz {
 			var store = new Wiz.Store("repo_uuid", "tests/data/wiz_4");
 			var obj = store.create_object();
 			assert( obj != null );
+
+			var same_obj = store.open_object(obj.uuid);
+			assert( same_obj != null );
+			assert( obj.uuid == same_obj.uuid );
 		}
 
 		static int main(string[] args) {

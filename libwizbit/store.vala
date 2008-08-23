@@ -19,5 +19,9 @@ namespace Wiz {
 		public Object create_object() {
 			return new Object("some_uuid_i_need_to_generate");
 		}
+
+		public Object open_object(string uuid) {
+			return new Object(uuid);
+		}
 	}
 }
