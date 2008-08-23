@@ -75,6 +75,8 @@ namespace Wiz {
 
 		public void test_wizbit_4() {
 			var store = new Wiz.Store("repo_uuid", "tests/data/wiz_4");
+			var obj = store.create_object();
+			assert( obj != null );
 		}
 
 		static int main(string[] args) {
