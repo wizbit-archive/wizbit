@@ -25,14 +25,14 @@ namespace Wiz {
 			*/
 		}
 
-		public void test_store() {
+		public void test_graph() {
 			var store = new Graph.Store("tests/data");
 
 			var blob = new Graph.Blob(store);
 			blob.set_contents_from_file("/tmp/foo");
 			blob.write();
-			
-			stdout.printf("blob: %s\n", blob.uuid);
+		
+			assert( blob.uuid.len() == 40 );
 
 			var commit = new Graph.Commit(store);
 			commit.blob = blob;
@@ -42,7 +42,7 @@ namespace Wiz {
 			commit.message = "Foo bar foo bar";
 			commit.write();
 
-			stdout.printf("commit: %s\n", commit.uuid);
+			assert( commit.uuid.len() == 40 );
 
 			/* OK, lets try and read 'stuff' back. */
 			var c = new Graph.Commit.from_uuid(store, commit.uuid);
@@ -81,7 +81,7 @@ namespace Wiz {
 
 		static int main(string[] args) {
 			var test = new Test();
-			test.test_store();
+			test.test_graph();
 			test.test_wizbit_2();
 			test.test_wizbit_3();
 			return 0;
