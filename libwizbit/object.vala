@@ -27,10 +27,10 @@ namespace Wiz {
 		}
 
 		construct {
-			this.store_path = "%s/.wizbit".printf(Environment.get_home_dir());
-			this.refs_path = "%s/refs".printf(this.store_path);
-			this.objects_path = "%s/objects".printf(this.store_path);
-			this.wc_path = "%s/wc".printf(this.store_path);
+			this.store_path = Path.build_filename(Environment.get_home_dir(), ".wizbit");
+			this.refs_path = Path.build_filename(this.store_path, "refs");
+			this.objects_path = Path.build_filename(this.store_path, "objects");
+			this.wc_path = Path.build_filename(this.store_path, "wc");
 
 			this.store = new Graph.Store(this.objects_path);
 
@@ -54,13 +54,15 @@ namespace Wiz {
 			builder.append("\n");
 
 			foreach (var v in this._tips) {
-				if (v != this._primary_tip) {
+				stdout.printf("%s\n", v.version_uuid);
+				if (v.version_uuid != this._primary_tip.version_uuid) {
 					builder.append(v.version_uuid);
 					builder.append("\n");
 				}
 			}
+			stdout.printf("\n");
 
-			FileUtils.set_contents(this.refs_path + "/" + this.uuid, builder.str, builder.str.len());
+			FileUtils.set_contents(Path.build_filename(this.refs_path, this.uuid), builder.str, builder.str.len());
 		}
 
 		private void read_tips() {
@@ -71,7 +73,13 @@ namespace Wiz {
 			string contents;
 			long size, mark, pos;
 			Version v;
-			FileUtils.get_contents(this.refs_path + "/" + this.uuid, out contents, out size);
+
+			string refs_path = Path.build_filename(this.refs_path, this.uuid);
+
+			if (!FileUtils.test(refs_path, FileTest.EXISTS))
+				return;
+
+			FileUtils.get_contents(refs_path, out contents, out size);
 
 			mark = pos = 0;
 			while (contents[pos] != '\n' && pos < size)

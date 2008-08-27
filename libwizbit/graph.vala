@@ -29,9 +29,9 @@ namespace Graph {
 		}
 
 		private string get_path_for_uuid(string uuid) {
-			string folder = this.directory + "/" + uuid.substring(0,2);
-			DirUtils.create_with_parents(folder,0755);
-			return folder + "/" + uuid.substring(2,40);
+			string folder = Path.build_filename(this.directory, uuid.substring(0,2));
+			DirUtils.create_with_parents(folder, 0755);
+			return Path.build_filename(folder, uuid.substring(2,40));
 		}
 
 		public MappedFile read(string uuid) {

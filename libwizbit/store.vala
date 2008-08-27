@@ -12,7 +12,7 @@ namespace Wiz {
 		
 		construct {
 			if (this.directory == null) {
-				this.directory = "~/.wizbit/";
+				this.directory = Path.build_filename(Environment.get_home_dir(), ".wizbit");
 			}
 		}
 

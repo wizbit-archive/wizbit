@@ -49,5 +49,10 @@ namespace Wiz {
 			this.file = this.commit.blob.read();
 			return new MemoryInputStream.from_data(file.get_contents(), file.get_length(), null);
 		}
+
+		public string read_as_string() {
+			this.file = this.commit.blob.read();
+			return ((string)file.get_contents()).substring(0, file.get_length());
+		}
 	}
 }

@@ -57,7 +57,7 @@ namespace Wiz {
 			var obj = new Wiz.Object("SOMENAME");
 
 			var v1 = obj.create_next_version_from_string("FOOBAR", null);
-			var v2 = obj.create_next_version_from_string("BARFOO", v1);
+			var v2 = obj.create_next_version_from_string("BARFOO", obj.primary_tip);
 		}
 
 		public void test_wizbit_3() {
