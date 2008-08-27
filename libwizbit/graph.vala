@@ -164,7 +164,7 @@ namespace Graph {
 			if (!matches(bufptr, "blob "))
 				return;
 
-			mark = pos = 6;
+			mark = pos = 5;
 			while (bufptr[pos] != '\n' && pos < size)
 				pos ++;
 

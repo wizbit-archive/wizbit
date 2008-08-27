@@ -48,6 +48,7 @@ namespace Wiz {
 			var c = new Graph.Commit.from_uuid(store, commit.uuid);
 			c.unserialize();
 
+			assert( c.blob.uuid == blob.uuid );
 			assert( c.author == "John Carr <john.carr@unrouted.co.uk>" );
 			assert( c.committer == "John Carr <john.carr@unrouted.co.uk>" );
 			assert( c.message == "Foo bar foo bar" );
@@ -67,10 +68,12 @@ namespace Wiz {
 			assert( v2 != null );
 			assert( v2.author != null );
 			assert( v2.previous != null );
+			assert( v2.read_as_string() == "BARFOO" );
 
 			var v1 = v2.previous;
 			assert( v1.author != null);
 			assert( v1.previous == null);
+			assert( v1. read_as_string() == "FOOBAR" );
 		}
 
 		public void test_wizbit_4() {
