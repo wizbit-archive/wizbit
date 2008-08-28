@@ -86,11 +86,30 @@ namespace Wiz {
 			assert( obj.uuid == same_obj.uuid );
 		}
 
+		public void test_refs_1() {
+			var obj = new Wiz.Object("REFSTEST");
+			obj.create_next_version_from_string("BARFOO", obj.primary_tip);
+			obj.create_next_version_from_string("FOOBAR", obj.primary_tip);
+			assert( obj.tips.length() == 1 );
+		}
+
+		public void test_refs_2() {
+			var obj = new Wiz.Object("REFSTEST2");
+			obj.create_next_version_from_string("BARFOO", obj.primary_tip);
+			obj.create_next_version_from_string("FOOBAR", obj.primary_tip);
+
+			var obj_2 = new Wiz.Object("REFSTEST2");
+			assert( obj.tips.length() == 1 );
+		}
+
 		static int main(string[] args) {
 			var test = new Test();
 			test.test_graph();
 			test.test_wizbit_2();
 			test.test_wizbit_3();
+			test.test_wizbit_4();
+			test.test_refs_1();
+			test.test_refs_2();
 			return 0;
 		}
 	}
