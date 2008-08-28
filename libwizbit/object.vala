@@ -118,6 +118,13 @@ namespace Wiz {
 
 			var new_version = new Version(this.store, commit.uuid);
 
+			foreach (var v in this._tips) {
+				if (v.version_uuid == this._primary_tip.version_uuid) {
+					this._tips.remove(v);
+					break;
+				}
+			}
+			this._tips.append(new_version);
 			this._primary_tip = new_version;
 			this.write_tips();
 
