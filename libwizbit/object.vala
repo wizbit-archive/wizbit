@@ -92,8 +92,8 @@ namespace Wiz {
 
 				while (contents[pos] != '\n' && pos < size)
 					pos ++;
-
-				this._tips.append(new Version(this.store, contents.substring(mark, pos-mark)));
+				if ((pos-mark) > 0)
+					this._tips.append(new Version(this.store, contents.substring(mark, pos-mark)));
 			}
 				
 		}
