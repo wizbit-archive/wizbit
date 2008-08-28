@@ -54,13 +54,11 @@ namespace Wiz {
 			builder.append("\n");
 
 			foreach (var v in this._tips) {
-				stdout.printf("%s\n", v.version_uuid);
 				if (v.version_uuid != this._primary_tip.version_uuid) {
 					builder.append(v.version_uuid);
 					builder.append("\n");
 				}
 			}
-			stdout.printf("\n");
 
 			FileUtils.set_contents(Path.build_filename(this.refs_path, this.uuid), builder.str, builder.str.len());
 		}
