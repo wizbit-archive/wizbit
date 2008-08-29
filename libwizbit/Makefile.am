@@ -10,7 +10,7 @@ BUILT_SOURCES = libwizbit.vala.stamp
 libwizbit_la_VALASOURCES = \
 	graph.vala \
 	store.vala \
-	object.vala \
+	bit.vala \
 	version.vala \
 	reader.vala \
 	writer.vala \
