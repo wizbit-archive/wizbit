@@ -2,7 +2,7 @@ using GLib;
 using Graph;
 
 namespace Wiz {
-	public class Object : GLib.Object {
+	public class Bit : GLib.Object {
 
 		private string store_path;
 		private string refs_path;
@@ -39,7 +39,7 @@ namespace Wiz {
 			this.read_tips();
 		}
 
-		public Object(string uuid) {
+		public Bit(string uuid) {
 			this.uuid = uuid;
 		}
 

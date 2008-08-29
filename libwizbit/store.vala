@@ -16,12 +16,12 @@ namespace Wiz {
 			}
 		}
 
-		public Object create_object() {
-			return new Object("some_uuid_i_need_to_generate");
+		public Bit create_bit() {
+			return new Bit("some_uuid_i_need_to_generate");
 		}
 
-		public Object open_object(string uuid) {
-			return new Object(uuid);
+		public Bit open_bit(string uuid) {
+			return new Bit(uuid);
 		}
 	}
 }
