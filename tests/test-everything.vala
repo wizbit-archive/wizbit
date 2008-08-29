@@ -9,7 +9,7 @@ namespace Wiz {
 			GLib.Cancellable c;
 			OutputStream stream;
 
-			Object obj = new Object();
+			Object obj = new Bit();
 
 			stream = obj.create_next_version();
 			stream.write("test", 4, c);
@@ -55,14 +55,14 @@ namespace Wiz {
 		}
 
 		public void test_wizbit_2() {
-			var obj = new Wiz.Object("SOMENAME");
+			var obj = new Wiz.Bit("SOMENAME");
 
 			var v1 = obj.create_next_version_from_string("FOOBAR", null);
 			var v2 = obj.create_next_version_from_string("BARFOO", obj.primary_tip);
 		}
 
 		public void test_wizbit_3() {
-			var obj = new Wiz.Object("SOMENAME");
+			var obj = new Wiz.Bit("SOMENAME");
 			
 			var v2 = obj.primary_tip;
 			assert( v2 != null );
@@ -78,27 +78,27 @@ namespace Wiz {
 
 		public void test_wizbit_4() {
 			var store = new Wiz.Store("repo_uuid", "tests/data/wiz_4");
-			var obj = store.create_object();
+			var obj = store.create_bit();
 			assert( obj != null );
 
-			var same_obj = store.open_object(obj.uuid);
+			var same_obj = store.open_bit(obj.uuid);
 			assert( same_obj != null );
 			assert( obj.uuid == same_obj.uuid );
 		}
 
 		public void test_refs_1() {
-			var obj = new Wiz.Object("REFSTEST");
+			var obj = new Wiz.Bit("REFSTEST");
 			obj.create_next_version_from_string("BARFOO", obj.primary_tip);
 			obj.create_next_version_from_string("FOOBAR", obj.primary_tip);
 			assert( obj.tips.length() == 1 );
 		}
 
 		public void test_refs_2() {
-			var obj = new Wiz.Object("REFSTEST2");
+			var obj = new Wiz.Bit("REFSTEST2");
 			obj.create_next_version_from_string("BARFOO", obj.primary_tip);
 			obj.create_next_version_from_string("FOOBAR", obj.primary_tip);
 
-			var obj_2 = new Wiz.Object("REFSTEST2");
+			var obj_2 = new Wiz.Bit("REFSTEST2");
 			assert( obj.tips.length() == 1 );
 		}
 
