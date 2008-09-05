@@ -3,6 +3,9 @@ using Graph;
 
 namespace Wiz {
 	public class Version : GLib.Object {
+		/* A Version is a pair of Graph objects, one representing the commit
+		 * the other representing the blob
+		 */
 		public Graph.Store store { get; construct; }
 		public string version_uuid { get; construct; }
 
