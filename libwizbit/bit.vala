@@ -3,13 +3,16 @@ using Graph;
 
 namespace Wiz {
 	public class Bit : GLib.Object {
-
-		private string store_path;
+		/* A bit is a collection of tips, a tip being a Version object
+		 * which represents the tip of a series of commits, this is almost 
+		 * identical to a reference in git.
+		 */
 		private string refs_path;
 		private string objects_path;
 		private string wc_path;
 		private Graph.Store store;
 
+		public string store_path { get; construct; }
 		public string uuid { get; construct; }
 
 		private Version _primary_tip;
@@ -27,10 +30,22 @@ namespace Wiz {
 		}
 
 		construct {
-			this.store_path = Path.build_filename(Environment.get_home_dir(), ".wizbit");
+			/* This shouldn't be here */
+			if (this.store_path == null) 
+				this.store_path = Path.build_filename(Environment.get_home_dir(), ".wizbit");
+
 			this.refs_path = Path.build_filename(this.store_path, "refs");
 			this.objects_path = Path.build_filename(this.store_path, "objects");
 			this.wc_path = Path.build_filename(this.store_path, "wc");
+
+			if (!FileUtils.test(this.store_path, FileTest.IS_DIR))
+				DirUtils.create_with_parents(this.store_path, 0755);
+			if (!FileUtils.test(this.refs_path, FileTest.IS_DIR))
+				DirUtils.create_with_parents(this.refs_path, 0755);
+			if (!FileUtils.test(this.objects_path, FileTest.IS_DIR))
+				DirUtils.create_with_parents(this.objects_path, 0755);
+			if (!FileUtils.test(this.wc_path, FileTest.IS_DIR))
+				DirUtils.create_with_parents(this.wc_path, 0755);
 
 			this.store = new Graph.Store(this.objects_path);
 
@@ -39,8 +54,9 @@ namespace Wiz {
 			this.read_tips();
 		}
 
-		public Bit(string uuid) {
+		public Bit(string uuid, string? store_path) {
 			this.uuid = uuid;
+			this.store_path = store_path;
 		}
 
 		private void write_tips() {

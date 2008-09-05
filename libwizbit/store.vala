@@ -5,7 +5,7 @@ namespace Wiz {
 		public string uuid { get; construct; }
 		public string directory { get; construct; }
 
-		public Store(string uuid, string directory) {
+		public Store(string uuid, string? directory) {
 			this.uuid = uuid;
 			this.directory = directory;
 		}
@@ -17,11 +17,11 @@ namespace Wiz {
 		}
 
 		public Bit create_bit() {
-			return new Bit("some_uuid_i_need_to_generate");
+			return new Bit("some_uuid_i_need_to_generate", this.directory);
 		}
 
 		public Bit open_bit(string uuid) {
-			return new Bit(uuid);
+			return new Bit(uuid, this.directory);
 		}
 	}
 }
