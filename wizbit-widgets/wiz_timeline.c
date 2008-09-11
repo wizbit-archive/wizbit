@@ -1,6 +1,7 @@
 /*
- * Gnome system monitor colour pickers
- * Copyright (C) 2007 Karl Lattimer <karl@qdh.org.uk>
+ * Wizbit Timeline Viewer
+ * Copyright (C) 2008 Codethink LTD
+ * Author: Karl Lattimer <karl@qdh.org.uk>
  * All rights reserved.
  *
  * This Library is free software; you can redistribute it and/or
