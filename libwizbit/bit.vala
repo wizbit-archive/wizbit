@@ -116,7 +116,7 @@ namespace Wiz {
 			return new OutputStream();
 		}
 
-		public Version create_next_version_from_string(string data, Version ?parent) {
+		public Version create_next_version_from_string(string data, Version ?parent = null) {
 			var blob = new Graph.Blob(this.store);
 			blob.set_contents((void *)data, data.len());
 			blob.write();
