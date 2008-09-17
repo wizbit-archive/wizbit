@@ -5,7 +5,7 @@ namespace Wiz {
 		public string uuid { get; construct; }
 		public string directory { get; construct; }
 
-		public Store(string uuid, string? directory) {
+		public Store(string uuid, string? directory = null) {
 			this.uuid = uuid;
 			this.directory = directory;
 		}
