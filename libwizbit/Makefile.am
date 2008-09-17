@@ -14,6 +14,8 @@ libwizbit_la_VALASOURCES = \
 	version.vala \
 	reader.vala \
 	writer.vala \
+	uuid.vapi \
+	utils.vala \
 	$(NULL)
 
 libwizbit_la_SOURCES = \
