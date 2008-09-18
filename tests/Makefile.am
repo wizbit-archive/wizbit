@@ -27,3 +27,7 @@ test_everything.vala.stamp: $(test_everything_VALASOURCES)
 
 test_everything_CFLAGS=@WIZBIT_CFLAGS@
 test_everything_LDADD=../libwizbit/libwizbit.la @WIZBIT_LIBS@
+
+EXTRA_DIST += \
+	$(test_everything_VALASOURCES) \
+	test_everything.vala.stamp
