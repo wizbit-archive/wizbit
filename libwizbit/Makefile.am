@@ -31,6 +31,6 @@ libwizbit_la_CFLAGS=@WIZBIT_CFLAGS@
 libwizbit_la_LIBS=@WIZBIT_LIBS@
 
 EXTRA_DIST = \
-	libwizbit_la_VALASOURCES \
+	$(libwizbit_la_VALASOURCES) \
 	libwizbit.vala.stamp \
 	$(NULL)
