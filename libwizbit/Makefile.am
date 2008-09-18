@@ -2,7 +2,7 @@ lib_LTLIBRARIES=libwizbit.la
 
 INCLUDES= \
 	$(GLIB_CFLAGS) \
-	$(LIBGITCORE_CFLAGS) \
+	-I$(top_srcdir) \
 	$(NULL)
 
 BUILT_SOURCES = libwizbit.vala.stamp
