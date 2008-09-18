@@ -1,7 +1,13 @@
-INCLUDES=-I$(top_srcdir) $(LIBGITCORE_CFLAGS) -DTESTDATADIR=\"$(srcdir)/data/\"
-TEST_BINARIES = test-everything
+include $(top_srcdir)/Makefile.decl
 
-noinst_PROGRAMS = test-everything
+INCLUDES = \
+	-I$(top_srcdir) \
+	$(LIBGITCORE_CFLAGS) \
+	-DTESTDATADIR=\"$(srcdir)/data/\"
+
+TEST_PROGS = test-everything
+
+noinst_PROGRAMS = $(TEST_PROGS)
 
 BUILT_SOURCES = test_everything.vala.stamp
 
