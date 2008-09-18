@@ -1,3 +1,5 @@
+include $(top_srcdir)/Makefile.decl
+
 lib_LTLIBRARIES=libwizbit.la
 
 INCLUDES= \
