@@ -132,8 +132,12 @@ namespace Wiz {
 
 			var new_version = new Version(this.store, commit.uuid);
 
+			// Remove the tip if we're replacing the current primary tip, if
+			// we're creating a new branch, we retain the current primary tip
+			// but assign a new primary tip
 			foreach (var v in this._tips) {
-				if (v.version_uuid == this._primary_tip.version_uuid) {
+				if ((parent.version_uuid == this._primary_tip.version_uuid) &&
+				    (v.version_uuid == this._primary_tip.version_uuid)) {
 					this._tips.remove(v);
 					break;
 				}
