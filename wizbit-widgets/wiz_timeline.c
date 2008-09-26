@@ -37,54 +37,65 @@
 
 #define WIZ_TIMELINE_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), WIZ_TYPE_TIMELINE, WizTimelinePrivate))
 
-struct _WizTimelineDag
-{
-    gpointer *parents[];
-    gint no_of_parents;
+typedef struct _WizTimelineNode WizTimelineNode;
+typedef struct _WizTimelineEdge WizTimelineEdge;
 
-    gdouble size;
-    gchar *version_uuid;
-
-    /* These x/y co-ordinates refer to positions relative to the size
-     * of the whole rendered DAG, rather than the portion of the DAG
-     * displayed on screen
-     */
-    guint x;
-    guint y;
-    guint timestamp;
-
-    gpointer *children[];
-    gint no_of_children;
+struct _WizTimelineEdge {
+  Edge *next;
+  Edge *prev;
+  Node *nodes[2];
 };
 
+struct _WizTimelineNode
+{
+	gint tip_id;
+
+  gdouble size;
+  gchar *version_uuid;
+
+  /* These x/y co-ordinates refer to positions relative to the size
+   * of the whole rendered DAG, rather than the portion of the DAG
+   * displayed on screen
+   */
+  guint x;
+  guint y;
+  guint timestamp;
+
+  gint no_of_edges;
+  WizTimelineEdge *edges;
+};
 
 struct _WizTimelinePrivate
 {
-    WizTimelineDag *dag;
-    WizBit *bit;
+	WizTimelineNode *primary_tip;
+	WizTimelineNode *root;
+  WizTimelineNode *last_node;
+  WizBit *bit;
+  gint *seen;
+  gint nodes;
 
-    /* We can turn off editability of this widget, if we're working with 
-     * bits (files etc...) which can't easily be merged.
-     */
-    gboolean mergable;
+  /* We can turn off editability of this widget, if we're working with 
+   * bits (files etc...) which can't easily be merged.
+   */
+  gboolean mergable;
 
-    gchar *bit_uuid;
-    gchar *selected_version_uuid;
+  gchar *bit_uuid;
+  gchar *selected_version_uuid;
 
-    gint width;
-    gint height;
-    gdouble zoom;
+  gint width;
+  gint height;
+  gdouble zoom;
 
-    /* The real position of the mouse relative to the full height of the DAG */
-    gint real_mouse_x;
-    gint real_mouse_y;
+  /* The real position of the mouse relative to the full height of the DAG */
+  gint real_mouse_x;
+  gint real_mouse_y;
 
-    gint x_offset;
-    gint visible_height;
+  gint x_offset;
+  gint visible_height;
 
-    gboolean mouse_down;
-    gchar *drag_version_uuid;
-    gchar *drop_version_uuid;
+  gboolean mouse_down;
+  gchar *drag_version_uuid;
+  gchar *drop_version_uuid;
 };
 
 /* Properties */
@@ -143,7 +154,6 @@ static gboolean wiz_timeline_enter_notify (GtkWidget * widget,
 static gboolean wiz_timeline_leave_notify (GtkWidget * widget,
                                            GdkEventCrossing * event);
 
-
 static guint timeline_signals[LAST_SIGNAL] = { 0 };
 
 static gpointer wiz_timeline_parent_class = NULL;
@@ -152,6 +162,7 @@ static void
 render (GtkWidget * widget)
 {
   WizTimeline *wiz_timeline = WIZ_TIMELINE (widget);
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
   cairo_t *cr = gdk_cairo_create (widget->window);
   gint width, height;
   GError *error = NULL;
@@ -161,6 +172,125 @@ render (GtkWidget * widget)
 
   /* Cleanup */
   cairo_destroy (cr);
+}
+
+void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline) 
+{
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+
+  WizTimelineNode *node = NULL;
+  WizTimelineNode *tmp_node;
+  WizTimelineEdge *edge;
+  WizTimelineEdge *last_edge;
+
+  gint i;
+  gboolean node_exists;
+  gboolean edge_exists;
+
+  do {
+    /* Find out whether or not this node has already been seen, otherwise
+     * create a new node and add it to the seen list
+     */
+    node = NULL;
+    if (priv->seen != NULL) {
+      node_exists = FALSE;
+      for (i = 0; i < priv->nodes; i++) {
+        tmp_node = (WizTimelineNode *)priv->seen[k];
+        // Compare version_uuid's in memory 
+        if (!memcmp(tmp_node->version_uuid, wiz_version_get_version_uuid(wiz_version), 40)) {
+          node = tmp_node;
+          node_exists = TRUE;
+          break;
+        }
+      }
+    }
+
+    if (node == NULL) {
+      node = g_slice_new(WizTimelineNode);
+      // TODO Set up node data
+      // TODO SHOULD COPY NOT REFERENCE
+      node->version_uuid = wiz_version_get_version_uuid(wiz_version);
+      node->edges = NULL;
+
+      if (priv->seen == NULL) {
+        priv->seen = g_slice_new(WizTimelineNode);
+        priv->primary_tip = node;
+      } else {
+        // TODO?seen = realloc(seen, (priv->nodes + 1) * sizeof(int));
+      }
+      priv->seen[priv->nodes] = (int)node;
+      priv->nodes++;
+    }
+    
+    /* Hook up the edges, this include the new edge between this node and
+     * the previous node, and the previous node and this one. Creating an
+     * undirected graph from the directed graph, while we're at it, we avoid
+     * existing edges between the two nodes in question
+     */
+
+    // this nodes new edge      
+    if (priv->last_node != NULL) {
+      new_edge = FALSE;
+      // TODO gslice edge = malloc(sizeof(Edge));
+      edge->nodes[0] = node;
+      edge->nodes[1] = priv->last_node;
+      if (node->edges == NULL) {
+        edge->next = edge;
+        edge->prev = edge;
+        node->edges = edge;
+      } else {
+        edge_exists = FALSE;
+        // Look for existing edge matching this edge
+        for (k = 0; k < node->no_of_edges; k++) {
+          if (node->edges->nodes[1] == last_node) {
+            // TODO free(edge);
+            edge_exists = TRUE;
+            break;
+          }
+          node->edges = node->edges->next;
+        }
+
+        if (edge_exists == FALSE) {
+          tmp_edge = node->edges;
+          edge->prev = tmp_edge->prev;
+          edge->prev->next = edge;
+          tmp_edge->prev = edge;
+          edge->next = tmp_edge;
+        }
+      }
+      node->no_of_edges++;
+
+      // Previous nodes new edge
+      edge = malloc(sizeof(Edge));
+      edge->nodes[0] = priv->last_node;
+      edge->nodes[1] = node;
+      if (priv->last_node->edges == NULL) {
+        edge->next = edge;
+        edge->prev = edge;
+        priv->last_node->edges = edge;
+      } else {
+        edge_exists = FALSE;
+        // Look for existing edge matching this edge
+        for (k = 0; k < node->no_of_edges; k++) {
+          if (priv->last_node->edges->nodes[1] == node) {
+            // TODO free(edge);
+            edge_exists = TRUE;
+            break;
+          }
+          node->edges = node->edges->next;
+        }
+        if (edge_exists == FALSE) {
+          edge->next = priv->last_node->edges->next;
+          edge->prev = priv->last_node->edges;
+          priv->last_node->edges->next = edge;
+          edge->next->prev = edge;
+        }
+      }
+      priv->last_node->no_of_edges++;
+    }
+    priv->last_node = node;
+    wiz_version = wiz_version_get_previous(wiz_version);
+  } while (wiz_version != NULL);
 }
 
 /* Update the widget DAG from the WizStore, this requires retireving the bit
@@ -173,7 +303,12 @@ render (GtkWidget * widget)
 void 
 wiz_timeline_update_from_store (WizTimeline *wiz_timeline) 
 {
- // TODO
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  // free??!?
+  priv->seen = NULL;
+  priv->last_node = NULL;
+  g_list_foreach(wiz_bit_get_tips(priv->bit), iterate_reflog, wiz_timeline);
+  priv->root = priv->last_node;
 }
 
 GType
