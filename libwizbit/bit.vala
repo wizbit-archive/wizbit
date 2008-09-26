@@ -125,16 +125,17 @@ namespace Wiz {
 			commit.blob = blob;
 			if (parent != null)
 				commit.parents.append( parent.commit );
-			commit.author = "John Carr <john.carr@unrouted.co.uk>";
+			// TODO Should get the committer from the env, or contacts :D
 			commit.committer = "John Carr <john.carr@unrouted.co.uk>";
-			commit.message = "I don't like Mondays";
+			commit.timestamp = Time.local (time_t());
 			commit.write();
 
 			var new_version = new Version(this.store, commit.uuid);
 
-			// Remove the tip if we're replacing the current primary tip, if
-			// we're creating a new branch, we retain the current primary tip
-			// but assign a new primary tip
+			/* Remove the tip if we're replacing the current primary tip, if
+			 * we're creating a new branch, we retain the current primary tip
+			 * but assign a new primary tip
+			 */
 			foreach (var v in this._tips) {
 				if ((parent.version_uuid == this._primary_tip.version_uuid) &&
 				    (v.version_uuid == this._primary_tip.version_uuid)) {

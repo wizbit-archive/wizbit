@@ -9,15 +9,17 @@ namespace Wiz {
 		public Graph.Store store { get; construct; }
 		public string version_uuid { get; construct; }
 
-		public string author {
+		public string committer {
 			get {
-				return this.commit.author;
+				return this.commit.commiter;
 			}
 		}
-
-		public string message {
+		// TODO
+		public Time timestamp {
 			get {
-				return this.commit.message;
+				return this.commit.timestamp;
+			} set {
+				timestamp = value;
 			}
 		}
 
