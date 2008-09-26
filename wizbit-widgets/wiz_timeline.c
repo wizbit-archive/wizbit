@@ -230,7 +230,7 @@ iterate_dag (WizTimeline *wiz_timeline, gpointer callback, gpointer data)
 }
 
 static void
-update_nodes(WizTimeline *wiz_timeline, WizTimelineNode *node, gpointer data)
+update_node(WizTimeline *wiz_timeline, WizTimelineNode *node, gpointer data)
 {
   WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
   /* work out the x/y co-ordinates of the dag, to do this we compare the
@@ -258,8 +258,8 @@ render (GtkWidget * widget)
   gint width, height;
   GError *error = NULL;
   gdk_drawable_get_size (widget->window, &width, &height);
-  iterate_dag(wiz_timeline, update_coords, NULL);
-  iterate_dag(wiz_timeline, render, cr);
+  iterate_dag(wiz_timeline, update_node, NULL);
+  iterate_dag(wiz_timeline, render_node, cr);
   cairo_destroy (cr);
 }
 
