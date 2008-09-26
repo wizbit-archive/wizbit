@@ -188,12 +188,12 @@ get_node (WizTimeline *wiz_timeline, gchar *version_uuid) {
     node->edges = NULL;
 
     if (priv->seen == NULL) {
-      priv->seen = g_slice_new(WizTimelineNode);
+      priv->seen = g_slice_new(sizeof(int));
       priv->primary_tip = node;
     } else {
       seen = priv->seen;
       priv->seen = g_slice_copy((priv->nodes + 1) * sizeof(int), seen);
-      g_slice_free(seen);
+      g_slice_free1((priv->nodes) * sizeof(int), seen);
     }
     priv->node = node;
     priv->seen[priv->nodes] = (int)node;
@@ -283,7 +283,7 @@ add_edge(WizTimelineNode *src, WizTimelineNode *dst) {
     // Look for existing edge matching this edge
     for (i = 0; i < src->no_of_edges; i++) {
       if (src->edges->nodes[1] == dst) {
-        g_slice_free(edge);
+        g_slice_free(WizTimelineEdge, edge);
         edge_exists = TRUE;
         break;
       }
@@ -332,7 +332,7 @@ void
 wiz_timeline_update_from_store (WizTimeline *wiz_timeline) 
 {
   WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
-  g_slice_free(priv->seen);
+  g_slice_free1((priv->nodes) * sizeof(int), seen);
   priv->seen = NULL;
   priv->last_node = NULL;
   g_list_foreach(wiz_bit_get_tips(priv->bit), iterate_reflog, wiz_timeline);
