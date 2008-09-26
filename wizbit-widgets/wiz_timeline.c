@@ -168,6 +168,7 @@ get_node (WizTimeline *wiz_timeline, gchar *version_uuid) {
   WizTimelineNode *node;
   priv->node = NULL;
   gint *seen;
+  gint i;
 
   if (priv->seen != NULL) {
     for (i = 0; i < priv->nodes; i++) {
@@ -266,7 +267,6 @@ render (GtkWidget * widget)
 /* Adds an edge to the linked list for edges of src */
 static void 
 add_edge(WizTimelineNode *src, WizTimelineNode *dst) {
-  gboolean new_edge = FALSE;
   WizTimelineEdge *edge = g_slice_new(WizTimelineEdge);
   WizTimelineEdge *tmp_edge;
   gint i;
@@ -281,7 +281,7 @@ add_edge(WizTimelineNode *src, WizTimelineNode *dst) {
   } else {
     edge_exists = FALSE;
     // Look for existing edge matching this edge
-    for (k = 0; k < src->no_of_edges; k++) {
+    for (i = 0; i < src->no_of_edges; i++) {
       if (src->edges->nodes[1] == dst) {
         g_slice_free(edge);
         edge_exists = TRUE;
@@ -305,26 +305,18 @@ void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline)
 {
   WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
 
-  WizTimelineNode *node = NULL;
-  WizTimelineNode *tmp_node;
-
   do {
-    /* Find out whether or not this node has already been seen, otherwise
-     * create a new node and add it to the seen list
-     */
     get_node(wiz_timeline, wiz_version_get_version_uuid(wiz_version));
-    node = priv->node;
-    
     /* Hook up the edges, this include the new edge between this node and
      * the previous node, and the previous node and this one. Creating an
      * undirected graph from the directed graph, while we're at it, we avoid
      * existing edges between the two nodes in question
      */
     if (priv->last_node != NULL) {  
-      add_edge(node, priv->last_node);  
-      add_edge(priv->last_node, node);
+      add_edge(priv->node, priv->last_node);  
+      add_edge(priv->last_node, priv->node);
     }
-    priv->last_node = node;
+    priv->last_node = priv->node;
     wiz_version = wiz_version_get_previous(wiz_version);
   } while (wiz_version != NULL);
 }
@@ -340,7 +332,7 @@ void
 wiz_timeline_update_from_store (WizTimeline *wiz_timeline) 
 {
   WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
-  // free??!?
+  g_slice_free(priv->seen);
   priv->seen = NULL;
   priv->last_node = NULL;
   g_list_foreach(wiz_bit_get_tips(priv->bit), iterate_reflog, wiz_timeline);
