@@ -48,7 +48,7 @@ struct _WizTimelineEdge {
 
 struct _WizTimelineNode
 {
-	gint tip_id;
+  gint tip_id;
 
   gdouble size;
   gchar *version_uuid;
@@ -67,11 +67,12 @@ struct _WizTimelineNode
 
 struct _WizTimelinePrivate
 {
-	WizTimelineNode *primary_tip;
-	WizTimelineNode *root;
+  WizTimelineNode *primary_tip;
+  WizTimelineNode *root;
   WizTimelineNode *last_node;
   WizBit *bit;
   gint *seen;
+  gint *edges;
   gint nodes;
 
   /* We can turn off editability of this widget, if we're working with 
@@ -158,6 +159,46 @@ static guint timeline_signals[LAST_SIGNAL] = { 0 };
 
 static gpointer wiz_timeline_parent_class = NULL;
 
+
+static void
+recurse_nodes (WizTimeline *wiz_timeline, WizTimelineNode *node, gointer callback, gointer data)
+{
+  gint i;
+  for (i = 0; i < node->no_of_edges; i++) {
+    recurse_nodes(wiz_timeline, node->edges->edges[1], callback);
+    node->edge = node->edges->next;
+  }
+  // if not seen
+  callback(wiz_timeline, node, data);
+}
+
+static void
+iterate_dag (WizTimeline *wiz_timeline, gpointer callback, gpointer data)
+{
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  WizTimelineNode *node = priv->root;
+  recurse_nodes(wiz_timeline, node, callback, data);
+}
+static void
+update_nodes(WizTimeline *wiz_timeline, WizTimelineNode *node, gpointer data)
+{
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  /* work out the x/y co-ordinates of the dag, to do this we compare the
+   * timesdtamp of this node and the timestamp of the root version and 
+   * the primary tip then perform a simple set of comparisons with them.
+   */
+  /* we also update the offset from the position of the sliders
+   */
+}
+
+static void
+render_node(WizTimeline *wiz_timeline, WizTimelineNode *node, cairo_t *cr)
+{
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  /* Draw the node where we told it to be drawn
+   */
+}
+
 static void
 render (GtkWidget * widget)
 {
@@ -167,10 +208,8 @@ render (GtkWidget * widget)
   gint width, height;
   GError *error = NULL;
   gdk_drawable_get_size (widget->window, &width, &height);
-
-  /* TODO Drawing code */
-
-  /* Cleanup */
+  iterate_dag(wiz_timeline, update_coords, NULL);
+  iterate_dag(wiz_timeline, render, cr);
   cairo_destroy (cr);
 }
 
@@ -184,6 +223,7 @@ void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline)
   WizTimelineEdge *last_edge;
 
   gint i;
+  gint *seen;
   gboolean node_exists;
   gboolean edge_exists;
 
@@ -207,16 +247,17 @@ void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline)
 
     if (node == NULL) {
       node = g_slice_new(WizTimelineNode);
-      // TODO Set up node data
-      // TODO SHOULD COPY NOT REFERENCE
-      node->version_uuid = wiz_version_get_version_uuid(wiz_version);
+      node->version_uuid = g_strdup (wiz_version_get_version_uuid(wiz_version));
+      node->timestamp = wiz_version_get_timestamp(wiz_version);
       node->edges = NULL;
 
       if (priv->seen == NULL) {
         priv->seen = g_slice_new(WizTimelineNode);
         priv->primary_tip = node;
       } else {
-        // TODO?seen = realloc(seen, (priv->nodes + 1) * sizeof(int));
+        seen = priv->seen;
+        priv->seen = g_slice_copy((priv->nodes + 1) * sizeof(int), seen);
+        g_slice_free(seen);
       }
       priv->seen[priv->nodes] = (int)node;
       priv->nodes++;
@@ -231,7 +272,7 @@ void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline)
     // this nodes new edge      
     if (priv->last_node != NULL) {
       new_edge = FALSE;
-      // TODO gslice edge = malloc(sizeof(Edge));
+      edge = g_slice_new(Edge);
       edge->nodes[0] = node;
       edge->nodes[1] = priv->last_node;
       if (node->edges == NULL) {
@@ -243,7 +284,7 @@ void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline)
         // Look for existing edge matching this edge
         for (k = 0; k < node->no_of_edges; k++) {
           if (node->edges->nodes[1] == last_node) {
-            // TODO free(edge);
+            g_slice_free(edge);
             edge_exists = TRUE;
             break;
           }
@@ -261,7 +302,7 @@ void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline)
       node->no_of_edges++;
 
       // Previous nodes new edge
-      edge = malloc(sizeof(Edge));
+      edge = g_slice_new(Edge);
       edge->nodes[0] = priv->last_node;
       edge->nodes[1] = node;
       if (priv->last_node->edges == NULL) {
@@ -273,7 +314,7 @@ void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline)
         // Look for existing edge matching this edge
         for (k = 0; k < node->no_of_edges; k++) {
           if (priv->last_node->edges->nodes[1] == node) {
-            // TODO free(edge);
+            g_slice_free(edge);
             edge_exists = TRUE;
             break;
           }
@@ -418,7 +459,12 @@ wiz_timeline_finalize (GObject * object)
 {
   WizTimeline *wiz_timeline = WIZ_TIMELINE (object);
   /* TODO Cleanup and destroy anything left over */
-
+  /* Iterate over and deallocate all of the dag, to do this, we iterate over
+   * from the root to the tips deallocating edges first and appending nodes
+   * to the seen list, then we iterate over the seen list and de-allocate it.
+   * this should be made into a function so it's callable as a routing to roll
+   * through to deallocate the dag. iterate_dag ^^
+   */
   G_OBJECT_CLASS (wiz_timeline_parent_class)->finalize (object);
 }
 
