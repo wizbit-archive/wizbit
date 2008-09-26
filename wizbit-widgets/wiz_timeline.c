@@ -70,6 +70,7 @@ struct _WizTimelinePrivate
   WizTimelineNode *primary_tip;
   WizTimelineNode *root;
   WizTimelineNode *last_node;
+  WizTImelineNode *node;
   WizBit *bit;
   gint *seen;
   gint *edges;
@@ -159,7 +160,51 @@ static guint timeline_signals[LAST_SIGNAL] = { 0 };
 
 static gpointer wiz_timeline_parent_class = NULL;
 
+// This little cluster fuck tells us if a node has been seen before and
+// allocates it if it hasn't, then sets priv->node to that node
+static int
+get_node (WizTimeline *wiz_timeline, gchar *version_uuid) {
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  WizTimelineNode *node;
+  priv->node = NULL;
+  gint *seen;
 
+  if (priv->seen != NULL) {
+    for (i = 0; i < priv->nodes; i++) {
+      node = (WizTimelineNode *)priv->seen[k];
+      // Compare version_uuid's in memory 
+      if (!memcmp(node->version_uuid, version_uuid, 40)) {
+        priv->node = tmp_node;
+        return TRUE;
+      }
+    }
+  }
+
+  if (priv->node == NULL) {
+    node = g_slice_new(WizTimelineNode);
+    node->version_uuid = g_strdup (wiz_version_get_version_uuid(wiz_version));
+    node->timestamp = wiz_version_get_timestamp(wiz_version);
+    node->edges = NULL;
+
+    if (priv->seen == NULL) {
+      priv->seen = g_slice_new(WizTimelineNode);
+      priv->primary_tip = node;
+    } else {
+      seen = priv->seen;
+      priv->seen = g_slice_copy((priv->nodes + 1) * sizeof(int), seen);
+      g_slice_free(seen);
+    }
+    priv->node = node;
+    priv->seen[priv->nodes] = (int)node;
+    priv->nodes++;
+  }
+  return FALSE;
+}
+
+
+/* Iterate over the nodes calling callback with timeline, node and data 
+ * if once we've iterated children we still haven't been seen.
+ */
 static void
 recurse_nodes (WizTimeline *wiz_timeline, WizTimelineNode *node, gointer callback, gointer data)
 {
@@ -168,10 +213,14 @@ recurse_nodes (WizTimeline *wiz_timeline, WizTimelineNode *node, gointer callbac
     recurse_nodes(wiz_timeline, node->edges->edges[1], callback);
     node->edge = node->edges->next;
   }
-  // if not seen
-  callback(wiz_timeline, node, data);
+  if (!get_node(WizTimeline *wiz_timeline, node->version_uuid)) {
+    callback(wiz_timeline, node, data);
+  }
 }
 
+/* Start are recursion of the dag from the root, it really doesn't matter where
+ * we start it should all eventually be touched
+ */
 static void
 iterate_dag (WizTimeline *wiz_timeline, gpointer callback, gpointer data)
 {
@@ -179,6 +228,7 @@ iterate_dag (WizTimeline *wiz_timeline, gpointer callback, gpointer data)
   WizTimelineNode *node = priv->root;
   recurse_nodes(wiz_timeline, node, callback, data);
 }
+
 static void
 update_nodes(WizTimeline *wiz_timeline, WizTimelineNode *node, gpointer data)
 {
@@ -213,121 +263,66 @@ render (GtkWidget * widget)
   cairo_destroy (cr);
 }
 
+/* Adds an edge to the linked list for edges of src */
+static void 
+add_edge(WizTimelineNode *src, WizTimelineNode *dst) {
+  gboolean new_edge = FALSE;
+  WizTimelineEdge *edge = g_slice_new(WizTimelineEdge);
+  WizTimelineEdge *tmp_edge;
+  gint i;
+  gboolean edge_exists;
+
+  edge->nodes[0] = src;
+  edge->nodes[1] = dst;
+  if (src->edges == NULL) {
+    edge->next = edge;
+    edge->prev = edge;
+    src->edges = edge;
+  } else {
+    edge_exists = FALSE;
+    // Look for existing edge matching this edge
+    for (k = 0; k < src->no_of_edges; k++) {
+      if (src->edges->nodes[1] == dst) {
+        g_slice_free(edge);
+        edge_exists = TRUE;
+        break;
+      }
+      src->edges = src->edges->next;
+    }
+
+    if (edge_exists == FALSE) {
+      tmp_edge = src->edges;
+      edge->prev = tmp_edge->prev;
+      edge->prev->next = edge;
+      tmp_edge->prev = edge;
+      edge->next = tmp_edge;
+    }
+  }
+  src->no_of_edges++;
+}
+
 void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline) 
 {
   WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
 
   WizTimelineNode *node = NULL;
   WizTimelineNode *tmp_node;
-  WizTimelineEdge *edge;
-  WizTimelineEdge *last_edge;
-
-  gint i;
-  gint *seen;
-  gboolean node_exists;
-  gboolean edge_exists;
 
   do {
     /* Find out whether or not this node has already been seen, otherwise
      * create a new node and add it to the seen list
      */
-    node = NULL;
-    if (priv->seen != NULL) {
-      node_exists = FALSE;
-      for (i = 0; i < priv->nodes; i++) {
-        tmp_node = (WizTimelineNode *)priv->seen[k];
-        // Compare version_uuid's in memory 
-        if (!memcmp(tmp_node->version_uuid, wiz_version_get_version_uuid(wiz_version), 40)) {
-          node = tmp_node;
-          node_exists = TRUE;
-          break;
-        }
-      }
-    }
-
-    if (node == NULL) {
-      node = g_slice_new(WizTimelineNode);
-      node->version_uuid = g_strdup (wiz_version_get_version_uuid(wiz_version));
-      node->timestamp = wiz_version_get_timestamp(wiz_version);
-      node->edges = NULL;
-
-      if (priv->seen == NULL) {
-        priv->seen = g_slice_new(WizTimelineNode);
-        priv->primary_tip = node;
-      } else {
-        seen = priv->seen;
-        priv->seen = g_slice_copy((priv->nodes + 1) * sizeof(int), seen);
-        g_slice_free(seen);
-      }
-      priv->seen[priv->nodes] = (int)node;
-      priv->nodes++;
-    }
+    get_node(wiz_timeline, wiz_version_get_version_uuid(wiz_version));
+    node = priv->node;
     
     /* Hook up the edges, this include the new edge between this node and
      * the previous node, and the previous node and this one. Creating an
      * undirected graph from the directed graph, while we're at it, we avoid
      * existing edges between the two nodes in question
      */
-
-    // this nodes new edge      
-    if (priv->last_node != NULL) {
-      new_edge = FALSE;
-      edge = g_slice_new(Edge);
-      edge->nodes[0] = node;
-      edge->nodes[1] = priv->last_node;
-      if (node->edges == NULL) {
-        edge->next = edge;
-        edge->prev = edge;
-        node->edges = edge;
-      } else {
-        edge_exists = FALSE;
-        // Look for existing edge matching this edge
-        for (k = 0; k < node->no_of_edges; k++) {
-          if (node->edges->nodes[1] == last_node) {
-            g_slice_free(edge);
-            edge_exists = TRUE;
-            break;
-          }
-          node->edges = node->edges->next;
-        }
-
-        if (edge_exists == FALSE) {
-          tmp_edge = node->edges;
-          edge->prev = tmp_edge->prev;
-          edge->prev->next = edge;
-          tmp_edge->prev = edge;
-          edge->next = tmp_edge;
-        }
-      }
-      node->no_of_edges++;
-
-      // Previous nodes new edge
-      edge = g_slice_new(Edge);
-      edge->nodes[0] = priv->last_node;
-      edge->nodes[1] = node;
-      if (priv->last_node->edges == NULL) {
-        edge->next = edge;
-        edge->prev = edge;
-        priv->last_node->edges = edge;
-      } else {
-        edge_exists = FALSE;
-        // Look for existing edge matching this edge
-        for (k = 0; k < node->no_of_edges; k++) {
-          if (priv->last_node->edges->nodes[1] == node) {
-            g_slice_free(edge);
-            edge_exists = TRUE;
-            break;
-          }
-          node->edges = node->edges->next;
-        }
-        if (edge_exists == FALSE) {
-          edge->next = priv->last_node->edges->next;
-          edge->prev = priv->last_node->edges;
-          priv->last_node->edges->next = edge;
-          edge->next->prev = edge;
-        }
-      }
-      priv->last_node->no_of_edges++;
+    if (priv->last_node != NULL) {  
+      add_edge(node, priv->last_node);  
+      add_edge(priv->last_node, node);
     }
     priv->last_node = node;
     wiz_version = wiz_version_get_previous(wiz_version);
