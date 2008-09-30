@@ -41,9 +41,8 @@ typedef struct _WizTimelineNode WizTimelineNode;
 typedef struct _WizTimelineEdge WizTimelineEdge;
 
 struct _WizTimelineEdge {
-  Edge *next;
-  Edge *prev;
-  Node *nodes[2];
+  Node *src;
+  Node *dst;
 };
 
 struct _WizTimelineNode
@@ -62,7 +61,7 @@ struct _WizTimelineNode
   guint timestamp;
 
   gint no_of_edges;
-  WizTimelineEdge *edges;
+  GList *edges;
 };
 
 struct _WizTimelinePrivate
@@ -72,9 +71,7 @@ struct _WizTimelinePrivate
   WizTimelineNode *last_node;
   WizTImelineNode *node;
   WizBit *bit;
-  gint *seen;
-  gint *edges;
-  gint nodes;
+  GList *seen;
 
   /* We can turn off editability of this widget, if we're working with 
    * bits (files etc...) which can't easily be merged.
@@ -160,52 +157,9 @@ static guint timeline_signals[LAST_SIGNAL] = { 0 };
 
 static gpointer wiz_timeline_parent_class = NULL;
 
-// This little cluster fuck tells us if a node has been seen before and
-// allocates it if it hasn't, then sets priv->node to that node
-static int
-get_node (WizTimeline *wiz_timeline, gchar *version_uuid) {
-  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
-  WizTimelineNode *node;
-  priv->node = NULL;
-  gint *seen;
-  gint i;
-
-  if (priv->seen != NULL) {
-    for (i = 0; i < priv->nodes; i++) {
-      node = (WizTimelineNode *)priv->seen[k];
-      // Compare version_uuid's in memory 
-      if (!memcmp(node->version_uuid, version_uuid, 40)) {
-        priv->node = tmp_node;
-        return TRUE;
-      }
-    }
-  }
-
-  if (priv->node == NULL) {
-    node = g_slice_new(WizTimelineNode);
-    node->version_uuid = g_strdup (wiz_version_get_version_uuid(wiz_version));
-    node->timestamp = wiz_version_get_timestamp(wiz_version);
-    node->edges = NULL;
-
-    if (priv->seen == NULL) {
-      priv->seen = g_slice_new(sizeof(int));
-      priv->primary_tip = node;
-    } else {
-      seen = priv->seen;
-      priv->seen = g_slice_copy((priv->nodes + 1) * sizeof(int), seen);
-      g_slice_free1((priv->nodes) * sizeof(int), seen);
-    }
-    priv->node = node;
-    priv->seen[priv->nodes] = (int)node;
-    priv->nodes++;
-  }
-  return FALSE;
-}
-
-
 /* Iterate over the nodes calling callback with timeline, node and data 
  * if once we've iterated children we still haven't been seen.
- */
+ 
 static void
 recurse_nodes (WizTimeline *wiz_timeline, WizTimelineNode *node, gointer callback, gointer data)
 {
@@ -221,7 +175,7 @@ recurse_nodes (WizTimeline *wiz_timeline, WizTimelineNode *node, gointer callbac
 
 /* Start are recursion of the dag from the root, it really doesn't matter where
  * we start it should all eventually be touched
- */
+ 
 static void
 iterate_dag (WizTimeline *wiz_timeline, gpointer callback, gpointer data)
 {
@@ -237,9 +191,9 @@ update_node(WizTimeline *wiz_timeline, WizTimelineNode *node, gpointer data)
   /* work out the x/y co-ordinates of the dag, to do this we compare the
    * timesdtamp of this node and the timestamp of the root version and 
    * the primary tip then perform a simple set of comparisons with them.
-   */
+   
   /* we also update the offset from the position of the sliders
-   */
+   
 }
 
 static void
@@ -247,7 +201,7 @@ render_node(WizTimeline *wiz_timeline, WizTimelineNode *node, cairo_t *cr)
 {
   WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
   /* Draw the node where we told it to be drawn
-   */
+   
 }
 
 static void
@@ -263,42 +217,66 @@ render (GtkWidget * widget)
   iterate_dag(wiz_timeline, render_node, cr);
   cairo_destroy (cr);
 }
+*/
+
+
+static gint
+node_seen(WizTimeline *wiz_timeline, gchar *version_uuid) {
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  gint i;
+  WizTimelineNode *node;
+  for (i = 0;i < g_list_length(priv->seen); i++) {
+    node = g_list_nth_data(priv->seen, i);
+    // Compare version_uuid's in memory 
+    if (!memcmp(node->version_uuid, version_uuid, 40)) {
+      priv->node = node;
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/* Retrieve or allocate a node 
+ */
+static void
+node_get (WizTimeline *wiz_timeline, WizVersion *wiz_version) {
+  WizTimelineNode *node;
+
+  if (node_seen(wiz_timeline, wiz_version->version_uuid))
+    return;
+
+  if (priv->node == NULL) {
+    node = g_slice_new(WizTimelineNode);
+    node->version_uuid = g_strdup (wiz_version_get_version_uuid(wiz_version));
+    node->timestamp = wiz_version_get_timestamp(wiz_version);
+    node->edges = NULL;
+
+    if (priv->seen == NULL)
+      priv->primary_tip = node;
+    priv->node = node;
+    priv->seen = g_list_append(node);
+  }
+}
 
 /* Adds an edge to the linked list for edges of src */
 static void 
 add_edge(WizTimelineNode *src, WizTimelineNode *dst) {
-  WizTimelineEdge *edge = g_slice_new(WizTimelineEdge);
-  WizTimelineEdge *tmp_edge;
+  WizTimelineEdge *edge = NULL;
   gint i;
-  gboolean edge_exists;
 
-  edge->nodes[0] = src;
-  edge->nodes[1] = dst;
-  if (src->edges == NULL) {
-    edge->next = edge;
-    edge->prev = edge;
-    src->edges = edge;
-  } else {
-    edge_exists = FALSE;
-    // Look for existing edge matching this edge
-    for (i = 0; i < src->no_of_edges; i++) {
-      if (src->edges->nodes[1] == dst) {
-        g_slice_free(WizTimelineEdge, edge);
-        edge_exists = TRUE;
-        break;
-      }
-      src->edges = src->edges->next;
-    }
-
-    if (edge_exists == FALSE) {
-      tmp_edge = src->edges;
-      edge->prev = tmp_edge->prev;
-      edge->prev->next = edge;
-      tmp_edge->prev = edge;
-      edge->next = tmp_edge;
-    }
+  // Look for existing edge matching this edge
+  for (i = 0;i < g_list_length(src->edges); i++) {
+    edge = g_list_nth_data(src->edges, i);
+    if (edge->dst == dst)
+      break;
+    edge = NULL;
   }
-  src->no_of_edges++;
+  if (edge == NULL) {
+    edge = g_slice_new(WizTimelineEdge);
+    edge->src = src;
+    edge->dst = dst;
+    src->edges = g_list_append(src->edges, edge);
+  }
 }
 
 void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline) 
@@ -306,7 +284,8 @@ void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline)
   WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
 
   do {
-    get_node(wiz_timeline, wiz_version_get_version_uuid(wiz_version));
+    // TODO Inner iteration to cycle parents!
+    get_node(wiz_timeline, wiz_version);
     /* Hook up the edges, this include the new edge between this node and
      * the previous node, and the previous node and this one. Creating an
      * undirected graph from the directed graph, while we're at it, we avoid
@@ -317,6 +296,7 @@ void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline)
       add_edge(priv->last_node, priv->node);
     }
     priv->last_node = priv->node;
+
     wiz_version = wiz_version_get_previous(wiz_version);
   } while (wiz_version != NULL);
 }
