@@ -304,7 +304,7 @@ void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline);
   WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
   gint i;
   GList *parents;
-  WizTimelineNode last_node = NULL;
+  WizTimelineNode *last_node = NULL;
   do {
     node_get(wiz_timeline, wiz_version);
     /* Hook up the edges, this include the new edge between this node and
