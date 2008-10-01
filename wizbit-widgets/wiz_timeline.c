@@ -41,8 +41,8 @@ typedef struct _WizTimelineNode WizTimelineNode;
 typedef struct _WizTimelineEdge WizTimelineEdge;
 
 struct _WizTimelineEdge {
-  Node *src;
-  Node *dst;
+  WizTimelineNode *src;
+  WizTimelineNode *dst;
 };
 
 struct _WizTimelineNode
@@ -59,8 +59,7 @@ struct _WizTimelineNode
   guint x;
   guint y;
   guint timestamp;
-
-  gint no_of_edges;
+  guint column;
   GList *edges;
 };
 
@@ -72,6 +71,8 @@ struct _WizTimelinePrivate
   WizTImelineNode *node;
   WizBit *bit;
   GList *seen;
+  GList *tips;
+  guint column;
 
   /* We can turn off editability of this widget, if we're working with 
    * bits (files etc...) which can't easily be merged.
@@ -81,16 +82,16 @@ struct _WizTimelinePrivate
   gchar *bit_uuid;
   gchar *selected_version_uuid;
 
-  gint width;
-  gint height;
+  guint width;
+  guint height;
   gdouble zoom;
 
   /* The real position of the mouse relative to the full height of the DAG */
-  gint real_mouse_x;
-  gint real_mouse_y;
+  guint real_mouse_x;
+  guint real_mouse_y;
 
-  gint x_offset;
-  gint visible_height;
+  guint x_offset;
+  guint visible_height;
 
   gboolean mouse_down;
   gchar *drag_version_uuid;
@@ -225,6 +226,7 @@ node_seen(WizTimeline *wiz_timeline, gchar *version_uuid) {
   WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
   gint i;
   WizTimelineNode *node;
+  priv->seen = g_list_first(priv->seen);
   for (i = 0;i < g_list_length(priv->seen); i++) {
     node = g_list_nth_data(priv->seen, i);
     // Compare version_uuid's in memory 
@@ -239,7 +241,7 @@ node_seen(WizTimeline *wiz_timeline, gchar *version_uuid) {
 /* Retrieve or allocate a node 
  */
 static void
-node_get (WizTimeline *wiz_timeline, WizVersion *wiz_version) {
+node_get (WizTimeline *wiz_timeline, WizVersion *wiz_version, guint col) {
   WizTimelineNode *node;
 
   if (node_seen(wiz_timeline, wiz_version->version_uuid))
@@ -249,7 +251,9 @@ node_get (WizTimeline *wiz_timeline, WizVersion *wiz_version) {
     node = g_slice_new(WizTimelineNode);
     node->version_uuid = g_strdup (wiz_version_get_version_uuid(wiz_version));
     node->timestamp = wiz_version_get_timestamp(wiz_version);
+    node->tip_id = priv->last_node->tip_id;
     node->edges = NULL;
+    node->column = priv->column;
 
     if (priv->seen == NULL)
       priv->primary_tip = node;
@@ -279,26 +283,35 @@ add_edge(WizTimelineNode *src, WizTimelineNode *dst) {
   }
 }
 
-void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline) 
+void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline); 
 {
   WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
-
+  gint i;
+  GList *parents;
   do {
-    // TODO Inner iteration to cycle parents!
-    get_node(wiz_timeline, wiz_version);
+    node_get(wiz_timeline, wiz_version);
     /* Hook up the edges, this include the new edge between this node and
      * the previous node, and the previous node and this one. Creating an
-     * undirected graph from the directed graph, while we're at it, we avoid
-     * existing edges between the two nodes in question
+     * undirected graph from the directed graph.
      */
     if (priv->last_node != NULL) {  
       add_edge(priv->node, priv->last_node);  
       add_edge(priv->last_node, priv->node);
     }
     priv->last_node = priv->node;
-
-    wiz_version = wiz_version_get_previous(wiz_version);
-  } while (wiz_version != NULL);
+    parents = wiz_version_get_parents(wiz_version);
+    if (parents != NULL) {
+      wiz_version = g_list_get_nth_data(parents, 0);
+    }
+    // Recurse over all other parents as if they were tips
+    if (g_list_length(parents) > 1) {
+      for (i = 1; i < g_list_length(parents) {
+        priv->column++;
+        iterate_reflog(g_list_get_nth_data(parents, i), wiz_timeline);    
+      }
+    }
+  } while (parents != NULL);
+  priv->column++;
 }
 
 /* Update the widget DAG from the WizStore, this requires retireving the bit
@@ -312,10 +325,13 @@ void
 wiz_timeline_update_from_store (WizTimeline *wiz_timeline) 
 {
   WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
-  g_slice_free1((priv->nodes) * sizeof(int), seen);
+  g_list_free(priv->seen);
   priv->seen = NULL;
   priv->last_node = NULL;
-  g_list_foreach(wiz_bit_get_tips(priv->bit), iterate_reflog, wiz_timeline);
+  priv->column = 1;
+  g_list_free(priv->tips);
+  priv->tips = wiz_bit_get_tips(priv->bit);
+  g_list_foreach(priv->tips, iterate_reflog, wiz_timeline);
   priv->root = priv->last_node;
 }
 
