@@ -20,6 +20,18 @@
  * Boston, MA 02111-1307, USA.
  */
 
+/* TODO
+ *
+ * 1. Fix up the iterate_dag and related functions to actually be sane
+ * 2. Work out the calculation code for zooming, essentially this is
+ *    based on the timestamp of the primary tip or "newest" tip and root node
+ *    timestamps.
+ * 3. Utilise two surfaces for drawing, one containing the edges, one containing
+ *    the nodes. The nodes are then composited onto the top of the edges, this
+ *    reduces the iterations of the dag required for rendering a node, however
+ *    it increases the risk of a large performance hit as compositing cairo
+ *    surfaces is painfully slow on some chips (but not vesa strangely enough)
+ */
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <sys/types.h>
@@ -67,7 +79,6 @@ struct _WizTimelinePrivate
 {
   WizTimelineNode *primary_tip;
   WizTimelineNode *root;
-  WizTimelineNode *last_node;
   WizTImelineNode *node;
   WizBit *bit;
   GList *seen;
@@ -157,6 +168,10 @@ static gboolean wiz_timeline_leave_notify (GtkWidget * widget,
 static guint timeline_signals[LAST_SIGNAL] = { 0 };
 
 static gpointer wiz_timeline_parent_class = NULL;
+
+// TODO This code is all crack right now, needs to be updated to use GList
+// as all the other code has been, also the function pointers are probably
+// crack too.
 
 /* Iterate over the nodes calling callback with timeline, node and data 
  * if once we've iterated children we still haven't been seen.
@@ -255,6 +270,7 @@ node_get (WizTimeline *wiz_timeline, WizVersion *wiz_version, guint col) {
     node->edges = NULL;
     node->column = priv->column;
 
+    // If seen is null this must be the primary tip, as that's where we start
     if (priv->seen == NULL)
       priv->primary_tip = node;
     priv->node = node;
@@ -288,17 +304,18 @@ void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline);
   WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
   gint i;
   GList *parents;
+  WizTimelineNode last_node = NULL;
   do {
     node_get(wiz_timeline, wiz_version);
     /* Hook up the edges, this include the new edge between this node and
      * the previous node, and the previous node and this one. Creating an
      * undirected graph from the directed graph.
      */
-    if (priv->last_node != NULL) {  
-      add_edge(priv->node, priv->last_node);  
-      add_edge(priv->last_node, priv->node);
+    if (last_node != NULL) {  
+      add_edge(priv->node, last_node);
+      add_edge(last_node, priv->node);
     }
-    priv->last_node = priv->node;
+    last_node = priv->node;
     parents = wiz_version_get_parents(wiz_version);
     if (parents != NULL) {
       wiz_version = g_list_get_nth_data(parents, 0);
@@ -311,6 +328,8 @@ void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline);
       }
     }
   } while (parents != NULL);
+  // All roads lead to rome :) 
+  priv->root = last_node;
   priv->column++;
 }
 
@@ -327,12 +346,8 @@ wiz_timeline_update_from_store (WizTimeline *wiz_timeline)
   WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
   g_list_free(priv->seen);
   priv->seen = NULL;
-  priv->last_node = NULL;
   priv->column = 1;
-  g_list_free(priv->tips);
-  priv->tips = wiz_bit_get_tips(priv->bit);
-  g_list_foreach(priv->tips, iterate_reflog, wiz_timeline);
-  priv->root = priv->last_node;
+  g_list_foreach(wiz_bit_get_tips(priv->bit), iterate_reflog, wiz_timeline);
 }
 
 GType
