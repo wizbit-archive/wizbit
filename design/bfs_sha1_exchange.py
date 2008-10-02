@@ -6,8 +6,8 @@ a list of SHA1's with another mock DAG. When we encounter a commit that is
 in both DAG's, the system knows it no longer has to visit parents of that
 commit.
 
-The number of SHA1's in each pass grows (exponentially?) to try and minimize
-excessive round tripping.
+The number of SHA1's in each pass grows to try and minimize excessive round
+tripping.
 
 Once the SHA1's have been exchanged (either by running the process twice in
 both directions, or by deriving the state from the conversation in the first
@@ -185,14 +185,14 @@ class SyncClient(object):
         Eventually, the server will be able to work out what objects the client is missing
         and transmit those.
 
-        When this has been tested some more, the value passed to self.iter.get() should
-        increase on each pass (exponentially?). This makes for less roundtrips when there
-        are *lots* of changes.
+        The number of sha1's exchanged increases with each pass to try and avoid roundtrips.
         """
+        size = len(self.store.tips)
         while not self.iter.is_depleted:
-            sha_list = [x.sha1 for x in self.iter.get(10)]
+            sha_list = [x.sha1 for x in self.iter.get(size)]
             print "you can have: ", sha_list
             self.iter.kick_out( server.what_do_you_have(sha_list) )
+            size *= 2
 
 if __name__ == "__main__":
     a = Store()
@@ -205,7 +205,7 @@ if __name__ == "__main__":
     a12 = a.commit("12", [a17])
     a11 = a.commit("11", [a16])
     a10 = a.commit("10", [a14, a15])
-    a9 = a.commit("9", [a10])
+    a9 = a.commit("9", [a10, a11])
     a8 = a.commit("8", [a13])
     a7 = a.commit("7", [a12])
     a6 = a.commit("6", [a9])
@@ -217,14 +217,18 @@ if __name__ == "__main__":
     a.tips = [a1, a2, a3, a4]
 
     b = Store()
+    b18 = b.commit("18")
     b16 = b.commit("16")
     b15 = b.commit("15")
     b14 = b.commit("14")
+    b13 = b.commit("13", [b18])
     b11 = b.commit("11", [b16])
     b10 = b.commit("10", [b14, b15])
     b9 = b.commit("9", [b10, b11])
+    b8 = b.commit("8", [b13])
     b6 = b.commit("6", [b9])
-    b.tips = [b6]
+    b4 = b.commit("4", [b8])
+    b.tips = [b6, b4]
 
     bx = SyncServer(b)
     ax = SyncClient(a)
