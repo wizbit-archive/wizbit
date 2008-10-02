@@ -1,3 +1,20 @@
+"""
+This is a test implementation of Wizbit sync using mock objects.
+
+The first phases uses a Breadth First Search on the mock DAG to exchange
+a list of SHA1's with another mock DAG. When we encounter a commit that is
+in both DAG's, the system knows it no longer has to visit parents of that
+commit.
+
+The number of SHA1's in each pass grows (exponentially?) to try and minimize
+excessive round tripping.
+
+Once the SHA1's have been exchanged (either by running the process twice in
+both directions, or by deriving the state from the conversation in the first
+pass), the actual objects are exchanged.
+
+When the object store is synchronized, we sync the tips. Somehow...
+"""
 
 class Commit(object):
     """
@@ -54,29 +71,38 @@ class BreadthFirstIterator(object):
         """
         next
 
-        Does a breadth first search over a DAG.
+        Actually does a breadth first search over the DAG.
 
-        self.visited is used to keep track of which notes we have already visited.
+        self.visited is used to keep track of which nodes we have already visited.
         This means we won't visit a node twice if branching occurs.
 
         self.queue is used to keep track of which nodes to visit next. We pop from
         the front and append parents to the end. This creates the effect of moving
-        sideways over the DAG.
+        sideways over the DAG. Vala implementation can use GQueue.
         """
+        # safe guard in case someone isn't suing is_depleted flag
         if len(self.queue) == 0:
             return None
+
+        # find a node in the queue that we haven't already visited
         p = self.queue.pop(0)
         while p:
             if p.sha1 not in self.visited:
                 break
             p = self.queue.pop(0)
 
+        # queue up more nodes to visit
+        for x in p.parents:
+            self.queue.append(x)
+
+        # record that we have visited this node and shouldn't go there again
+        self.visited[p.sha1] = p
+
+        # if the queue is empty, set the EOF marker
+        # (just so we can while (!is_depleted) { p = next(); do_stuff(p); })
         if len(self.queue) == 0:
             self.is_depleted = True
 
-        for x in p.parents:
-            self.queue.append(x)
-        self.visited[p.sha1] = p
         return p
 
     def get(self, size):
@@ -106,6 +132,7 @@ class BreadthFirstIterator(object):
         Ahh, iterate through your parents until you hit a parent that isn't in your
         visited list.
         """
+        # its got 3 loops! KILL IT!
         for sha1 in sha_list:
             commit = self.visited[sha1]
             for parent in commit.parents:
@@ -148,9 +175,19 @@ class SyncClient(object):
         Currently, we just do a sha1 exchange based on a breadth first search of the DAG.
         This allows the client to work out which objects it is missing. The initial
         implementation requires this to be run once in each direction, but the server
-        should be able to BFS with data received from client and end up knowing the
-        objects both sides of the sync are missing (i.e. a list of objects to send and
-        a list of objects to ask for)
+        should be able to BFS itself (with data received from client in the visited list)
+        and end up knowing the objects both sides of the sync are missing (i.e. a list of
+        objects to send and a list of objects to ask for)
+
+        When this process is run, the client knows what objects the server is missing and
+        can transmit them. Eventually, this will make use of packs...
+
+        Eventually, the server will be able to work out what objects the client is missing
+        and transmit those.
+
+        When this has been tested some more, the value passed to self.iter.get() should
+        increase on each pass (exponentially?). This makes for less roundtrips when there
+        are *lots* of changes.
         """
         while not self.iter.is_depleted:
             sha_list = [x.sha1 for x in self.iter.get(10)]
