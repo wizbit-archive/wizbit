@@ -1,16 +1,16 @@
 using GLib;
-using Wizbit;
+using Wiz;
 
 public class SyncServer : Object {
-	public Wizbit.Store store { private get; construct; }
+	public Wiz.Store store { private get; construct; }
 
-	public SyncServer(Wizbit.Store store) {
+	public SyncServer(Wiz.Store store) {
 		this.store = store;
 	}
 
 	public List<Version> do_you_have(List<Version> versions) {
 		var retval = new List<Version>();
-		foreach (val v in versions)
+		foreach (var v in versions)
 			if (false)
 				retval.append(v);
 		return retval;
@@ -18,31 +18,32 @@ public class SyncServer : Object {
 }
 
 public class SyncClient : Object {
-	public Wizbit.Store store { private get; construct; }
+	Wiz.BreadthFirstIterator iter;
+	public Wiz.Store store { private get; construct; }
 
-	public SyncClient(Wizbit.Store store, SyncServer server) {
+	public SyncClient(Wiz.Store store, SyncServer server) {
 		this.store = store;
 	}
 
 	construct {
-		this.iter = Wizbit.BreadthFirstIterator();
+		this.iter = new Wiz.BreadthFirstIterator();
 	}
 
 	public void sync(SyncServer server) {
 		int size = 4;
 		while (!this.iter.end) {
-			List<Version> list = self.iter.get(size);
+			List<Version> list = this.iter.get(size);
 			foreach (var v in server.do_you_have( list ) ) {
 				/* foreach (var p in v.parents)
-					self.iter.kick_out(p);*/
-				self.iter.kick_out(v.previous);
+					this.iter.kick_out(p);*/
+				this.iter.kick_out(v.previous);
 			}
 			size *= 2;
 		}
 	}
 }
 
-void test_sync(void)
+void test_sync()
 {
 	var a = new Wiz.Store("some_uuid", "data/sync_a");
 
@@ -82,4 +83,14 @@ void test_sync(void)
 	b4 = y.create_next_version_from_string("4", [b8]);
 	// b.tips = [b6, b4]
 	*/
+}
+
+public static void main (string[] args) {
+	if (!FileUtils.test("data", FileTest.IS_DIR)) {
+		DirUtils.create_with_parents("data", 0755);
+		/* Should write some data to the file data/blob-data */
+	}
+	Test.init (ref args);
+	Test.add_func("/wizbit/sync/1", test_sync);
+	Test.run();
 }
