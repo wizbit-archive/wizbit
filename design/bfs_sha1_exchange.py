@@ -1,7 +1,7 @@
 
 class Commit(object):
 
-def __init__(self, sha1, parents=[]):
+    def __init__(self, sha1, parents=[]):
         self.sha1 = sha1
         self.blob = "Here is some data\n" + sha1
         self.parents = parents
