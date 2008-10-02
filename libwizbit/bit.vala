@@ -136,7 +136,7 @@ namespace Wiz {
 			// we're creating a new branch, we retain the current primary tip
 			// but assign a new primary tip
 			foreach (var v in this._tips) {
-				if ((parent.version_uuid == this._primary_tip.version_uuid) &&
+				if ((parent != null && parent.version_uuid == this._primary_tip.version_uuid) &&
 				    (v.version_uuid == this._primary_tip.version_uuid)) {
 					this._tips.remove(v);
 					break;
