@@ -32,8 +32,11 @@ public class SyncClient : Object {
 		int size = 4;
 		while (!this.iter.end) {
 			List<Version> list = self.iter.get(size);
-			foreach (var v in server.do_you_have( list ) )
-				self.iter.kick_out(v);
+			foreach (var v in server.do_you_have( list ) ) {
+				/* foreach (var p in v.parents)
+					self.iter.kick_out(p);*/
+				self.iter.kick_out(v.previous);
+			}
 			size *= 2;
 		}
 	}
