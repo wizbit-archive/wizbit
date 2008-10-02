@@ -40,6 +40,16 @@ namespace Wiz {
 			return p;
 		}
 
+		public List<Version> get(uint size) {
+			var retval = new List<Version>();
+			var i = size;
+			while (i > 0 && !this.end) {
+				retval.append(this.next());
+				i--;
+			}
+			return retval;
+		}
+
 		public void kick_out(Version v) {
 			for (int i = 0; i < this.queue.get_length(); i++) {
 				if (v.version_uuid == this.queue.peek_nth(i).version_uuid) {
