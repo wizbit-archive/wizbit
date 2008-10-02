@@ -57,6 +57,11 @@ class BreadthFirstIterator(object):
         return retval
 
     def kick_out(self, sha_list):
+        """
+        kick_out
+        @sha_list: A list of sha1's to remove from the queue. This will also
+        remove parent commit objects from the queue.
+        """
         def _(v):
             for x in self.queue[:]:
                 if v.blob == x.blob:
