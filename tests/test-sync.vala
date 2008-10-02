@@ -29,7 +29,10 @@ public class SyncClient : Object {
 		this.iter = new Wiz.BreadthFirstIterator();
 	}
 
-	public void sync(SyncServer server) {
+	public void sync(SyncServer server, List<Version> tips) {
+		foreach (var v in tips)
+			this.iter.add_version(v);
+
 		int size = 4;
 		while (!this.iter.end) {
 			List<Version> list = this.iter.get(size);
@@ -88,7 +91,7 @@ void test_sync()
 
 	var sa = new SyncServer(a);
 	var sb = new SyncClient(b);
-	sb.sync(sa);
+	sb.sync(sa, z.tips);
 }
 
 public static void main (string[] args) {
