@@ -139,6 +139,8 @@ class BreadthFirstIterator(object):
                 for x in self.queue[:]:
                     if x.sha1 == parent.sha1:
                         self.queue.remove(x)
+                        if len(self.queue) == 0:
+                            self.is_depleted = True
                         break
 
 class SyncServer(object):
