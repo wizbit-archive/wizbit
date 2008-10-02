@@ -21,7 +21,7 @@ public class SyncClient : Object {
 	Wiz.BreadthFirstIterator iter;
 	public Wiz.Store store { private get; construct; }
 
-	public SyncClient(Wiz.Store store, SyncServer server) {
+	public SyncClient(Wiz.Store store) {
 		this.store = store;
 	}
 
@@ -83,6 +83,12 @@ void test_sync()
 	b4 = y.create_next_version_from_string("4", [b8]);
 	// b.tips = [b6, b4]
 	*/
+
+	var b = new Wiz.Store("some_uuid", "data/sync_b");
+
+	var sa = new SyncServer(a);
+	var sb = new SyncClient(b);
+	sb.sync(sa);
 }
 
 public static void main (string[] args) {

@@ -5,7 +5,7 @@ namespace Wiz {
 		List<Version> visited;
 		Queue<Version> queue;
 
-		public bool end { get; private set; default = false; }
+		public bool end { get; private set; default = true; }
 
 		construct {
 			this.visited = new List<Version>();
@@ -14,6 +14,7 @@ namespace Wiz {
 
 		public void add_version(Version v) {
 			this.queue.push_tail(v);
+			this.end = false;
 		}
 
 		bool have_visited(Version v) {
