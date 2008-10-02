@@ -28,7 +28,7 @@ class BreadthFirstIterator(object):
     def __init__(self, store, queue):
         self.store = store
         self.queue = queue[:]
-        self.visited = []
+        self.visited = {}
         self.is_depleted = False
 
     def next(self):
@@ -36,7 +36,7 @@ class BreadthFirstIterator(object):
             return None
         p = self.queue.pop(0)
         while p:
-            if p not in self.visited:
+            if p.sha1 not in self.visited:
                 break
             p = self.queue.pop(0)
 
@@ -45,7 +45,7 @@ class BreadthFirstIterator(object):
 
         for x in p.parents:
             self.queue.append(x)
-        self.visited.append(p)
+        self.visited[p.sha1] = p
         return p
 
     def get(self, size):
