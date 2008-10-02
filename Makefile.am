@@ -8,6 +8,7 @@ SUBDIRS = \
 	libwizbit \
 	tests \
 	po \
+	python \
 	$(NULL)
 
 AM_CPPFLAGS = \

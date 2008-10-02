@@ -1,0 +1,18 @@
+%%
+headers
+#include "pygobject.h"
+#include "graph.h"
+#include "bit.h"
+#include "store.h"
+#include "utils.h"
+#include "breadthfirst.h"
+%%
+modulename wizbit
+%%
+import gobject.GObject as PyGObject_Type
+%%
+ignore-glob
+ *_get_type
+ WizOutputStream*
+ WizInputStream*
+%%
