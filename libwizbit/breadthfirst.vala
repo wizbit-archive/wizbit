@@ -26,7 +26,7 @@ namespace Wiz {
 
 		public Version next() {
 			var p = this.queue.pop_head();
-			while(p!=null && !this.have_visited(p))
+			while(p!=null && this.have_visited(p))
 				p = this.queue.pop_head();
 
 			/*foreach (var p in popped.parents) {
