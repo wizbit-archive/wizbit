@@ -40,6 +40,7 @@ AC_CONFIG_FILES([Makefile
 	libwizbit/Makefile
 	tests/Makefile
 	po/Makefile.in
-	python/Makefile])
+	bindings/Makefile
+	bindings/python/Makefile])
 
 AC_OUTPUT
