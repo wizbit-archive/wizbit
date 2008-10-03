@@ -1,0 +1,12 @@
+prefix=${pcfiledir}/../..
+exec_prefix=${prefix}
+libdir=${exec_prefix}/lib
+gapidir=${prefix}/share/wizbit-sharp/0.0.1
+assemblies_dir=${libdir}/mono/wizbit-sharp-0.0.1
+
+Name: Wizbit#
+Description: Wizbit# - GNOMEDesktop .NET Binding
+Version: @VERSION@
+Requires: gtk-sharp-2.0
+Cflags: -I:${gapidir}/wizbit-api.xml
+Libs: -r:${assemblies_dir}/wizbit-sharp.dll
