@@ -1,3 +1,4 @@
+include $(top_srcdir)/Makefile.decl
 
 WIZZERS =					\
 	$(top_builddir)/libwizbit/bit.h		\
