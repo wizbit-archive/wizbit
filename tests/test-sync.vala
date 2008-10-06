@@ -11,7 +11,7 @@ public class SyncServer : Object {
 	public List<Version> do_you_have(List<Version> versions) {
 		var retval = new List<Version>();
 		foreach (var v in versions)
-			if (false)
+			if (this.store.bit_exists(v.version_uuid))
 				retval.append(v);
 		return retval;
 	}

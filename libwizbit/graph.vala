@@ -34,6 +34,10 @@ namespace Graph {
 			return Path.build_filename(folder, uuid.substring(2,40));
 		}
 
+		public bool exists(string uuid) {
+			return FileUtils.test(this.get_path_for_uuid(uuid), FileTest.EXISTS);
+		}
+
 		public MappedFile read(string uuid) {
 			string path = this.get_path_for_uuid(uuid);
 			return new MappedFile(path, false);
