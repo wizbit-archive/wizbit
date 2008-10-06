@@ -1,3 +1,5 @@
+include $(top_srcdir)/Makefile.decl
+
 lib_LTLIBRARIES=libwizbit.la
 
 INCLUDES= \
@@ -16,6 +18,7 @@ libwizbit_la_VALASOURCES = \
 	writer.vala \
 	uuid.vapi \
 	utils.vala \
+	breadthfirst.vala \
 	$(NULL)
 
 libwizbit_la_SOURCES = \
@@ -24,7 +27,7 @@ libwizbit_la_SOURCES = \
 	$(NULL)
 
 libwizbit.vala.stamp: $(libwizbit_la_VALASOURCES)
-	$(VALAC) -C --library libwizbit --basedir $(top_srcdir) --pkg glib-2.0 --pkg gio-2.0 --pkg gio-unix-2.0 $^
+	$(VALAC) -C --library libwizbit --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg glib-2.0 --pkg gio-2.0 --pkg gio-unix-2.0 $^
 	touch $@
 
 libwizbit_la_CFLAGS=@WIZBIT_CFLAGS@

@@ -1,6 +1,11 @@
 AC_INIT([wizbit], [0.1.0], [john.carr@unrouted.co.uk], [wizbit])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADERS(config.h)
+
+m4_pattern_allow([^AC_WIZ_])
+AC_CONFIG_MACRO_DIR([m4])
+AC_SUBST(ACLOCAL_AMFLAGS, "$ACLOCAL_FLAGS -I m4")
+
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
 
@@ -29,9 +34,12 @@ PKG_CHECK_MODULES(WIZBIT, glib-2.0 >= $GLIB_REQUIRED gobject-2.0 >= $GLIB_REQUIR
 AC_SUBST(WIZBIT_CFLAGS)
 AC_SUBST(WIZBIT_LIBS)
 
+AC_WIZ_PYTHON
+
 AC_CONFIG_FILES([Makefile
 	libwizbit/Makefile
 	tests/Makefile
-	po/Makefile.in])
+	po/Makefile.in
+	python/Makefile])
 
 AC_OUTPUT

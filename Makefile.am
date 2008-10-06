@@ -8,6 +8,7 @@ SUBDIRS = \
 	libwizbit \
 	tests \
 	po \
+	python \
 	$(NULL)
 
 AM_CPPFLAGS = \
@@ -29,7 +30,7 @@ wizbit_SOURCES = \
 	$(NULL)
 
 src/wizbit.vala.stamp: $(wizbit_VALASOURCES)
-	$(VALAC) -C --basedir $(top_srcdir) $^
+	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) $^
 	touch $@
 
 wizbit_LDADD = \
