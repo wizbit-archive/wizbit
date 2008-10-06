@@ -63,15 +63,9 @@ struct _WizTimelineNode
 
   gdouble size;
   gchar *version_uuid;
-
-  /* These x/y co-ordinates refer to positions relative to the size
-   * of the whole rendered DAG, rather than the portion of the DAG
-   * displayed on screen
-   */
-  guint x;
-  guint y;
   guint timestamp;
   guint column;
+  gdouble v_pos;
   GList *edges;
 };
 
@@ -169,73 +163,6 @@ static guint timeline_signals[LAST_SIGNAL] = { 0 };
 
 static gpointer wiz_timeline_parent_class = NULL;
 
-// TODO This code is all crack right now, needs to be updated to use GList
-// as all the other code has been, also the function pointers are probably
-// crack too.
-
-/* Iterate over the nodes calling callback with timeline, node and data 
- * if once we've iterated children we still haven't been seen.
- 
-static void
-recurse_nodes (WizTimeline *wiz_timeline, WizTimelineNode *node, gointer callback, gointer data)
-{
-  gint i;
-  for (i = 0; i < node->no_of_edges; i++) {
-    recurse_nodes(wiz_timeline, node->edges->edges[1], callback);
-    node->edge = node->edges->next;
-  }
-  if (!get_node(WizTimeline *wiz_timeline, node->version_uuid)) {
-    callback(wiz_timeline, node, data);
-  }
-}
-
-/* Start are recursion of the dag from the root, it really doesn't matter where
- * we start it should all eventually be touched
- 
-static void
-iterate_dag (WizTimeline *wiz_timeline, gpointer callback, gpointer data)
-{
-  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
-  WizTimelineNode *node = priv->root;
-  recurse_nodes(wiz_timeline, node, callback, data);
-}
-
-static void
-update_node(WizTimeline *wiz_timeline, WizTimelineNode *node, gpointer data)
-{
-  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
-  /* work out the x/y co-ordinates of the dag, to do this we compare the
-   * timesdtamp of this node and the timestamp of the root version and 
-   * the primary tip then perform a simple set of comparisons with them.
-   
-  /* we also update the offset from the position of the sliders
-   
-}
-
-static void
-render_node(WizTimeline *wiz_timeline, WizTimelineNode *node, cairo_t *cr)
-{
-  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
-  /* Draw the node where we told it to be drawn
-   
-}
-
-static void
-render (GtkWidget * widget)
-{
-  WizTimeline *wiz_timeline = WIZ_TIMELINE (widget);
-  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
-  cairo_t *cr = gdk_cairo_create (widget->window);
-  gint width, height;
-  GError *error = NULL;
-  gdk_drawable_get_size (widget->window, &width, &height);
-  iterate_dag(wiz_timeline, update_node, NULL);
-  iterate_dag(wiz_timeline, render_node, cr);
-  cairo_destroy (cr);
-}
-*/
-
-
 static gint
 node_seen(WizTimeline *wiz_timeline, gchar *version_uuid) {
   WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
@@ -322,7 +249,7 @@ void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline);
     }
     // Recurse over all other parents as if they were tips
     if (g_list_length(parents) > 1) {
-      for (i = 1; i < g_list_length(parents) {
+      for (i = 1; i < g_list_length(parents); i++) {
         priv->column++;
         iterate_reflog(g_list_get_nth_data(parents, i), wiz_timeline);    
       }
@@ -348,6 +275,68 @@ wiz_timeline_update_from_store (WizTimeline *wiz_timeline)
   priv->seen = NULL;
   priv->column = 1;
   g_list_foreach(wiz_bit_get_tips(priv->bit), iterate_reflog, wiz_timeline);
+}
+
+/* Iterate over the nodes calling callback with timeline, node and data 
+ * if once we've iterated children we still haven't been seen.
+ */
+static void
+recurse_nodes (WizTimeline *wiz_timeline, WizTimelineNode *node, gointer callback, gointer data)
+{
+  WizTimelineEdge *edge;
+  gint i;
+  if (node_seen(WizTimeline *wiz_timeline, node->version_uuid)) {
+    callback(wiz_timeline, priv->node, data);
+    for (i = 0;i < g_list_length(priv->node->edges); i++) {
+      edge = g_list_nth_data(priv->node->edges, i);
+      recurse_nodes(wiz_timeline, edge->dst, callback);
+    }
+  }
+}
+
+/* Start are recursion of the dag from the root, it really doesn't matter where
+ * we start it should all eventually be touched
+ */
+static void
+iterate_dag (WizTimeline *wiz_timeline, gpointer callback, gpointer data)
+{
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  WizTimelineNode *node = priv->root;
+  recurse_nodes(wiz_timeline, node, callback, data);
+}
+
+static void
+update_node(WizTimeline *wiz_timeline, WizTimelineNode *node, gpointer data)
+{
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  /* work out the x/y co-ordinates of the dag, to do this we compare the
+   * timesdtamp of this node and the timestamp of the root version and 
+   * the primary tip then perform a simple set of comparisons with them.
+   
+  /* we also update the offset from the position of the sliders
+   */
+}
+
+static void
+render_node(WizTimeline *wiz_timeline, WizTimelineNode *node, cairo_t *cr)
+{
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  /* Draw the node where we told it to be drawn
+   */
+}
+
+static void
+render (GtkWidget * widget)
+{
+  WizTimeline *wiz_timeline = WIZ_TIMELINE (widget);
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  cairo_t *cr = gdk_cairo_create (widget->window);
+  gint width, height;
+  GError *error = NULL;
+  gdk_drawable_get_size (widget->window, &width, &height);
+  iterate_dag(wiz_timeline, update_node, NULL);
+  iterate_dag(wiz_timeline, render_node, cr);
+  cairo_destroy (cr);
 }
 
 GType
