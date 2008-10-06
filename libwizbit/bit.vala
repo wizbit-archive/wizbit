@@ -109,7 +109,6 @@ namespace Wiz {
 				if ((pos-mark) > 0)
 					this._tips.append(new Version(this.store, contents.substring(mark, pos-mark)));
 			}
-				
 		}
 
 		public OutputStream create_next_version() {
@@ -132,16 +131,29 @@ namespace Wiz {
 
 			var new_version = new Version(this.store, commit.uuid);
 
+			/* We assume that we are making a new tip and that it is the primary tip.
+			 * Scan the tip list and look for the parent and remove it accordingly
+			 */
+			if (parent != null) {
+				foreach (var v in this._tips) {
+					if (v.version_uuid == parent.version_uuid) {
+						this._tips.remove(v);
+						/* Potentially we can break here
+						break; */
+					}
+				}
+			}
+
 			// Remove the tip if we're replacing the current primary tip, if
 			// we're creating a new branch, we retain the current primary tip
 			// but assign a new primary tip
-			foreach (var v in this._tips) {
-				if ((parent != null && parent.version_uuid == this._primary_tip.version_uuid) &&
-				    (v.version_uuid == this._primary_tip.version_uuid)) {
+			/* FIXME: Can't remember what the hell this was supposed to do? */
+			/*foreach (var v in this._tips) {
+				if (v.version_uuid == this._primary_tip.version_uuid) {
 					this._tips.remove(v);
 					break;
 				}
-			}
+			}*/
 			this._tips.append(new_version);
 			this._primary_tip = new_version;
 			this.write_tips();

@@ -46,6 +46,36 @@ public class SyncClient : Object {
 	}
 }
 
+void test_simple_1()
+{
+	var a = new Wiz.Store("some_uuid", "data/sync_simple_1_a");
+
+	var z = a.create_bit();
+
+	assert( z.tips.length() == 0 );
+
+	var a1 = z.create_next_version_from_string("1");
+	var a2 = z.create_next_version_from_string("2", a1);
+	var a3 = z.create_next_version_from_string("3", a2);
+	var a4 = z.create_next_version_from_string("4", a3);
+	var a5 = z.create_next_version_from_string("5", a4);
+
+	assert( z.tips.length() == 1 );
+
+	var a6 = z.create_next_version_from_string("6", a2);
+	var a7 = z.create_next_version_from_string("7", a6);
+	var a8 = z.create_next_version_from_string("8", a7);
+	var a9 = z.create_next_version_from_string("9", a8);
+
+	assert( z.tips.length() == 2 );
+
+	var b = new Wiz.Store("some_uuid", "data/sync_simple_1_b");
+
+	var sa = new SyncServer(a);
+	var sb = new SyncClient(b);
+	sb.sync(sa, z.tips);
+}
+
 void test_sync()
 {
 	var a = new Wiz.Store("some_uuid", "data/sync_a");
@@ -70,6 +100,9 @@ void test_sync()
 	var a2 = z.create_next_version_from_string("2", a6);
 	var a1 = z.create_next_version_from_string("1", a5);
 	// a.tips = [a1, a2, a3, a4]
+
+	stdout.printf("MONKEY: %u", z.tips.length());
+	assert(z.tips.length() == 4);
 
 	/*
 	var b = new Wiz.Store("some_uuid", "data/sync_b");
@@ -100,6 +133,7 @@ public static void main (string[] args) {
 		/* Should write some data to the file data/blob-data */
 	}
 	Test.init (ref args);
-	Test.add_func("/wizbit/sync/1", test_sync);
+	Test.add_func("/wizbit/sync/1", test_simple_1);
+	/* Test.add_func("/wizbit/sync/1", test_sync); */
 	Test.run();
 }
