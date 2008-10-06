@@ -11,7 +11,7 @@ namespace Wiz {
 
 		public string committer {
 			get {
-				return this.commit.commiter;
+				return this.commit.committer;
 			}
 		}
 
@@ -39,7 +39,7 @@ namespace Wiz {
 		public List<Version> parents {
 			get {
 				if (this.commit.parents.length() == 0)
-					return (Version)null;
+					return (List)null;
 				List<Version> parents;
 				foreach (Commit parent in this.commit.parents) {
 					if (!parent.parsed)
