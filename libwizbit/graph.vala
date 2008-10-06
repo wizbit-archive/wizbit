@@ -129,7 +129,7 @@ namespace Graph {
 		public Blob blob { get; set; }
 		public List<Commit> parents;
 		public string committer { get; set; }
-		public Time timestamp { get; set; }
+		public int timestamp { get; set; }
 
 		/* Duplicated because vala won't use the ones in Object yet */
 		public Commit(Store store) {
@@ -194,12 +194,8 @@ namespace Graph {
 			mark = pos = pos+10;
 			while (bufptr[pos] != '\n' && pos < size)
 				pos ++;
-			// TODO
-			this.timestamp = Time.local (time_t());//((string)bufptr).substring(mark, pos-mark);
-
-			mark = pos = pos+1;
-
-			this.message = ((string)bufptr).substring(mark, size-mark);
+			string tmptimestamp = ((string)bufptr).substring(mark, pos-mark);
+			this.timestamp = tmptimestamp.to_int();
 		}
 
 		public override void serialize(out void *bufptr, out long size) {
@@ -208,7 +204,7 @@ namespace Graph {
 			foreach (Commit parent in this.parents)
 				this.builder.append("parent %s\n".printf(parent.uuid));
 			this.builder.append("committer %s\n".printf(this.committer));
-			// TODO TIMESTAMP this.builder.append("timestamp %d\n".printf(this.timestamp.sinceepoch?));
+			this.builder.append("timestamp %d\n".printf(this.timestamp));
 
 			bufptr = this.builder.str;
 			size = this.builder.str.len();

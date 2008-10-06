@@ -127,7 +127,7 @@ namespace Wiz {
 				commit.parents.append( parent.commit );
 			// TODO Should get the committer from the env, or contacts :D
 			commit.committer = "John Carr <john.carr@unrouted.co.uk>";
-			commit.timestamp = Time.local (time_t());
+			commit.timestamp = (int) time_t();
 			commit.write();
 
 			var new_version = new Version(this.store, commit.uuid);

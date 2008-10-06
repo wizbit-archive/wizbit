@@ -14,12 +14,10 @@ namespace Wiz {
 				return this.commit.commiter;
 			}
 		}
-		// TODO
-		public Time timestamp {
+
+		public int timestamp {
 			get {
 				return this.commit.timestamp;
-			} set {
-				timestamp = value;
 			}
 		}
 
@@ -32,6 +30,23 @@ namespace Wiz {
 				if (!c.parsed)
 					c.unserialize();
 				return new Version(this.store, c.uuid);
+			}
+		}
+
+		/* to iterate every node in the dag we need all parents
+		 * of all nodes
+		 */
+		public List<Version> parents {
+			get {
+				if (this.commit.parents.length() == 0)
+					return (Version)null;
+				List<Version> parents;
+				foreach (Commit parent in this.commit.parents) {
+					if (!parent.parsed)
+						parent.unserialize();
+					parents.append(new Version(this.store, parent.uuid));
+				}
+				return parents;
 			}
 		}
 
