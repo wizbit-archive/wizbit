@@ -129,7 +129,7 @@ namespace Graph {
 
 	public class Commit : Object {
 		private StringBuilder builder;
-	
+
 		public Blob blob { get; set; }
 		public List<Commit> parents;
 		public string author { get; set; }
@@ -179,7 +179,7 @@ namespace Graph {
 				mark = pos = pos + 7;
 				while (bufptr[pos] != '\n' && pos < size)
 					pos ++;
-				
+
 				this.parents.append(new Commit.from_uuid(this.store, ((string)bufptr).substring(mark, pos-mark)));
 				mark = pos = pos+1;
 			}
