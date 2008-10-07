@@ -77,16 +77,6 @@ namespace Graph {
 
 		public virtual void serialize(out void *bufptr, out long size) {}
 
-		protected bool matches (char* begin, string keyword) {
-			char* keyword_array = keyword;
-			long len = keyword.len ();
-			for (int i = 0; i < len; i++) {
-				if (begin[i] != keyword_array[i]) {
-					return false;
-				}
-			}
-			return true;
-		}
 
 	}
 
@@ -205,6 +195,15 @@ namespace Graph {
 			mark = pos = pos+1;
 
 			this.message = ((string)bufptr).substring(mark, size-mark);
+		}
+
+		private bool matches (char* begin, string keyword) {
+			char* keyword_array = keyword;
+			long len = keyword.len ();
+			for (int i = 0; i < len; i++)
+				if (begin[i] != keyword_array[i])
+					return false;
+			return true;
 		}
 
 		public override void serialize(out void *bufptr, out long size) {
