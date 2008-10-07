@@ -15,6 +15,10 @@ public class SyncServer : Object {
 				retval.append(v);
 		return retval;
 	}
+
+	public Version? i_can_has_object() {
+		return null;
+	}
 }
 
 public class SyncClient : Object {
@@ -33,15 +37,28 @@ public class SyncClient : Object {
 		foreach (var v in tips)
 			this.iter.add_version(v);
 
-		int size = 4;
+		uint size = 4;
 		while (!this.iter.end) {
-			List<Version> list = this.iter.get(size);
-			foreach (var v in server.do_you_have( list ) ) {
+			stdout.printf("i might send: %u\n", size);
+
+			List<Version> to_send = this.iter.get(size);
+			stdout.printf("sending: %u\n", to_send.length());
+
+			List<Version> got_back = server.do_you_have(to_send);
+			stdout.printf("got back: %u\n", got_back.length());
+
+			foreach (var v in got_back) {
 				/* foreach (var p in v.parents)
 					this.iter.kick_out(p);*/
 				this.iter.kick_out(v.previous);
 			}
-			size *= 2;
+
+			size += 2;
+		}
+
+		var commit = server.i_can_has_object();
+		while (commit != null) {
+			commit = server.i_can_has_object();
 		}
 	}
 }
