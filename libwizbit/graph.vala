@@ -76,8 +76,6 @@ namespace Graph {
 		}
 
 		public virtual void serialize(out void *bufptr, out long size) {}
-
-
 	}
 
 	public class Blob : Object {
