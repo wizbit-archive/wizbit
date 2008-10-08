@@ -30,7 +30,7 @@ public class SyncServer : Object {
 	}
 
 	public Version? i_can_has_object() {
-		return this.iter.next();
+		return null;
 	}
 }
 
