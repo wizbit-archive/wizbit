@@ -17,6 +17,10 @@ namespace Wiz {
 			this.end = false;
 		}
 
+		public void add_visited(Version v) {
+			this.visited.append(v);
+		}
+
 		bool have_visited(Version v) {
 			foreach (var visited in this.visited)
 				if (v.version_uuid == visited.version_uuid)

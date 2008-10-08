@@ -1,23 +1,37 @@
 using GLib;
 using Wiz;
+using Graph;
 
 public class SyncServer : Object {
 	public Wiz.Store store { private get; construct; }
+
+	private List<Version> tips;
+	private Wiz.BreadthFirstIterator iter;
 
 	public SyncServer(Wiz.Store store) {
 		this.store = store;
 	}
 
 	public List<Version> do_you_have(List<Version> versions) {
+		if (this.tips == null) {
+			this.tips = versions.copy();
+			this.iter = new Wiz.BreadthFirstIterator();
+			foreach (var v in versions)
+				this.iter.add_version(v);
+		}
+
 		var retval = new List<Version>();
-		foreach (var v in versions)
+		foreach (var v in versions) {
 			if (this.store.bit_exists(v.version_uuid))
 				retval.append(v);
+			else
+				this.iter.add_visited(v);
+		}
 		return retval;
 	}
 
 	public Version? i_can_has_object() {
-		return null;
+		return this.iter.next();
 	}
 }
 
