@@ -1,6 +1,5 @@
 using GLib;
 using Wiz;
-using Graph;
 
 public class SyncServer : Object {
 	public Wiz.Store store { private get; construct; }
