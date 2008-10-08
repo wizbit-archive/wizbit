@@ -124,9 +124,9 @@ namespace Wiz {
 			commit.blob = blob;
 			if (parent != null)
 				commit.parents.append( parent.commit );
-			commit.author = "John Carr <john.carr@unrouted.co.uk>";
+			// TODO Should get the committer from the env, or contacts :D
 			commit.committer = "John Carr <john.carr@unrouted.co.uk>";
-			commit.message = "I don't like Mondays";
+			commit.timestamp = (int) time_t();
 			commit.write();
 
 			var new_version = new Version(this.store, commit.uuid);

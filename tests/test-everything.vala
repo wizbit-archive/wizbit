@@ -24,12 +24,12 @@ public void test_wiz_bit_2() {
 	
 	var v2 = obj.primary_tip;
 	assert( v2 != null );
-	assert( v2.author != null );
+	assert( v2.committer != null );
 	assert( v2.previous != null );
 	assert( v2.read_as_string() == "BARFOO" );
 
 	var v1 = v2.previous;
-	assert( v1.author != null);
+	assert( v1.committer != null);
 	assert( v1.previous == null);
 	assert( v1. read_as_string() == "FOOBAR" );
 }
@@ -62,9 +62,8 @@ public void test_graph() {
 	var commit = new Graph.Commit(store);
 	commit.blob = blob;
 	commit.parents.append( new Graph.Commit.from_uuid(store, "some random uuid") );
-	commit.author = "John Carr <john.carr@unrouted.co.uk>";
 	commit.committer = "John Carr <john.carr@unrouted.co.uk>";
-	commit.message = "Foo bar foo bar";
+  commit.timestamp = (int) time_t();
 	commit.write();
 
 	assert( commit.uuid.len() == 40 );
@@ -74,9 +73,7 @@ public void test_graph() {
 	c.unserialize();
 
 	assert( c.blob.uuid == blob.uuid );
-	assert( c.author == "John Carr <john.carr@unrouted.co.uk>" );
 	assert( c.committer == "John Carr <john.carr@unrouted.co.uk>" );
-	assert( c.message == "Foo bar foo bar" );
 }
 
 public static void main (string[] args) {

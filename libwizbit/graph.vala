@@ -120,9 +120,8 @@ namespace Graph {
 
 		public Blob blob { get; set; }
 		public List<Commit> parents;
-		public string author { get; set; }
 		public string committer { get; set; }
-		public string message { get; set; }
+		public int timestamp { get; set; }
 
 		/* Duplicated because vala won't use the ones in Object yet */
 		public Commit(Store store) {
@@ -172,16 +171,6 @@ namespace Graph {
 				mark = pos = pos+1;
 			}
 
-			if (!matches(&bufptr[pos], "author "))
-				return;
-
-			mark = pos = pos+7;
-			while (bufptr[pos] != '\n' && pos < size)
-				pos ++;
-
-			this.author = ((string)bufptr).substring(mark, pos-mark);
-			mark = pos = pos+1;
-
 			if (!matches(&bufptr[pos], "committer "))
 				return;
 
@@ -190,9 +179,15 @@ namespace Graph {
 				pos ++;
 
 			this.committer = ((string)bufptr).substring(mark, pos-mark);
-			mark = pos = pos+1;
 
-			this.message = ((string)bufptr).substring(mark, size-mark);
+			if (!matches(&bufptr[pos], "timestamp "))
+				return;
+
+			mark = pos = pos+10;
+			while (bufptr[pos] != '\n' && pos < size)
+				pos ++;
+			string tmptimestamp = ((string)bufptr).substring(mark, pos-mark);
+			this.timestamp = tmptimestamp.to_int();
 		}
 
 		private bool matches (char* begin, string keyword) {
@@ -209,9 +204,8 @@ namespace Graph {
 			this.builder.append("blob %s\n".printf(this.blob.uuid));
 			foreach (Commit parent in this.parents)
 				this.builder.append("parent %s\n".printf(parent.uuid));
-			this.builder.append("author %s\n".printf(this.author));
 			this.builder.append("committer %s\n".printf(this.committer));
-			this.builder.append(this.message);
+			this.builder.append("timestamp %d\n".printf(this.timestamp));
 
 			bufptr = this.builder.str;
 			size = this.builder.str.len();

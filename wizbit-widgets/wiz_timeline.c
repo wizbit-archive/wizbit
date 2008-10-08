@@ -20,6 +20,18 @@
  * Boston, MA 02111-1307, USA.
  */
 
+/* TODO
+ *
+ * 1. Fix up the iterate_dag and related functions to actually be sane
+ * 2. Work out the calculation code for zooming, essentially this is
+ *    based on the timestamp of the primary tip or "newest" tip and root node
+ *    timestamps.
+ * 3. Utilise two surfaces for drawing, one containing the edges, one containing
+ *    the nodes. The nodes are then composited onto the top of the edges, this
+ *    reduces the iterations of the dag required for rendering a node, however
+ *    it increases the risk of a large performance hit as compositing cairo
+ *    surfaces is painfully slow on some chips (but not vesa strangely enough)
+ */
 #include <glib/gi18n.h>
 #include <gtk/gtk.h>
 #include <sys/types.h>
@@ -37,54 +49,58 @@
 
 #define WIZ_TIMELINE_GET_PRIVATE(obj) (G_TYPE_INSTANCE_GET_PRIVATE ((obj), WIZ_TYPE_TIMELINE, WizTimelinePrivate))
 
-struct _WizTimelineDag
-{
-    gpointer *parents[];
-    gint no_of_parents;
+typedef struct _WizTimelineNode WizTimelineNode;
+typedef struct _WizTimelineEdge WizTimelineEdge;
 
-    gdouble size;
-    gchar *version_uuid;
-
-    /* These x/y co-ordinates refer to positions relative to the size
-     * of the whole rendered DAG, rather than the portion of the DAG
-     * displayed on screen
-     */
-    guint x;
-    guint y;
-    guint timestamp;
-
-    gpointer *children[];
-    gint no_of_children;
+struct _WizTimelineEdge {
+  WizTimelineNode *src;
+  WizTimelineNode *dst;
 };
 
+struct _WizTimelineNode
+{
+  gint tip_id;
+
+  gdouble size;
+  gchar *version_uuid;
+  guint timestamp;
+  guint column;
+  gdouble v_pos;
+  GList *edges;
+};
 
 struct _WizTimelinePrivate
 {
-    WizTimelineDag *dag;
-    WizBit *bit;
+  WizTimelineNode *primary_tip;
+  WizTimelineNode *root;
+  WizTImelineNode *node;
+  WizBit *bit;
+  GList *seen;
+  GList *tips;
+  guint column;
 
-    /* We can turn off editability of this widget, if we're working with 
-     * bits (files etc...) which can't easily be merged.
-     */
-    gboolean mergable;
+  /* We can turn off editability of this widget, if we're working with 
+   * bits (files etc...) which can't easily be merged.
+   */
+  gboolean mergable;
 
-    gchar *bit_uuid;
-    gchar *selected_version_uuid;
+  gchar *bit_uuid;
+  gchar *selected_version_uuid;
 
-    gint width;
-    gint height;
-    gdouble zoom;
+  guint width;
+  guint height;
+  gdouble zoom;
 
-    /* The real position of the mouse relative to the full height of the DAG */
-    gint real_mouse_x;
-    gint real_mouse_y;
+  /* The real position of the mouse relative to the full height of the DAG */
+  guint real_mouse_x;
+  guint real_mouse_y;
 
-    gint x_offset;
-    gint visible_height;
+  guint x_offset;
+  guint visible_height;
 
-    gboolean mouse_down;
-    gchar *drag_version_uuid;
-    gchar *drop_version_uuid;
+  gboolean mouse_down;
+  gchar *drag_version_uuid;
+  gchar *drop_version_uuid;
 };
 
 /* Properties */
@@ -143,24 +159,105 @@ static gboolean wiz_timeline_enter_notify (GtkWidget * widget,
 static gboolean wiz_timeline_leave_notify (GtkWidget * widget,
                                            GdkEventCrossing * event);
 
-
 static guint timeline_signals[LAST_SIGNAL] = { 0 };
 
 static gpointer wiz_timeline_parent_class = NULL;
 
+static gint
+node_seen(WizTimeline *wiz_timeline, gchar *version_uuid) {
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  gint i;
+  WizTimelineNode *node;
+  priv->seen = g_list_first(priv->seen);
+  for (i = 0;i < g_list_length(priv->seen); i++) {
+    node = g_list_nth_data(priv->seen, i);
+    // Compare version_uuid's in memory 
+    if (!memcmp(node->version_uuid, version_uuid, 40)) {
+      priv->node = node;
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/* Retrieve or allocate a node 
+ */
 static void
-render (GtkWidget * widget)
+node_get (WizTimeline *wiz_timeline, WizVersion *wiz_version, guint col) {
+  WizTimelineNode *node;
+
+  if (node_seen(wiz_timeline, wiz_version->version_uuid))
+    return;
+
+  if (priv->node == NULL) {
+    node = g_slice_new(WizTimelineNode);
+    node->version_uuid = g_strdup (wiz_version_get_version_uuid(wiz_version));
+    node->timestamp = wiz_version_get_timestamp(wiz_version);
+    node->tip_id = priv->last_node->tip_id;
+    node->edges = NULL;
+    node->column = priv->column;
+
+    // If seen is null this must be the primary tip, as that's where we start
+    if (priv->seen == NULL)
+      priv->primary_tip = node;
+    priv->node = node;
+    priv->seen = g_list_append(node);
+  }
+}
+
+/* Adds an edge to the linked list for edges of src */
+static void 
+add_edge(WizTimelineNode *src, WizTimelineNode *dst) {
+  WizTimelineEdge *edge = NULL;
+  gint i;
+
+  // Look for existing edge matching this edge
+  for (i = 0;i < g_list_length(src->edges); i++) {
+    edge = g_list_nth_data(src->edges, i);
+    if (edge->dst == dst)
+      break;
+    edge = NULL;
+  }
+  if (edge == NULL) {
+    edge = g_slice_new(WizTimelineEdge);
+    edge->src = src;
+    edge->dst = dst;
+    src->edges = g_list_append(src->edges, edge);
+  }
+}
+
+void iterate_reflog(WizVersion *wiz_version, WizTimeline *wiz_timeline); 
 {
-  WizTimeline *wiz_timeline = WIZ_TIMELINE (widget);
-  cairo_t *cr = gdk_cairo_create (widget->window);
-  gint width, height;
-  GError *error = NULL;
-  gdk_drawable_get_size (widget->window, &width, &height);
-
-  /* TODO Drawing code */
-
-  /* Cleanup */
-  cairo_destroy (cr);
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  gint i;
+  GList *parents;
+  WizTimelineNode *last_node = NULL;
+  do {
+    node_get(wiz_timeline, wiz_version);
+    /* Hook up the edges, this include the new edge between this node and
+     * the previous node, and the previous node and this one. Creating an
+     * undirected graph from the directed graph.
+     */
+    if (last_node != NULL) {  
+      add_edge(priv->node, last_node);
+      add_edge(last_node, priv->node);
+    }
+    last_node = priv->node;
+    parents = wiz_version_get_parents(wiz_version);
+    if (parents != NULL) {
+      wiz_version = g_list_get_nth_data(parents, 0);
+    }
+    // Recurse over all other parents as if they were tips
+    if (g_list_length(parents) > 1) {
+      for (i = 1; i < g_list_length(parents); i++) {
+        priv->column++;
+        iterate_reflog(g_list_get_nth_data(parents, i), wiz_timeline);    
+      }
+    }
+  } while (parents != NULL);
+  // All roads lead to rome :) 
+  priv->root = last_node;
+  priv->column++;
 }
 
 /* Update the widget DAG from the WizStore, this requires retireving the bit
@@ -173,7 +270,73 @@ render (GtkWidget * widget)
 void 
 wiz_timeline_update_from_store (WizTimeline *wiz_timeline) 
 {
- // TODO
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  g_list_free(priv->seen);
+  priv->seen = NULL;
+  priv->column = 1;
+  g_list_foreach(wiz_bit_get_tips(priv->bit), iterate_reflog, wiz_timeline);
+}
+
+/* Iterate over the nodes calling callback with timeline, node and data 
+ * if once we've iterated children we still haven't been seen.
+ */
+static void
+recurse_nodes (WizTimeline *wiz_timeline, WizTimelineNode *node, gointer callback, gointer data)
+{
+  WizTimelineEdge *edge;
+  gint i;
+  if (node_seen(WizTimeline *wiz_timeline, node->version_uuid)) {
+    callback(wiz_timeline, priv->node, data);
+    for (i = 0;i < g_list_length(priv->node->edges); i++) {
+      edge = g_list_nth_data(priv->node->edges, i);
+      recurse_nodes(wiz_timeline, edge->dst, callback);
+    }
+  }
+}
+
+/* Start are recursion of the dag from the root, it really doesn't matter where
+ * we start it should all eventually be touched
+ */
+static void
+iterate_dag (WizTimeline *wiz_timeline, gpointer callback, gpointer data)
+{
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  WizTimelineNode *node = priv->root;
+  recurse_nodes(wiz_timeline, node, callback, data);
+}
+
+static void
+update_node(WizTimeline *wiz_timeline, WizTimelineNode *node, gpointer data)
+{
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  /* work out the x/y co-ordinates of the dag, to do this we compare the
+   * timesdtamp of this node and the timestamp of the root version and 
+   * the primary tip then perform a simple set of comparisons with them.
+   
+  /* we also update the offset from the position of the sliders
+   */
+}
+
+static void
+render_node(WizTimeline *wiz_timeline, WizTimelineNode *node, cairo_t *cr)
+{
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  /* Draw the node where we told it to be drawn
+   */
+}
+
+static void
+render (GtkWidget * widget)
+{
+  WizTimeline *wiz_timeline = WIZ_TIMELINE (widget);
+  WizTimelinePrivate *priv = WIZ_TIMELINE_GET_PRIVATE(wiz_timeline);
+  cairo_t *cr = gdk_cairo_create (widget->window);
+  gint width, height;
+  GError *error = NULL;
+  gdk_drawable_get_size (widget->window, &width, &height);
+  iterate_dag(wiz_timeline, update_node, NULL);
+  iterate_dag(wiz_timeline, render_node, cr);
+  cairo_destroy (cr);
 }
 
 GType
@@ -283,7 +446,12 @@ wiz_timeline_finalize (GObject * object)
 {
   WizTimeline *wiz_timeline = WIZ_TIMELINE (object);
   /* TODO Cleanup and destroy anything left over */
-
+  /* Iterate over and deallocate all of the dag, to do this, we iterate over
+   * from the root to the tips deallocating edges first and appending nodes
+   * to the seen list, then we iterate over the seen list and de-allocate it.
+   * this should be made into a function so it's callable as a routing to roll
+   * through to deallocate the dag. iterate_dag ^^
+   */
   G_OBJECT_CLASS (wiz_timeline_parent_class)->finalize (object);
 }
 

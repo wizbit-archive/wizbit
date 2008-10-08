@@ -9,15 +9,15 @@ namespace Wiz {
 		public Graph.Store store { get; construct; }
 		public string version_uuid { get; construct; }
 
-		public string author {
+		public string committer {
 			get {
-				return this.commit.author;
+				return this.commit.committer;
 			}
 		}
 
-		public string message {
+		public int timestamp {
 			get {
-				return this.commit.message;
+				return this.commit.timestamp;
 			}
 		}
 
@@ -30,6 +30,23 @@ namespace Wiz {
 				if (!c.parsed)
 					c.unserialize();
 				return new Version(this.store, c.uuid);
+			}
+		}
+
+		/* to iterate every node in the dag we need all parents
+		 * of all nodes
+		 */
+		public List<Version> parents {
+			get {
+				if (this.commit.parents.length() == 0)
+					return (List)null;
+				List<Version> parents;
+				foreach (Commit parent in this.commit.parents) {
+					if (!parent.parsed)
+						parent.unserialize();
+					parents.append(new Version(this.store, parent.uuid));
+				}
+				return parents;
 			}
 		}
 

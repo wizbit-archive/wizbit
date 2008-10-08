@@ -36,7 +36,6 @@ G_BEGIN_DECLS
 typedef struct _WizTimeline           WizTimeline;
 typedef struct _WizTimelineClass      WizTimelineClass;
 typedef struct _WizTimelinePrivate    WizTimelinePrivate;
-typedef struct _WizTimelineDag        WizTimelineDag;
 
 struct _WizTimeline
 {
