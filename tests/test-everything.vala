@@ -21,17 +21,18 @@ public void test_wiz_bit_1() {
 
 public void test_wiz_bit_2() {
 	var obj = new Wiz.Bit("SOMENAME", "data/wiz_bit");
-	
+
 	var v2 = obj.primary_tip;
 	assert( v2 != null );
 	assert( v2.committer != null );
-	assert( v2.previous != null );
+	assert( v2.parents.length() == 1 );
 	assert( v2.read_as_string() == "BARFOO" );
 
-	var v1 = v2.previous;
+	var v1 = v2.parents.nth_data(0);
+	assert( v1 != null );
 	assert( v1.committer != null);
-	assert( v1.previous == null);
-	assert( v1. read_as_string() == "FOOBAR" );
+	assert( v1.parents.length() == 0 );
+	assert( v1.read_as_string() == "FOOBAR" );
 }
 
 public void test_wiz_refs_1() {

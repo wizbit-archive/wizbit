@@ -33,11 +33,8 @@ namespace Wiz {
 			while(p!=null && this.have_visited(p))
 				p = this.queue.pop_head();
 
-			/*foreach (var p in popped.parents) {
-				this.queue.append(p);
-			}*/
-			if (p.previous != null)
-				this.queue.push_tail(p.previous);
+			foreach (var par in p.parents)
+				this.queue.push_tail(par);
 
 			if (this.queue.get_length() == 0)
 				this.end = true;

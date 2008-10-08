@@ -60,11 +60,9 @@ public class SyncClient : Object {
 			List<Version> got_back = server.do_you_have(to_send);
 			stdout.printf("got back: %u\n", got_back.length());
 
-			foreach (var v in got_back) {
-				/* foreach (var p in v.parents)
-					this.iter.kick_out(p);*/
-				this.iter.kick_out(v.previous);
-			}
+			foreach (var v in got_back)
+				foreach (var p in v.parents)
+					this.iter.kick_out(p);
 
 			size += 2;
 		}

@@ -36,11 +36,9 @@ namespace Wiz {
 		/* to iterate every node in the dag we need all parents
 		 * of all nodes
 		 */
-		public List<Version> parents {
+		public List<Version> #parents {
 			get {
-				if (this.commit.parents.length() == 0)
-					return (List)null;
-				List<Version> parents;
+				var parents = new List<Version>();
 				foreach (Commit parent in this.commit.parents) {
 					if (!parent.parsed)
 						parent.unserialize();
