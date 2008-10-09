@@ -41,7 +41,7 @@ test_sync_SOURCES = \
 	$(NULL)
 
 test-sync.vala.stamp: $(test_sync_VALASOURCES)
-	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg gio-2.0 $^
+	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg gio-2.0 --pkg gnio $^
 	touch $@
 
 test_sync_CFLAGS=@WIZBIT_CFLAGS@
