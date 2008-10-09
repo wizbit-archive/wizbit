@@ -14,7 +14,7 @@ BUILT_SOURCES = \
 	$(NULL)
 
 test_everything_VALASOURCES = \
-	$(top_builddir)/libwizbit/libwizbit.vapi		\
+	$(top_builddir)/libwizbit/wizbit.vapi		\
 	test-everything.vala				\
 	$(NULL)
 
@@ -31,7 +31,7 @@ test_everything_CFLAGS=@WIZBIT_CFLAGS@
 test_everything_LDADD=../libwizbit/libwizbit.la @WIZBIT_LIBS@
 
 test_sync_VALASOURCES = \
-	$(top_builddir)/libwizbit/libwizbit.vapi		\
+	$(top_builddir)/libwizbit/wizbit.vapi		\
 	test-sync.vala					\
 	$(NULL)
 
