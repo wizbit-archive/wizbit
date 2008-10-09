@@ -36,6 +36,9 @@ wizbit_LDADD = \
 	$(WIZBIT_LIBS) \
 	$(NULL)
 
+pkgconfigdir = $(libdir)/pkgconfig
+pkgconfig_DATA = wizbit.pc
+
 EXTRA_DIST = \
 	intltool-extract.in \
 	intltool-update.in \
