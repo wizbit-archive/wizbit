@@ -47,6 +47,8 @@ public class SyncClient : Object {
 	}
 
 	public void sync(SyncServer server, List<Version> tips) {
+		var need_to_send = new List<Version>();
+
 		foreach (var v in tips)
 			this.iter.add_version(v);
 
@@ -60,7 +62,6 @@ public class SyncClient : Object {
 			List<Version> got_back = server.do_you_have(to_send);
 			stdout.printf("got back: %u\n", got_back.length());
 
-			List<Version> need_to_send;
 			foreach (var x in to_send) {
 				bool flag = true;
 				foreach (var y in got_back)
@@ -80,10 +81,8 @@ public class SyncClient : Object {
 			size += 2;
 		}
 
-		var commit = server.i_can_has_object();
-		while (commit != null) {
-			commit = server.i_can_has_object();
-		}
+		foreach (var v in need_to_send)
+			stdout.printf("ucanhas: %s\n", v.version_uuid);
 	}
 }
 
