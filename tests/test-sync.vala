@@ -71,6 +71,7 @@ public class SyncClient : Object {
 					flag = false;
 				}
 			}
+			stdout.printf("k, i need to send u: %u\n", need_to_send.length());
 
 			foreach (var v in got_back)
 				foreach (var p in v.parents)
