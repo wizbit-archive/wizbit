@@ -17,13 +17,13 @@ AM_CPPFLAGS = \
 
 BUILT_SOURCES = src/wizbit.vala.stamp
 
-bin_PROGRAMS = wizbit
+bin_PROGRAMS = wizbitd
 
-wizbit_VALASOURCES = \
+wizbitd_VALASOURCES = \
 	src/main.vala \
 	$(NULL)
 
-wizbit_SOURCES = \
+wizbitd_SOURCES = \
 	$(wizbit_VALASOURCES:.vala=.c) \
 	$(wizbit_VALASOURCES:.vala=.h) \
 	$(NULL)
@@ -32,7 +32,7 @@ src/wizbit.vala.stamp: $(wizbit_VALASOURCES)
 	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) $^
 	touch $@
 
-wizbit_LDADD = \
+wizbitd_LDADD = \
 	$(WIZBIT_LIBS) \
 	$(NULL)
 
