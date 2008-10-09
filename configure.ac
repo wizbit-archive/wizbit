@@ -34,7 +34,9 @@ PKG_CHECK_MODULES(WIZBIT, glib-2.0 >= $GLIB_REQUIRED gobject-2.0 >= $GLIB_REQUIR
 AC_SUBST(WIZBIT_CFLAGS)
 AC_SUBST(WIZBIT_LIBS)
 
-AC_CONFIG_FILES([Makefile
+AC_CONFIG_FILES([
+	wizbit.pc
+	Makefile
 	libwizbit/Makefile
 	tests/Makefile
 	po/Makefile.in
