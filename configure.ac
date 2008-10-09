@@ -34,17 +34,10 @@ PKG_CHECK_MODULES(WIZBIT, glib-2.0 >= $GLIB_REQUIRED gobject-2.0 >= $GLIB_REQUIR
 AC_SUBST(WIZBIT_CFLAGS)
 AC_SUBST(WIZBIT_LIBS)
 
-AC_WIZ_PYTHON
-AC_WIZ_DOTNET_CHECK
-
 AC_CONFIG_FILES([Makefile
 	libwizbit/Makefile
 	tests/Makefile
 	po/Makefile.in
-	bindings/Makefile
-	bindings/dotnet/Makefile
-	bindings/dotnet/wizbit-sources.xml
-	bindings/dotnet/wizbit-sharp.pc
-	bindings/python/Makefile])
+])
 
 AC_OUTPUT

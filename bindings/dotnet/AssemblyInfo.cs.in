@@ -1,7 +1,0 @@
-using System.Reflection;
-using System.Runtime.CompilerServices;
-
-[assembly:AssemblyVersion("0.0.1")]
-[assembly:AssemblyDelaySign(false)]
-[assembly:AssemblyKeyFile("wizbit-sharp.snk")]
-[assembly:GLib.IgnoreClassInitializers]

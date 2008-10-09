@@ -8,7 +8,6 @@ SUBDIRS = \
 	libwizbit \
 	tests \
 	po \
-	bindings \
 	$(NULL)
 
 AM_CPPFLAGS = \
