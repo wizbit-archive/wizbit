@@ -27,13 +27,13 @@ libwizbit_la_SOURCES = \
 	$(NULL)
 
 libwizbit.vala.stamp: $(libwizbit_la_VALASOURCES)
-	$(VALAC) -C --library libwizbit --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg glib-2.0 --pkg gio-2.0 --pkg gio-unix-2.0 $^
+	$(VALAC) -C --library wizbit --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg glib-2.0 --pkg gio-2.0 --pkg gio-unix-2.0 $^
 	touch $@
 
 libwizbit_la_CFLAGS=@WIZBIT_CFLAGS@
 libwizbit_la_LIBS=@WIZBIT_LIBS@
 
-wizbitincludedir = $(includedir)/wizbit-1.0/
+wizbitincludedir = $(includedir)/wizbit-1.0/wizbit
 wizbitinclude_HEADERS = \
 	$(libwizbit_la_VALASOURCES:.vala=.h) \
 	$(NULL)
