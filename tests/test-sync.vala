@@ -54,13 +54,13 @@ public class SyncClient : Object {
 
 		uint size = 4;
 		while (!this.iter.end) {
-			stdout.printf("i might send: %u\n", size);
+			debug("i might send: %u\n", size);
 
 			List<Version> to_send = this.iter.get(size);
-			stdout.printf("sending: %u\n", to_send.length());
+			debug("sending: %u\n", to_send.length());
 
 			List<Version> got_back = server.do_you_have(to_send);
-			stdout.printf("got back: %u\n", got_back.length());
+			debug("got back: %u\n", got_back.length());
 
 			foreach (var x in to_send) {
 				bool flag = true;
@@ -72,7 +72,7 @@ public class SyncClient : Object {
 					flag = false;
 				}
 			}
-			stdout.printf("k, i need to send u: %u\n", need_to_send.length());
+			debug("k, i need to send u: %u\n", need_to_send.length());
 
 			foreach (var v in got_back)
 				foreach (var p in v.parents)
@@ -82,7 +82,7 @@ public class SyncClient : Object {
 		}
 
 		foreach (var v in need_to_send)
-			stdout.printf("ucanhas: %s\n", v.version_uuid);
+			debug("ucanhas: %s\n", v.version_uuid);
 	}
 }
 
