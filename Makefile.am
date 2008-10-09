@@ -15,27 +15,6 @@ AM_CPPFLAGS = \
 	-include $(CONFIG_HEADER) \
 	$(NULL)
 
-BUILT_SOURCES = src/wizbit.vala.stamp
-
-bin_PROGRAMS = wizbitd
-
-wizbitd_VALASOURCES = \
-	src/main.vala \
-	$(NULL)
-
-wizbitd_SOURCES = \
-	$(wizbit_VALASOURCES:.vala=.c) \
-	$(wizbit_VALASOURCES:.vala=.h) \
-	$(NULL)
-
-src/wizbit.vala.stamp: $(wizbit_VALASOURCES)
-	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) $^
-	touch $@
-
-wizbitd_LDADD = \
-	$(WIZBIT_LIBS) \
-	$(NULL)
-
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = wizbit.pc
 
