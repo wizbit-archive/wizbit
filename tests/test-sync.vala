@@ -60,6 +60,18 @@ public class SyncClient : Object {
 			List<Version> got_back = server.do_you_have(to_send);
 			stdout.printf("got back: %u\n", got_back.length());
 
+			List<Version> need_to_send;
+			foreach (var x in to_send) {
+				bool flag = true;
+				foreach (var y in got_back)
+					if (x.version_uuid == y.version_uuid)
+						flag = false;
+				if (flag) {
+					need_to_send.append(x);
+					flag = false;
+				}
+			}
+
 			foreach (var v in got_back)
 				foreach (var p in v.parents)
 					this.iter.kick_out(p);
