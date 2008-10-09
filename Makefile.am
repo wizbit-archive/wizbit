@@ -5,7 +5,7 @@ NULL =
 AUTOMAKE_OPTIONS = subdir-objects
 
 SUBDIRS = \
-	libwizbit \
+	wizbit \
 	tests \
 	po \
 	$(NULL)

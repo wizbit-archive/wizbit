@@ -37,7 +37,7 @@ AC_SUBST(WIZBIT_LIBS)
 AC_CONFIG_FILES([
 	wizbit.pc
 	Makefile
-	libwizbit/Makefile
+	wizbit/Makefile
 	tests/Makefile
 	po/Makefile.in
 ])
