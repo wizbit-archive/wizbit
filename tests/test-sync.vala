@@ -4,33 +4,27 @@ using Wiz;
 public class SyncServer : Object {
 	public Wiz.Store store { private get; construct; }
 
-	private List<Version> tips;
-	private Wiz.BreadthFirstIterator iter;
-
 	public SyncServer(Wiz.Store store) {
 		this.store = store;
 	}
 
-	public List<Version> do_you_have(List<Version> versions) {
-		if (this.tips == null) {
-			this.tips = versions.copy();
-			this.iter = new Wiz.BreadthFirstIterator();
-			foreach (var v in versions)
-				this.iter.add_version(v);
-		}
-
-		var retval = new List<Version>();
+	public List<string> check(List<string> versions) {
+		/*
+		 * check
+		 * @versions: A list of versions to check for
+		 * 
+		 * Returns: A list of versions we have
+		 */
+		var retval = new List<string>();
 		foreach (var v in versions) {
-			if (this.store.bit_exists(v.version_uuid))
+			if (this.store.bit_exists(v))
 				retval.append(v);
-			else
-				this.iter.add_visited(v);
 		}
 		return retval;
 	}
 
-	public Version? i_can_has_object() {
-		return null;
+	public void here(string blob) {
+		debug("i can has red veg nao?");
 	}
 }
 
@@ -46,10 +40,10 @@ public class SyncClient : Object {
 		this.iter = new Wiz.BreadthFirstIterator();
 	}
 
-	public void sync(SyncServer server, List<Version> tips) {
+	public void push(SyncServer server, Wiz.Bit bit) {
 		var need_to_send = new List<Version>();
 
-		foreach (var v in tips)
+		foreach (var v in bit.tips)
 			this.iter.add_version(v);
 
 		uint size = 4;
@@ -78,7 +72,7 @@ public class SyncClient : Object {
 				foreach (var p in v.parents)
 					this.iter.kick_out(p);
 
-			size += 2;
+			size *= 2;
 		}
 
 		foreach (var v in need_to_send)
@@ -113,7 +107,7 @@ void test_simple_1()
 
 	var sa = new SyncServer(a);
 	var sb = new SyncClient(b);
-	sb.sync(sa, z.tips);
+	sb.sync(sa, z);
 }
 
 void test_sync()
