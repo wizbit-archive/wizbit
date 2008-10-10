@@ -61,6 +61,16 @@ public class SyncSource : Object {
 		this.size *= 2;
 		return retval;
 	}
+
+	public string ill_have_no_cheese_on_my_burger(string version_uuid) {
+		debug("om nom nom on the redveg burger");
+		return "crap we have no api to get this";
+	}
+
+	public string nom_nom(string version_uuid) {
+		var v = this.store.open_version("nomnom", version_uuid);
+		return v.read_as_string();
+	}
 }
 
 public class SyncClient : Object {
@@ -83,24 +93,27 @@ public class SyncClient : Object {
 		server.tell_me_about(object_uuids);
 
 		var burgers = server.tell_me_about_that_cheeseburger(new List<string>());
-		var sounds_yummy = new List<string>();
+		var sounds_yummy = new Queue<string>();
 		while (burgers.length() > 0) {
 			var do_not_want = new List<string>();
 			foreach (var additive in burgers) {
 				if (this.store.has_version(additive))
 					do_not_want.append(additive);
 				else
-					sounds_yummy.append(additive);
+					sounds_yummy.push_tail(additive);
 			}
 
 			burgers = server.tell_me_about_that_cheeseburger(do_not_want);
 		}
 
-		/*
+		/* Get redveg burgers from server, oldest first */
 		do {
-			sounds_yummy.pop();
-		} while (sounds_yummy.length() > 0);
-		*/
+			var uuid = sounds_yummy.pop_tail();
+			var blob = server.ill_have_no_cheese_on_my_burger(uuid);
+			var commit = server.nom_nom(uuid);
+
+			debug(blob);
+		} while (sounds_yummy.get_length() > 0);
 	}
 }
 
