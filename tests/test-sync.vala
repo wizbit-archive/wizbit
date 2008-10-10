@@ -41,14 +41,15 @@ public class SyncSource : Object {
 		return retval;
 	}
 
-	public List<string> tell_me_about_that_cheeseburger(List<string> versions) {
+	public List<string> tell_me_about_that_cheeseburger(Queue<string> versions) {
 		/*
 		 * tell_me_about_that_cheeseburger
 		 * @versions: A list of versions to kick out of the iterator
 		 * 
 		 * Returns: A list of versions found by the breadth first search
 		 */
-		foreach (var v in versions) {
+		for (uint i = 0; i < versions.get_length(); i++) {
+			var v = versions.peek_nth(i);
 			var wz = this.store.open_version("rarar", v);
 			this.iter.kick_out(wz);
 		}
@@ -92,17 +93,18 @@ public class SyncClient : Object {
 		/* Tell the server what objects we are interested in pulling */
 		server.tell_me_about(object_uuids);
 
-		var burgers = server.tell_me_about_that_cheeseburger(new List<string>());
 		var sounds_yummy = new Queue<string>();
+		var do_not_want = new Queue<string>();
+		var burgers = server.tell_me_about_that_cheeseburger(do_not_want);
+
 		while (burgers.length() > 0) {
-			var do_not_want = new List<string>();
+			do_not_want = new Queue<string>();
 			foreach (var additive in burgers) {
 				if (this.store.has_version(additive))
-					do_not_want.append(additive);
+					do_not_want.push_tail(additive);
 				else
 					sounds_yummy.push_tail(additive);
 			}
-
 			burgers = server.tell_me_about_that_cheeseburger(do_not_want);
 		}
 
