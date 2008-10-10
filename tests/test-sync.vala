@@ -1,30 +1,65 @@
 using GLib;
 using Wiz;
 
-public class SyncServer : Object {
+public class SyncSource : Object {
 	public Wiz.Store store { private get; construct; }
 
-	public SyncServer(Wiz.Store store) {
+	uint size;
+	Wiz.BreadthFirstIterator iter;
+
+	public SyncSource(Wiz.Store store) {
 		this.store = store;
 	}
 
-	public List<string> check(List<string> versions) {
+	public List<string> tell_me_about(List<string> objects) {
 		/*
-		 * check
-		 * @versions: A list of versions to check for
-		 * 
-		 * Returns: A list of versions we have
+		 * tell_me_about
+		 * @objects: A list of object ids that we want to pull
+		 *
+		 * Returns: A list of objects that arent on the source
+		 *
+		 * When pulling from a sync source, a client uses this method
+		 * to set which objects to bfs over.
+		 *
+		 * FIXME: This is a bit FAIL because we can only pull objects
+		 * we know about...
 		 */
+		this.size = 0;
+		this.iter = new Wiz.BreadthFirstIterator();
 		var retval = new List<string>();
-		foreach (var v in versions) {
-			if (this.store.bit_exists(v))
-				retval.append(v);
+		foreach (var o in objects) {
+			if (this.store.has_bit(o)) {
+				var bit = this.store.open_bit(o);
+				foreach (var t in bit.tips) {
+					this.iter.add_version(t);
+					this.size++;
+				}
+			} else {
+				retval.append(o);
+			}
 		}
 		return retval;
 	}
 
-	public void here(string blob) {
-		debug("i can has red veg nao?");
+	public List<string> tell_me_about_that_cheeseburger(List<string> versions) {
+		/*
+		 * tell_me_about_that_cheeseburger
+		 * @versions: A list of versions to kick out of the iterator
+		 * 
+		 * Returns: A list of versions found by the breadth first search
+		 */
+		foreach (var v in versions) {
+			var wz = this.store.open_version("rarar", v);
+			this.iter.kick_out(wz);
+		}
+
+		var retval = new List<string>();
+		var found = this.iter.get(this.size);
+		foreach (var f in found) {
+			retval.append(f.version_uuid);
+		}
+		this.size *= 2;
+		return retval;
 	}
 }
 
@@ -40,43 +75,32 @@ public class SyncClient : Object {
 		this.iter = new Wiz.BreadthFirstIterator();
 	}
 
-	public void push(SyncServer server, Wiz.Bit bit) {
-		var need_to_send = new List<Version>();
+	public void pull(SyncSource server, Wiz.Bit bit) {
+		var object_uuids = new List<string>();
+		object_uuids.append(bit.uuid);
 
-		foreach (var v in bit.tips)
-			this.iter.add_version(v);
+		/* Tell the server what objects we are interested in pulling */
+		server.tell_me_about(object_uuids);
 
-		uint size = 4;
-		while (!this.iter.end) {
-			debug("i might send: %u\n", size);
-
-			List<Version> to_send = this.iter.get(size);
-			debug("sending: %u\n", to_send.length());
-
-			List<Version> got_back = server.check(to_send);
-			debug("got back: %u\n", got_back.length());
-
-			foreach (var x in to_send) {
-				bool flag = true;
-				foreach (var y in got_back)
-					if (x.version_uuid == y.version_uuid)
-						flag = false;
-				if (flag) {
-					need_to_send.append(x);
-					flag = false;
-				}
+		var burgers = server.tell_me_about_that_cheeseburger(new List<string>());
+		var sounds_yummy = new List<string>();
+		while (burgers.length() > 0) {
+			var do_not_want = new List<string>();
+			foreach (var additive in burgers) {
+				if (this.store.has_version(additive))
+					do_not_want.append(additive);
+				else
+					sounds_yummy.append(additive);
 			}
-			debug("k, i need to send u: %u\n", need_to_send.length());
 
-			foreach (var v in got_back)
-				foreach (var p in v.parents)
-					this.iter.kick_out(p);
-
-			size *= 2;
+			burgers = server.tell_me_about_that_cheeseburger(do_not_want);
 		}
 
-		foreach (var v in need_to_send)
-			server.here("rarrrr");
+		/*
+		do {
+			sounds_yummy.pop();
+		} while (sounds_yummy.length() > 0);
+		*/
 	}
 }
 
@@ -105,9 +129,9 @@ void test_simple_1()
 
 	var b = new Wiz.Store("some_uuid", "data/sync_simple_1_b");
 
-	var sa = new SyncServer(a);
+	var sa = new SyncSource(a);
 	var sb = new SyncClient(b);
-	sb.push(sa, z);
+	sb.pull(sa, z);
 }
 
 void test_sync()
@@ -156,9 +180,9 @@ void test_sync()
 
 	var b = new Wiz.Store("some_uuid", "data/sync_b");
 
-	var sa = new SyncServer(a);
+	var sa = new SyncSource(a);
 	var sb = new SyncClient(b);
-	sb.push(sa, z);
+	sb.pull(sa, z);
 }
 
 public static void main (string[] args) {

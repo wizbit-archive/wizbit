@@ -22,8 +22,12 @@ namespace Wiz {
 			this.store = new Graph.Store(this.directory);
 		}
 
-		public bool bit_exists(string uuid) {
+		public bool has_version(string uuid) {
 			return this.store.exists(uuid);
+		}
+
+		public bool has_bit(string uuid) {
+			return true;
 		}
 
 		public Bit create_bit() {
