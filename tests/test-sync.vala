@@ -158,7 +158,7 @@ void test_sync()
 
 	var sa = new SyncServer(a);
 	var sb = new SyncClient(b);
-	sb.push(sa, z;
+	sb.push(sa, z);
 }
 
 public static void main (string[] args) {
