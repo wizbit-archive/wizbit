@@ -53,7 +53,7 @@ public class SyncClient : Object {
 			List<Version> to_send = this.iter.get(size);
 			debug("sending: %u\n", to_send.length());
 
-			List<Version> got_back = server.do_you_have(to_send);
+			List<Version> got_back = server.check(to_send);
 			debug("got back: %u\n", got_back.length());
 
 			foreach (var x in to_send) {
@@ -76,7 +76,7 @@ public class SyncClient : Object {
 		}
 
 		foreach (var v in need_to_send)
-			debug("ucanhas: %s\n", v.version_uuid);
+			server.here("rarrrr");
 	}
 }
 
