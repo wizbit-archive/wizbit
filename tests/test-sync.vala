@@ -95,17 +95,17 @@ public class SyncClient : Object {
 
 		var sounds_yummy = new Queue<string>();
 		var do_not_want = new Queue<string>();
-		var burgers = server.tell_me_about_that_cheeseburger(do_not_want);
+		var shas = server.tell_me_about_that_cheeseburger(do_not_want);
 
-		while (burgers.length() > 0) {
+		while (shas.length() > 0) {
 			do_not_want = new Queue<string>();
-			foreach (var additive in burgers) {
-				if (this.store.has_version(additive))
-					do_not_want.push_tail(additive);
+			foreach (var sha in shas) {
+				if (this.store.has_version(sha))
+					do_not_want.push_tail(sha);
 				else
-					sounds_yummy.push_tail(additive);
+					sounds_yummy.push_tail(sha);
 			}
-			burgers = server.tell_me_about_that_cheeseburger(do_not_want);
+			shas = server.tell_me_about_that_cheeseburger(do_not_want);
 		}
 
 		/* Get redveg burgers from server, oldest first */
