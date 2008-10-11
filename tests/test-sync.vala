@@ -41,9 +41,9 @@ public class SyncSource : Object {
 		return retval;
 	}
 
-	public List<string> tell_me_about_that_cheeseburger(Queue<string> versions) {
+	public List<string> search_for_shas(Queue<string> versions) {
 		/*
-		 * tell_me_about_that_cheeseburger
+		 * search_for_shas
 		 * @versions: A list of versions to kick out of the iterator
 		 * 
 		 * Returns: A list of versions found by the breadth first search
@@ -64,7 +64,6 @@ public class SyncSource : Object {
 	}
 
 	public string grab_commit(string version_uuid) {
-		debug("om nom nom on the redveg burger");
 		return "crap we have no api to get this";
 	}
 
@@ -95,7 +94,7 @@ public class SyncClient : Object {
 
 		var sounds_yummy = new Queue<string>();
 		var do_not_want = new Queue<string>();
-		var shas = server.tell_me_about_that_cheeseburger(do_not_want);
+		var shas = server.search_for_shas(do_not_want);
 
 		while (shas.length() > 0) {
 			do_not_want = new Queue<string>();
@@ -105,10 +104,9 @@ public class SyncClient : Object {
 				else
 					sounds_yummy.push_tail(sha);
 			}
-			shas = server.tell_me_about_that_cheeseburger(do_not_want);
+			shas = server.search_for_shas(do_not_want);
 		}
 
-		/* Get redveg burgers from server, oldest first */
 		do {
 			var uuid = sounds_yummy.pop_tail();
 			var commit = server.grab_commit(uuid);
