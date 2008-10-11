@@ -64,7 +64,11 @@ public class SyncSource : Object {
 	}
 
 	public string grab_commit(string version_uuid) {
-		return "crap we have no api to get this";
+		string outstr;
+		uint outlen;
+                string drop_path = Path.build_filename(this.store.directory, "objects", version_uuid.substring(0,2), version_uuid.substring(2, 14));
+                FileUtils.get_contents(drop_path, out outstr, out outlen);
+		return outstr;
 	}
 
 	public string grab_blob(string version_uuid) {
@@ -109,11 +113,14 @@ public class SyncClient : Object {
 
 		do {
 			var uuid = want.pop_tail();
-			var commit = server.grab_commit(uuid);
-			var blob = server.grab_blob(uuid);
-
-			debug(blob);
+			this.drop_raw(uuid, server.grab_commit(uuid));
+			this.drop_raw(uuid, server.grab_blob(uuid));
 		} while (want.get_length() > 0);
+	}
+
+	void drop_raw(string uuid, string raw) {
+		string drop_path = Path.build_filename(this.store.directory, "objects", uuid.substring(0,2), uuid.substring(2, 14));
+		FileUtils.set_contents(drop_path, raw);
 	}
 }
 
