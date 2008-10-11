@@ -11,9 +11,9 @@ public class SyncSource : Object {
 		this.store = store;
 	}
 
-	public List<string> tell_me_about(List<string> objects) {
+	public List<string> search_for_objects(List<string> objects) {
 		/*
-		 * tell_me_about
+		 * search_for_objects
 		 * @objects: A list of object ids that we want to pull
 		 *
 		 * Returns: A list of objects that arent on the source
@@ -90,7 +90,7 @@ public class SyncClient : Object {
 		object_uuids.append(bit.uuid);
 
 		/* Tell the server what objects we are interested in pulling */
-		server.tell_me_about(object_uuids);
+		server.search_for_objects(object_uuids);
 
 		var want = new Queue<string>();
 		var do_not_want = new Queue<string>();
