@@ -63,12 +63,12 @@ public class SyncSource : Object {
 		return retval;
 	}
 
-	public string ill_have_no_cheese_on_my_burger(string version_uuid) {
+	public string grab_commit(string version_uuid) {
 		debug("om nom nom on the redveg burger");
 		return "crap we have no api to get this";
 	}
 
-	public string nom_nom(string version_uuid) {
+	public string grab_blob(string version_uuid) {
 		var v = this.store.open_version("nomnom", version_uuid);
 		return v.read_as_string();
 	}
@@ -111,8 +111,8 @@ public class SyncClient : Object {
 		/* Get redveg burgers from server, oldest first */
 		do {
 			var uuid = sounds_yummy.pop_tail();
-			var blob = server.ill_have_no_cheese_on_my_burger(uuid);
-			var commit = server.nom_nom(uuid);
+			var commit = server.grab_commit(uuid);
+			var blob = server.grab_blob(uuid);
 
 			debug(blob);
 		} while (sounds_yummy.get_length() > 0);
