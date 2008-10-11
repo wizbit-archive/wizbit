@@ -5,6 +5,7 @@ namespace Wiz {
 		public string uuid { get; construct; }
 		public string directory { get; construct; }
 
+		private string object_dir;
 		private Graph.Store store;
 
 		public Store(string uuid, string? directory = null) {
@@ -19,7 +20,8 @@ namespace Wiz {
 			if (this.directory == null) {
 				this.directory = Path.build_filename(Environment.get_home_dir(), ".wizbit/%s".printf(this.uuid));
 			}
-			this.store = new Graph.Store(this.directory);
+			this.object_dir = Path.build_filename(this.directory, "objects");
+			this.store = new Graph.Store(this.object_dir);
 		}
 
 		public bool has_version(string uuid) {
