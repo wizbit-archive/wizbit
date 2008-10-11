@@ -66,7 +66,7 @@ public class SyncSource : Object {
 	public string grab_commit(string version_uuid) {
 		string outstr;
 		uint outlen;
-                string drop_path = Path.build_filename(this.store.directory, "objects", version_uuid.substring(0,2), version_uuid.substring(2, 14));
+                string drop_path = Path.build_filename(this.store.directory, "objects", version_uuid.substring(0,2), version_uuid.substring(2, 40));
                 FileUtils.get_contents(drop_path, out outstr, out outlen);
 		return outstr;
 	}
@@ -119,7 +119,7 @@ public class SyncClient : Object {
 	}
 
 	void drop_raw(string uuid, string raw) {
-		string drop_path = Path.build_filename(this.store.directory, "objects", uuid.substring(0,2), uuid.substring(2, 14));
+		string drop_path = Path.build_filename(this.store.directory, "objects", uuid.substring(0,2), uuid.substring(2, 40));
 		FileUtils.set_contents(drop_path, raw);
 	}
 }
