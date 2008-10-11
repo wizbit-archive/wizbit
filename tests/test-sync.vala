@@ -92,7 +92,7 @@ public class SyncClient : Object {
 		/* Tell the server what objects we are interested in pulling */
 		server.tell_me_about(object_uuids);
 
-		var sounds_yummy = new Queue<string>();
+		var want = new Queue<string>();
 		var do_not_want = new Queue<string>();
 		var shas = server.search_for_shas(do_not_want);
 
@@ -102,18 +102,18 @@ public class SyncClient : Object {
 				if (this.store.has_version(sha))
 					do_not_want.push_tail(sha);
 				else
-					sounds_yummy.push_tail(sha);
+					want.push_tail(sha);
 			}
 			shas = server.search_for_shas(do_not_want);
 		}
 
 		do {
-			var uuid = sounds_yummy.pop_tail();
+			var uuid = want.pop_tail();
 			var commit = server.grab_commit(uuid);
 			var blob = server.grab_blob(uuid);
 
 			debug(blob);
-		} while (sounds_yummy.get_length() > 0);
+		} while (want.get_length() > 0);
 	}
 }
 
@@ -147,57 +147,6 @@ void test_simple_1()
 	sb.pull(sa, z);
 }
 
-void test_sync()
-{
-	var a = new Wiz.Store("some_uuid", "data/sync_a");
-
-	var z = a.create_bit();
-	var a18 = z.create_next_version_from_string("18");
-	var a17 = z.create_next_version_from_string("17");
-	var a16 = z.create_next_version_from_string("16");
-	var a15 = z.create_next_version_from_string("15");
-	var a14 = z.create_next_version_from_string("14");
-	var a13 = z.create_next_version_from_string("13", a18);
-	var a12 = z.create_next_version_from_string("12", a17);
-	var a11 = z.create_next_version_from_string("11", a16);
-	var a10 = z.create_next_version_from_string("10", a14); // [a14, a15]);
-	var a9 = z.create_next_version_from_string("9", a10); // [a10, a11]);
-	var a8 = z.create_next_version_from_string("8", a13);
-	var a7 = z.create_next_version_from_string("7", a12);
-	var a6 = z.create_next_version_from_string("6", a9);
-	var a5 = z.create_next_version_from_string("5", a9);
-	var a4 = z.create_next_version_from_string("4", a8);
-	var a3 = z.create_next_version_from_string("3", a7);
-	var a2 = z.create_next_version_from_string("2", a6);
-	var a1 = z.create_next_version_from_string("1", a5);
-	// a.tips = [a1, a2, a3, a4]
-
-	stdout.printf("MONKEY: %u", z.tips.length());
-	assert(z.tips.length() == 4);
-
-	/*
-	var b = new Wiz.Store("some_uuid", "data/sync_b");
-	b18 = y.create_next_version_from_string("18");
-	b16 = y.create_next_version_from_string("16");
-	b15 = y.create_next_version_from_string("15");
-	b14 = y.create_next_version_from_string("14");
-	b13 = y.create_next_version_from_string("13", [b18]);
-	b11 = y.create_next_version_from_string("11", [b16]);
-	b10 = y.create_next_version_from_string("10", [b14, b15]);
-	b9 = y.create_next_version_from_string("9", [b10, b11]);
-	b8 = y.create_next_version_from_string("8", [b13]);
-	b6 = y.create_next_version_from_string("6", [b9]);
-	b4 = y.create_next_version_from_string("4", [b8]);
-	// b.tips = [b6, b4]
-	*/
-
-	var b = new Wiz.Store("some_uuid", "data/sync_b");
-
-	var sa = new SyncSource(a);
-	var sb = new SyncClient(b);
-	sb.pull(sa, z);
-}
-
 public static void main (string[] args) {
 	if (!FileUtils.test("data", FileTest.IS_DIR)) {
 		DirUtils.create_with_parents("data", 0755);
@@ -205,6 +154,5 @@ public static void main (string[] args) {
 	}
 	Test.init (ref args);
 	Test.add_func("/wizbit/sync/1", test_simple_1);
-	/* Test.add_func("/wizbit/sync/1", test_sync); */
 	Test.run();
 }
