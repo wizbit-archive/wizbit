@@ -92,8 +92,11 @@ public class SyncSource : Object {
 	}
 
 	public string grab_blob(string version_uuid) {
+		var gs = new Graph.Store(Path.build_filename(this.store.directory, "objects"));
+		var gc = new Graph.Commit.from_uuid(gs, version_uuid);
+		gc.unserialize();
 		var v = this.store.open_version("nomnom", version_uuid);
-		return v.read_as_string();
+		return "%s%s".printf(gc.blob.uuid, v.read_as_string());
 	}
 
 	public List<string> grab_tips(string bit_uuid) {
@@ -147,7 +150,9 @@ public class SyncClient : Object {
 		while (want.get_length() > 0) {
 			var uuid = want.pop_tail();
 			this.drop_raw(uuid, server.grab_commit(uuid));
-			this.drop_raw(uuid, server.grab_blob(uuid));
+
+			var blob = server.grab_blob(uuid);
+			this.drop_raw(blob.substring(0,40), blob.substring(40, blob.len()));
 		};
 
 		debug("merging tips (there are %u)", objs.length());
@@ -162,7 +167,10 @@ public class SyncClient : Object {
 	}
 
 	void drop_raw(string uuid, string raw) {
-		string drop_path = Path.build_filename(this.store.directory, "objects", uuid.substring(0,2), uuid.substring(2, 40));
+		string drop_dir = Path.build_filename(this.store.directory, "objects", uuid.substring(0,2));
+		if (!FileUtils.test(drop_dir, FileTest.IS_DIR))
+			DirUtils.create_with_parents(drop_dir, 0755);
+		string drop_path = Path.build_filename(drop_dir, uuid.substring(2,40));
 		FileUtils.set_contents(drop_path, raw);
 	}
 
