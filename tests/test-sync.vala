@@ -97,7 +97,6 @@ public class SyncSource : Object {
 
 public class SyncClient : Object {
 	Wiz.BreadthFirstIterator iter;
-	uint pulled;
 
 	public Wiz.Store store { private get; construct; }
 
@@ -107,7 +106,6 @@ public class SyncClient : Object {
 
 	construct {
 		this.iter = new Wiz.BreadthFirstIterator();
-		this.pulled = 0;
 	}
 
 	public void pull(SyncSource server) {
@@ -129,14 +127,12 @@ public class SyncClient : Object {
 			shas = server.search_for_shas(do_not_want);
 		}
 
+		debug("there are %u blobs to pull", want.get_length());
 		while (want.get_length() > 0) {
 			var uuid = want.pop_tail();
 			this.drop_raw(uuid, server.grab_commit(uuid));
 			this.drop_raw(uuid, server.grab_blob(uuid));
-			pulled++;
 		};
-
-		debug("i has just ate %u cheeseburgers", pulled+1);
 	}
 
 	void drop_raw(string uuid, string raw) {
