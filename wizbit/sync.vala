@@ -152,13 +152,25 @@ public class SyncClient : Object {
 
 		debug("merging tips (there are %u)", objs.length());
 		foreach (var b in objs) {
-			var bit = this.store.open_bit(b);
-			var remote_tips = server.grab_tips(b);
+			if (this.store.has_bit(b)) {
+				var bit = this.store.open_bit(b);
+				var remote_tips = server.grab_tips(b);
+			} else {
+				this.drop_tips(b, server.grab_tips(b)); 
+			}
 		}
 	}
 
 	void drop_raw(string uuid, string raw) {
 		string drop_path = Path.build_filename(this.store.directory, "objects", uuid.substring(0,2), uuid.substring(2, 40));
 		FileUtils.set_contents(drop_path, raw);
+	}
+
+	void drop_tips(string uuid, List<string> tips) {
+		var raw = new StringBuilder();
+		foreach (var t in tips)
+			raw.append("%s\n".printf(t));
+		string drop_path = Path.build_filename(this.store.directory, "refs", uuid);
+		FileUtils.set_contents(drop_path, raw.str);
 	}
 }
