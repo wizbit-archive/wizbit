@@ -152,6 +152,8 @@ public class SyncClient : Object {
 
 		debug("merging tips (there are %u)", objs.length());
 		foreach (var b in objs) {
+			var bit = this.store.open_bit(b);
+			var remote_tips = server.grab_tips(b);
 		}
 	}
 
