@@ -5,8 +5,10 @@ namespace Wiz {
 		public string uuid { get; construct; }
 		public string directory { get; construct; }
 
-		private string object_dir;
 		private Graph.Store store;
+
+		string object_dir;
+		string refs_dir;
 
 		public Store(string uuid, string? directory = null) {
 			this.uuid = uuid;
@@ -21,6 +23,7 @@ namespace Wiz {
 				this.directory = Path.build_filename(Environment.get_home_dir(), ".wizbit/%s".printf(this.uuid));
 			}
 			this.object_dir = Path.build_filename(this.directory, "objects");
+			this.refs_dir = Path.build_filename(this.directory, "refs");
 			this.store = new Graph.Store(this.object_dir);
 		}
 
@@ -29,7 +32,7 @@ namespace Wiz {
 		}
 
 		public bool has_bit(string uuid) {
-			return true;
+			return FileUtils.test(Path.build_filename(this.refs_dir, uuid), FileTest.EXISTS);
 		}
 
 		public Bit create_bit() {
