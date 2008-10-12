@@ -11,7 +11,7 @@ public class SyncSource : Object {
 		this.store = store;
 	}
 
-	public void search_for_all_objects() {
+	public List<string> search_for_all_objects() {
 		var objs = new List<string>();
 
 		/* at the moment we don't have api to list objects so lets enum
@@ -26,6 +26,8 @@ public class SyncSource : Object {
 		}
 
 		this.search_for_objects(objs);
+
+		return objs;
 	}
 
 	public List<string> search_for_objects(List<string> objects) {
@@ -124,7 +126,7 @@ public class SyncClient : Object {
 
 	public void pull(SyncSource server) {
 		/* Tell the server what objects we are interested in pulling */
-		server.search_for_all_objects();
+		var objs = server.search_for_all_objects();
 
 		var want = new Queue<string>();
 		var do_not_want = new Queue<string>();
@@ -147,6 +149,10 @@ public class SyncClient : Object {
 			this.drop_raw(uuid, server.grab_commit(uuid));
 			this.drop_raw(uuid, server.grab_blob(uuid));
 		};
+
+		debug("merging tips (there are %u)", objs.length());
+		foreach (var b in objs) {
+		}
 	}
 
 	void drop_raw(string uuid, string raw) {
