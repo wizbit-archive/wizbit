@@ -129,12 +129,12 @@ public class SyncClient : Object {
 			shas = server.search_for_shas(do_not_want);
 		}
 
-		do {
+		while (want.get_length() > 0) {
 			var uuid = want.pop_tail();
 			this.drop_raw(uuid, server.grab_commit(uuid));
 			this.drop_raw(uuid, server.grab_blob(uuid));
 			pulled++;
-		} while (want.get_length() > 0);
+		};
 
 		debug("i has just ate %u cheeseburgers", pulled+1);
 	}
