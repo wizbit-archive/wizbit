@@ -58,6 +58,13 @@ namespace Wiz {
 					this.queue.pop_nth(i);
 					break;
 				}
+
+				foreach (var p in v.parents) {
+					if (p.version_uuid == this.queue.peek_nth(i).version_uuid) {
+						this.queue.pop_nth(i);
+						break;
+					}
+				}
 			}
 			if (this.queue.get_length() == 0)
 				this.end = true;
