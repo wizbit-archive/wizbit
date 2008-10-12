@@ -77,6 +77,7 @@ public class SyncSource : Object {
 			retval.append(f.version_uuid);
 		}
 		this.size *= 2;
+		debug("%u", retval.length());
 		return retval;
 	}
 
@@ -96,6 +97,8 @@ public class SyncSource : Object {
 
 public class SyncClient : Object {
 	Wiz.BreadthFirstIterator iter;
+	uint pulled;
+
 	public Wiz.Store store { private get; construct; }
 
 	public SyncClient(Wiz.Store store) {
@@ -104,6 +107,7 @@ public class SyncClient : Object {
 
 	construct {
 		this.iter = new Wiz.BreadthFirstIterator();
+		this.pulled = 0;
 	}
 
 	public void pull(SyncSource server) {
@@ -129,7 +133,10 @@ public class SyncClient : Object {
 			var uuid = want.pop_tail();
 			this.drop_raw(uuid, server.grab_commit(uuid));
 			this.drop_raw(uuid, server.grab_blob(uuid));
+			pulled++;
 		} while (want.get_length() > 0);
+
+		debug("i has just ate %u cheeseburgers", pulled+1);
 	}
 
 	void drop_raw(string uuid, string raw) {
@@ -166,6 +173,10 @@ void test_simple_1()
 	var sa = new SyncSource(a);
 	var sb = new SyncClient(b);
 	sb.pull(sa);
+
+	var ta = new SyncSource(a);
+	var tb = new SyncClient(b);
+	sb.pull(ta);
 }
 
 public static void main (string[] args) {
