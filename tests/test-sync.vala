@@ -11,6 +11,23 @@ public class SyncSource : Object {
 		this.store = store;
 	}
 
+	public void search_for_all_objects() {
+		var objs = new List<string>();
+
+		/* at the moment we don't have api to list objects so lets enum
+		 * ths tips folder
+		 */
+		var path = Path.build_filename(this.store.directory, "refs");
+		var dir = Dir.open(path);
+		var f = dir.read_name();
+		while (f != null) {
+			objs.append(f);
+			f = dir.read_name();
+		}
+
+		this.search_for_objects(objs);
+	}
+
 	public List<string> search_for_objects(List<string> objects) {
 		/*
 		 * search_for_objects
@@ -89,12 +106,9 @@ public class SyncClient : Object {
 		this.iter = new Wiz.BreadthFirstIterator();
 	}
 
-	public void pull(SyncSource server, Wiz.Bit bit) {
-		var object_uuids = new List<string>();
-		object_uuids.append(bit.uuid);
-
+	public void pull(SyncSource server) {
 		/* Tell the server what objects we are interested in pulling */
-		server.search_for_objects(object_uuids);
+		server.search_for_all_objects();
 
 		var want = new Queue<string>();
 		var do_not_want = new Queue<string>();
@@ -151,7 +165,7 @@ void test_simple_1()
 
 	var sa = new SyncSource(a);
 	var sb = new SyncClient(b);
-	sb.pull(sa, z);
+	sb.pull(sa);
 }
 
 public static void main (string[] args) {
