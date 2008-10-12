@@ -93,6 +93,20 @@ public class SyncSource : Object {
 		var v = this.store.open_version("nomnom", version_uuid);
 		return v.read_as_string();
 	}
+
+	public List<string> grab_tips(string bit_uuid) {
+		var b = this.store.open_bit(bit_uuid);
+		var retval = new List<string>();
+		if (b.primary_tip != null) {
+			retval.append(b.primary_tip.version_uuid);
+			foreach (var t in b.tips) {
+				if (t.version_uuid != b.primary_tip.version_uuid)
+					retval.append(t.version_uuid);
+			}
+		}
+
+		return retval;
+	}
 }
 
 public class SyncClient : Object {
