@@ -32,7 +32,7 @@ libwizbit.vala.stamp: $(libwizbit_la_VALASOURCES)
 	touch $@
 
 libwizbit_la_CFLAGS=@WIZBIT_CFLAGS@
-libwizbit_la_LIBS=@WIZBIT_LIBS@
+libwizbit_la_LIBADD=@WIZBIT_LIBS@
 
 wizbitincludedir = $(includedir)/wizbit-1.0/wizbit
 wizbitinclude_HEADERS = \
