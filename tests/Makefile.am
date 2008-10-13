@@ -28,7 +28,7 @@ test_everything.vala.stamp: $(test_everything_VALASOURCES)
 	touch $@
 
 test_everything_CFLAGS=@WIZBIT_CFLAGS@
-test_everything_LDADD=../wizbit/libwizbit.la @WIZBIT_LIBS@
+test_everything_LDADD=../wizbit/libwizbit.la
 
 test_sync_VALASOURCES = \
 	$(top_builddir)/wizbit/wizbit.vapi		\
@@ -45,7 +45,7 @@ test-sync.vala.stamp: $(test_sync_VALASOURCES)
 	touch $@
 
 test_sync_CFLAGS=@WIZBIT_CFLAGS@
-test_sync_LDADD=../wizbit/libwizbit.la @WIZBIT_LIBS@
+test_sync_LDADD=../wizbit/libwizbit.la
 
 EXTRA_DIST += \
 	$(BUILT_SOURCES)				\
