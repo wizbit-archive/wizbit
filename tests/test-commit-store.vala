@@ -2,6 +2,17 @@ using GLib;
 using Wiz;
 using Graph;
 
+public void test_commit_lookup() {
+	var s = new CommitStore("data/foo");
+
+	var c1 = new RarCommit();
+	c1.blob = "1234";
+	s.store_commit(c1);
+
+	var c1_lookup = s.lookup_commit(c1.uuid);
+	assert(c1.blob == "1234");
+}
+
 public void test_commit() {
 	var s = new CommitStore("data/foo");
 
@@ -24,6 +35,7 @@ public static void main (string[] args) {
 		/* Should write some data to the file data/blob-data */
 	}
 	Test.init (ref args);
+	Test.add_func("/wizbit/commit_store/commit_lookup", test_commit_lookup);
 	Test.add_func("/wizbit/commit_store/1", test_commit);
 	Test.run();
 }
