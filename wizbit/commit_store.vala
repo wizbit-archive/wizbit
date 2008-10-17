@@ -18,7 +18,7 @@ namespace Wiz {
 			"SELECT r.parent_id FROM relations AS r WHERE r.node_id = ?";
 
 		private static const string GET_TIPS_SQL =
-			"SELECT c.id FROM commits AS c LEFT OUTER JOIN relations AS r ON c.uuid=r.parent_id WHERE r.parent_id IS NULL";
+			"SELECT c.uuid FROM commits AS c LEFT OUTER JOIN relations AS r ON c.uuid=r.parent_id WHERE r.parent_id IS NULL";
 
 		private static const string INSERT_COMMIT_SQL =
 			"INSERT INTO commits VALUES (?, ?)";
