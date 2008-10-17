@@ -15,7 +15,7 @@ public void test_commit() {
 	s.store_commit(c2);
 
 	var tips = s.get_tips("sdsdsd");
-	stdout.printf("%u", tips.length());
+	assert(tips.length() == 1);
 }
 
 public static void main (string[] args) {
