@@ -60,7 +60,6 @@ namespace Wiz {
 			val = this.db.prepare(GET_TIPS_SQL, -1,
 				out this.get_tips_sql);
 			assert(val == Sqlite.OK);
-			assert(this.get_tips_sql != null);
 
 			val = this.db.prepare(INSERT_COMMIT_SQL, -1,
 				out this.insert_commit_sql);
