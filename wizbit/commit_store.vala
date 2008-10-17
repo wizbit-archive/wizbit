@@ -11,10 +11,16 @@ namespace Wiz {
 		private static const string CREATE_RELATIONS_TABLE =
 			"CREATE TABLE relations(node_id VARCHAR(40), parent_id VARCHAR(40))";
 
+		private static const string GO_FORWARDS_SQL =
+			"SELECT r.commit_id FROM relations AS r WHERE r.parent_id = ?";
+
+		private static const string GO_BACKWARDS_SQL =
+			"SELECT r.parent_id FROM relations AS r WHERE r.commit_id = ?";
+
 		private Database db;
 
-		private Statement create_commits_table;
-		private Statement create_relations_table;
+		private Statement go_forwards_sql;
+		private Statement go_backwards_sql;
 
 		public CommitStore(string directory) {
 			this.directory = directory;
@@ -25,10 +31,10 @@ namespace Wiz {
 
 			Database.open(":memory:", out this.db);
 
-			this.db.prepare(CREATE_COMMITS_TABLE, -1,
-				out this.create_commits_table);
-			this.db.prepare(CREATE_RELATIONS_TABLE, -1,
-				out this.create_relations_table);
+			this.db.prepare(GO_FORWARDS_SQL, -1,
+				out this.go_forwards_sql);
+			this.db.prepare(GO_BACKWARDS_SQL, -1,
+				out this.go_backwards_sql);
 
 			int val = this.db.exec(CREATE_COMMITS_TABLE);
 			val = this.db.exec(CREATE_RELATIONS_TABLE);
@@ -41,11 +47,21 @@ namespace Wiz {
 
 		public List<string> get_forwards(string uuid, string version) {
 			var retval = new List<string>();
+			this.go_forwards_sql.reset();
+			this.go_forwards_sql.bind_text(1, uuid);
+			while (statement.step() == Sqlite.ROW) {
+				retval.append("%s".printf(statement.column_text(1)));
+			}
 			return retval;
 		}
 
 		public List<string> get_backwards(string uuid, string version) {
 			var retval = new List<string>();
+			this.go_backwards_sql.reset();
+			this.go_backwards_sql.bind_text(1, uuid);
+			while (statement.step() == Sqlite.ROW) {
+				retval.append("%s".printf(statement.column_text(1)));
+			}
 			return retval;
 		}
 	}
