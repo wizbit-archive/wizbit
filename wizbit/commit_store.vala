@@ -49,16 +49,26 @@ namespace Wiz {
 			val = this.db.exec(CREATE_RELATIONS_TABLE);
 			assert(val == Sqlite.OK);
 
-			this.db.prepare(GO_FORWARDS_SQL, -1,
+			val = this.db.prepare(GO_FORWARDS_SQL, -1,
 				out this.go_forwards_sql);
-			this.db.prepare(GO_BACKWARDS_SQL, -1,
+			assert(val == Sqlite.OK);
+
+			val = this.db.prepare(GO_BACKWARDS_SQL, -1,
 				out this.go_backwards_sql);
-			this.db.prepare(GET_TIPS_SQL, -1,
+			assert(val == Sqlite.OK);
+
+			val = this.db.prepare(GET_TIPS_SQL, -1,
 				out this.get_tips_sql);
-			this.db.prepare(INSERT_COMMIT_SQL, -1,
+			assert(val == Sqlite.OK);
+			assert(this.get_tips_sql != null);
+
+			val = this.db.prepare(INSERT_COMMIT_SQL, -1,
 				out this.insert_commit_sql);
-			this.db.prepare(INSERT_RELATION_SQL, -1,
+			assert(val == Sqlite.OK);
+
+			val = this.db.prepare(INSERT_RELATION_SQL, -1,
 				out this.insert_relation_sql);
+			assert(val == Sqlite.OK);
 		}
 
 		public List<string> get_tips(string uuid) {
