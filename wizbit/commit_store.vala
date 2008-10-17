@@ -20,11 +20,19 @@ namespace Wiz {
 		private static const string GET_TIPS_SQL =
 			"SELECT c.id FROM commits AS c LEFT OUTER JOIN relations AS r ON c.id=r.parent_id WHERE r.parent_id IS NULL";
 
+		private static const string INSERT_COMMIT_SQL =
+			"INSERT INTO commits VALUES (?, ?)";
+
+		private static const string INSERT_RELATION_SQL =
+			"INSERT INTO relations VALUES (?, ?)";
+
 		private Database db;
 
 		private Statement go_forwards_sql;
 		private Statement go_backwards_sql;
 		private Statement get_tips_sql;
+		private Statement insert_commit_sql;
+		private Statement insert_relation_sql;
 
 		public CommitStore(string directory) {
 			this.directory = directory;
@@ -41,6 +49,10 @@ namespace Wiz {
 				out this.go_backwards_sql);
 			this.db.prepare(GET_TIPS_SQL, -1,
 				out this.get_tips_sql);
+			this.db.prepare(INSERT_COMMIT_SQL, -1,
+				out this.insert_commit_sql);
+			this.db.prepare(INSERT_RELATION_SQL, -1,
+				out this.insert_relation_sql);
 
 			int val = this.db.exec(CREATE_COMMITS_TABLE);
 			val = this.db.exec(CREATE_RELATIONS_TABLE);
@@ -73,6 +85,37 @@ namespace Wiz {
 				retval.append("%s".printf(this.go_backwards_sql.column_text(1)));
 			}
 			return retval;
+		}
+
+		public RarCommit store_commit(RarCommit c) {
+			c.uuid = generate_uuid();
+
+			this.insert_commit_sql.reset();
+			this.insert_commit_sql.bind_text(1, c.uuid);
+			this.insert_commit_sql.bind_text(2, c.blob);
+			this.insert_commit_sql.step();
+
+			foreach (var p in c.parents) {
+				this.insert_relation_sql.reset();
+				this.insert_relation_sql.bind_text(1, c.uuid);
+				this.insert_relation_sql.bind_text(2, p);
+				this.insert_relation_sql.step();
+			}
+
+			return c;
+		}
+	}
+
+	internal class RarCommit {
+		public string uuid { get; set; }
+		public string blob { get; set; }
+		public string committer { get; set; }
+		public int timestamp { get; set; }
+
+		public List<string> parents;
+
+		construct {
+			this.parents = new List<string>();
 		}
 	}
 }
