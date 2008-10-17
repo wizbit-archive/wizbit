@@ -27,10 +27,10 @@ namespace Wiz {
 			"INSERT INTO relations VALUES (?, ?)";
 
 		private static const string SELECT_COMMIT_SQL =
-			"SELECT c.blob FROM commit AS c WHERE c.uuid=?";
+			"SELECT c.blob FROM commits AS c WHERE c.uuid=?";
 
 		private static const string SELECT_RELATION_SQL =
-			"SELECT r.parent_id FROM relation AS r WHERE r.node_id=?";
+			"SELECT r.parent_id FROM relations AS r WHERE r.node_id=?";
 
 		private Database db;
 
