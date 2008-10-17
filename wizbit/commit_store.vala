@@ -64,9 +64,12 @@ namespace Wiz {
 		public List<string> get_tips(string uuid) {
 			var retval = new List<string>();
 			this.get_tips_sql.reset();
-			while (this.get_tips_sql.step() == Sqlite.ROW) {
+			var res = this.get_tips_sql.step();
+			while (res == Sqlite.ROW) {
 				retval.append("%s".printf(this.get_tips_sql.column_text(1)));
+				res = this.get_tips_sql.step();
 			}
+			assert( res == Sqlite.DONE );
 			return retval;
 		}
 
