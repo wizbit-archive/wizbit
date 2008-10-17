@@ -12,13 +12,13 @@ namespace Wiz {
 			"CREATE TABLE relations(node_id VARCHAR(40), parent_id VARCHAR(40))";
 
 		private static const string GO_FORWARDS_SQL =
-			"SELECT r.commit_id FROM relations AS r WHERE r.parent_id = ?";
+			"SELECT r.node_id FROM relations AS r WHERE r.parent_id = ?";
 
 		private static const string GO_BACKWARDS_SQL =
-			"SELECT r.parent_id FROM relations AS r WHERE r.commit_id = ?";
+			"SELECT r.parent_id FROM relations AS r WHERE r.node_id = ?";
 
 		private static const string GET_TIPS_SQL =
-			"SELECT c.id FROM commits AS c LEFT OUTER JOIN relations AS r ON c.id=r.parent_id WHERE r.parent_id IS NULL";
+			"SELECT c.id FROM commits AS c LEFT OUTER JOIN relations AS r ON c.uuid=r.parent_id WHERE r.parent_id IS NULL";
 
 		private static const string INSERT_COMMIT_SQL =
 			"INSERT INTO commits VALUES (?, ?)";
