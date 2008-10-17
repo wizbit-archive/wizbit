@@ -86,9 +86,12 @@ namespace Wiz {
 			var retval = new List<string>();
 			this.go_forwards_sql.reset();
 			this.go_forwards_sql.bind_text(1, uuid);
-			while (this.go_forwards_sql.step() == Sqlite.ROW) {
+			var res = this.go_forwards_sql.step();
+			while (res == Sqlite.ROW) {
 				retval.append("%s".printf(this.go_forwards_sql.column_text(1)));
+				res = this.go_forwards_sql.step();
 			}
+			assert( res == Sqlite.DONE );
 			return retval;
 		}
 
@@ -96,9 +99,12 @@ namespace Wiz {
 			var retval = new List<string>();
 			this.go_backwards_sql.reset();
 			this.go_backwards_sql.bind_text(1, uuid);
-			while (this.go_backwards_sql.step() == Sqlite.ROW) {
+			var res = this.go_backwards_sql.step();
+			while (res == Sqlite.ROW) {
 				retval.append("%s".printf(this.go_backwards_sql.column_text(1)));
+				res = this.go_backwards_sql.step();
 			}
+			assert( res == Sqlite.DONE );
 			return retval;
 		}
 
