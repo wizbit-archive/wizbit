@@ -2,7 +2,7 @@ using GLib;
 using Sqlite;
 
 namespace Wiz {
-	public class CommitStore {
+	public class CommitStore : Object {
 		public string directory { get; construct; }
 
 		private static const string CREATE_COMMITS_TABLE =
