@@ -26,6 +26,12 @@ namespace Wiz {
 		private static const string INSERT_RELATION_SQL =
 			"INSERT INTO relations VALUES (?, ?)";
 
+		private static const string SELECT_COMMIT_SQL =
+			"SELECT c.blob FROM commit AS c WHERE c.uuid=?";
+
+		private static const string SELECT_RELATION_SQL =
+			"SELECT r.parent_id FROM relation AS r WHERE r.node_id=?";
+
 		private Database db;
 
 		private Statement go_forwards_sql;
@@ -33,6 +39,8 @@ namespace Wiz {
 		private Statement get_tips_sql;
 		private Statement insert_commit_sql;
 		private Statement insert_relation_sql;
+		private Statement select_commit_sql;
+		private Statement select_relation_sql;
 
 		public CommitStore(string directory) {
 			this.directory = directory;
@@ -67,6 +75,14 @@ namespace Wiz {
 
 			val = this.db.prepare(INSERT_RELATION_SQL, -1,
 				out this.insert_relation_sql);
+			assert(val == Sqlite.OK);
+
+			val = this.db.prepare(SELECT_COMMIT_SQL, -1,
+				out this.select_commit_sql);
+			assert(val == Sqlite.OK);
+
+			val = this.db.prepare(SELECT_RELATION_SQL, -1,
+				out this.select_relation_sql);
 			assert(val == Sqlite.OK);
 		}
 
@@ -106,6 +122,28 @@ namespace Wiz {
 			}
 			assert( res == Sqlite.DONE );
 			return retval;
+		}
+
+		public RarCommit lookup_commit(string uuid) {
+			var c = new RarCommit();
+			c.uuid = uuid;
+
+			this.select_commit_sql.reset();
+			this.select_commit_sql.bind_text(1, uuid);
+			var res = this.select_commit_sql.step();
+			assert(res == Sqlite.ROW);
+			c.blob = "%s".printf(this.select_commit_sql.column_text(1));
+
+			this.select_relation_sql.reset();
+			this.select_relation_sql.bind_text(1, uuid);
+			res = this.select_relation_sql.step();
+			while (res == Sqlite.ROW) {
+				c.parents.append("%s".printf(this.select_relation_sql.column_text(1)));
+				res = this.select_relation_sql.step();
+			}
+			assert(res == Sqlite.DONE);
+
+			return c;
 		}
 
 		public RarCommit store_commit(RarCommit c) {
