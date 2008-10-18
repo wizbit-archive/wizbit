@@ -14,7 +14,7 @@ public void test_store_new() {
 	 */
 	var foo = new List<CommitStore>();
 	for (int i=0; i<10000; i++) {
-		var test = new CommitStore(":memory:");
+		var test = new CommitStore(":memory:", "foo");
 		var c = new RarCommit();
 		c.blob = "1234";
 		test.store_commit(c);
@@ -27,7 +27,7 @@ public void test_commit_lookup() {
 	/*
 	 * Commit to a CommitStore and then try and read it back out
 	 */
-	var s = new CommitStore("data/foo");
+	var s = new CommitStore(":memory:", "foo");
 
 	var c1 = new RarCommit();
 	c1.blob = "1234";
@@ -38,7 +38,7 @@ public void test_commit_lookup() {
 }
 
 public void test_commit() {
-	var s = new CommitStore("data/foo");
+	var s = new CommitStore(":memory:", "foo");
 
 	var c1 = new RarCommit();
 	c1.blob = "rararar";

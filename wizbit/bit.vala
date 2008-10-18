@@ -45,7 +45,7 @@ namespace Wiz {
 				DirUtils.create_with_parents(this.objects_path, 0755);
 
 			this.blobs = new Graph.Store(this.objects_path);
-			this.commits = new CommitStore(this.refs_path);
+			this.commits = new CommitStore(Path.build_filename(this.refs_path, uuid), uuid);
 		}
 
 		public Bit(string uuid, string? store_path) {

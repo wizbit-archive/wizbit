@@ -3,7 +3,8 @@ using Sqlite;
 
 namespace Wiz {
 	public class CommitStore : Object {
-		public string directory { get; construct; }
+		public string database { get; construct; }
+		public string uuid { get; construct; }
 
 		private static const string CREATE_COMMITS_TABLE =
 			"CREATE TABLE commits(uuid VARCHAR(40), blob VARCHAR(40))";
@@ -42,14 +43,15 @@ namespace Wiz {
 		private Statement select_commit_sql;
 		private Statement select_relation_sql;
 
-		public CommitStore(string directory) {
-			this.directory = directory;
+		public CommitStore(string database, string uuid) {
+			this.database = database;
+			this.uuid = uuid;
 		}
 
 		construct {
 			/* test and create commits directory */
 
-			Database.open(":memory:", out this.db);
+			Database.open(this.database, out this.db);
 
 			int val = this.db.exec(CREATE_COMMITS_TABLE);
 			assert(val == Sqlite.OK);
