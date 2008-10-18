@@ -19,7 +19,7 @@ public void test_store_new() {
 		c.blob = "1234";
 		test.store_commit(c);
 		assert(test.get_tips("fsfs").length() == 1);
-		foo.append(new CommitStore(":memory:"));
+		foo.append(test);
 	}
 }
 
