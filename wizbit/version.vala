@@ -48,7 +48,7 @@ namespace Wiz {
 			}
 		}
 
-		protected Graph.Commit commit;
+		private Graph.Commit commit;
 		private Graph.Blob blob;
 
 		private MappedFile file;
