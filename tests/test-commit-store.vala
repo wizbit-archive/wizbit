@@ -18,7 +18,7 @@ public void test_store_new() {
 		var c = new RarCommit();
 		c.blob = "1234";
 		test.store_commit(c);
-		assert(test.get_tips("fsfs").length() == 1);
+		assert(test.get_tips().length() == 1);
 		foo.append(test);
 	}
 }
@@ -49,7 +49,7 @@ public void test_commit() {
 	c2.parents.append(c1.uuid);
 	s.store_commit(c2);
 
-	var tips = s.get_tips("sdsdsd");
+	var tips = s.get_tips();
 	assert(tips.length() == 1);
 }
 

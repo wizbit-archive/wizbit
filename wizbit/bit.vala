@@ -9,8 +9,8 @@ namespace Wiz {
 		private string refs_path;
 		private string objects_path;
 
-		private Graph.Store blobs;
-		private CommitStore commits;
+		protected Graph.Store blobs;
+		protected CommitStore commits;
 
 		public string store_path { get; construct; }
 		public string uuid { get; construct; }
@@ -58,7 +58,7 @@ namespace Wiz {
 		}
 
 		public Version create_next_version_from_string(string data, Version ?parent = null) {
-			var blob = new Graph.Blob(this.store);
+			var blob = new Graph.Blob(this.blobs);
 			blob.set_contents((void *)data, data.len());
 			blob.write();
 
@@ -71,7 +71,7 @@ namespace Wiz {
 			commit.timestamp = (int) time_t();
 			this.commits.store_commit(commit);
 
-			var new_version = new Version(this.store, commit.uuid);
+			var new_version = new Version(this, commit.uuid);
 			this._primary_tip = new_version;
 
 			return new_version;

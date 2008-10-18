@@ -86,7 +86,7 @@ namespace Wiz {
 			assert(val == Sqlite.OK);
 		}
 
-		public List<string> get_tips(string uuid) {
+		public List<string> get_tips() {
 			var retval = new List<string>();
 			this.get_tips_sql.reset();
 			var res = this.get_tips_sql.step();
@@ -98,10 +98,10 @@ namespace Wiz {
 			return retval;
 		}
 
-		public List<string> get_forwards(string uuid, string version) {
+		public List<string> get_forwards(string version_uuid) {
 			var retval = new List<string>();
 			this.go_forwards_sql.reset();
-			this.go_forwards_sql.bind_text(1, uuid);
+			this.go_forwards_sql.bind_text(1, version_uuid);
 			var res = this.go_forwards_sql.step();
 			while (res == Sqlite.ROW) {
 				retval.append("%s".printf(this.go_forwards_sql.column_text(1)));
@@ -111,10 +111,10 @@ namespace Wiz {
 			return retval;
 		}
 
-		public List<string> get_backwards(string uuid, string version) {
+		public List<string> get_backwards(string version_uuid) {
 			var retval = new List<string>();
 			this.go_backwards_sql.reset();
-			this.go_backwards_sql.bind_text(1, uuid);
+			this.go_backwards_sql.bind_text(1, version_uuid);
 			var res = this.go_backwards_sql.step();
 			while (res == Sqlite.ROW) {
 				retval.append("%s".printf(this.go_backwards_sql.column_text(1)));
