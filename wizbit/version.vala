@@ -11,6 +11,13 @@ namespace Wiz {
 
 		private RarCommit commit;
 
+		/* deprecated */
+		protected string blob_id {
+			get {
+				return this.commit.blob;
+			}
+		}
+
 		public string committer {
 			get {
 				return this.commit.committer;
