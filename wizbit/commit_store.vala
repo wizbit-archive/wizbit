@@ -180,7 +180,7 @@ namespace Wiz {
 			if (version <= 0) {
 				// upgrade version 0 to version 1
 				this.upgrade_database_step(
-					"CREATE TABLE commits(uuid VARCHAR(40), blob VARCHAR(40), committer VARCHAR(256), INTEGER timestamp)");
+					"CREATE TABLE commits(uuid VARCHAR(40), blob VARCHAR(40), committer VARCHAR(256), timestamp INTEGER)");
 				this.upgrade_database_step(
 					"CREATE TABLE relations(node_id VARCHAR(40), parent_id VARCHAR(40))");
 			}
