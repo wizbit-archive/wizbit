@@ -19,13 +19,13 @@ namespace Wiz {
 			"SELECT c.uuid FROM commits AS c LEFT OUTER JOIN relations AS r ON c.uuid=r.parent_id WHERE r.parent_id IS NULL";
 
 		private static const string INSERT_COMMIT_SQL =
-			"INSERT INTO commits VALUES (?, ?)";
+			"INSERT INTO commits VALUES (?, ?, ?, ?)";
 
 		private static const string INSERT_RELATION_SQL =
 			"INSERT INTO relations VALUES (?, ?)";
 
 		private static const string SELECT_COMMIT_SQL =
-			"SELECT c.blob FROM commits AS c WHERE c.uuid=?";
+			"SELECT c.blob, c.committer, c.timestamp FROM commits AS c WHERE c.uuid=?";
 
 		private static const string SELECT_RELATION_SQL =
 			"SELECT r.parent_id FROM relations AS r WHERE r.node_id=?";
@@ -140,7 +140,8 @@ namespace Wiz {
 			var res = this.select_commit_sql.step();
 			assert(res == Sqlite.ROW);
 			c.blob = "%s".printf(this.select_commit_sql.column_text(1));
-
+			c.committer = "%s".printf(this.select_commit_sql.column_text(2));
+			c.timestamp = this.select_commit_sql.column_int(3);
 			this.select_relation_sql.reset();
 			this.select_relation_sql.bind_text(1, uuid);
 			res = this.select_relation_sql.step();
@@ -159,6 +160,8 @@ namespace Wiz {
 			this.insert_commit_sql.reset();
 			this.insert_commit_sql.bind_text(1, c.uuid);
 			this.insert_commit_sql.bind_text(2, c.blob);
+			this.insert_commit_sql.bind_text(3, c.committer);
+			this.insert_commit_sql.bind_int(4, c.timestamp);
 			this.insert_commit_sql.step();
 
 			foreach (var p in c.parents) {
@@ -177,7 +180,7 @@ namespace Wiz {
 			if (version <= 0) {
 				// upgrade version 0 to version 1
 				this.upgrade_database_step(
-					"CREATE TABLE commits(uuid VARCHAR(40), blob VARCHAR(40))");
+					"CREATE TABLE commits(uuid VARCHAR(40), blob VARCHAR(40), committer VARCHAR(256), INTEGER timestamp)");
 				this.upgrade_database_step(
 					"CREATE TABLE relations(node_id VARCHAR(40), parent_id VARCHAR(40))");
 			}
