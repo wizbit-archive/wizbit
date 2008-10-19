@@ -22,10 +22,12 @@ namespace Wiz {
 			}
 		}
 
-		private List<Version> _tips;
-		public List<Version> tips {
+		public List<Version> #tips {
 			get {
-				return _tips;
+				var retval = new List<Version>();
+				foreach (var t in this.commits.get_tips())
+					retval.append(new Version(this, t));
+				return retval;
 			}
 		}
 
@@ -73,7 +75,6 @@ namespace Wiz {
 
 			var new_version = new Version(this, commit.uuid);
 			this._primary_tip = new_version;
-
 			return new_version;
 		}
 	}
