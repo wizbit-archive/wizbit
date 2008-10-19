@@ -6,12 +6,6 @@ namespace Wiz {
 		public string database { get; construct; }
 		public string uuid { get; construct; }
 
-		private static const string CREATE_COMMITS_TABLE =
-			"CREATE TABLE commits(uuid VARCHAR(40), blob VARCHAR(40))";
-
-		private static const string CREATE_RELATIONS_TABLE =
-			"CREATE TABLE relations(node_id VARCHAR(40), parent_id VARCHAR(40))";
-
 		private static const string GO_FORWARDS_SQL =
 			"SELECT r.node_id FROM relations AS r WHERE r.parent_id = ?";
 
@@ -53,13 +47,9 @@ namespace Wiz {
 
 			Database.open(this.database, out this.db);
 
-			int val = this.db.exec(CREATE_COMMITS_TABLE);
-			assert(val == Sqlite.OK);
+			this.upgrade_database();
 
-			val = this.db.exec(CREATE_RELATIONS_TABLE);
-			assert(val == Sqlite.OK);
-
-			val = this.db.prepare(GO_FORWARDS_SQL, -1,
+			var val = this.db.prepare(GO_FORWARDS_SQL, -1,
 				out this.go_forwards_sql);
 			assert(val == Sqlite.OK);
 
@@ -164,6 +154,43 @@ namespace Wiz {
 			}
 
 			return c;
+		}
+
+		private void upgrade_database() {
+			uint version = this.check_database_version();
+
+			if (version <= 0) {
+				// upgrade version 0 to version 1
+				this.upgrade_database_step(
+					"CREATE TABLE commits(uuid VARCHAR(40), blob VARCHAR(40))");
+				this.upgrade_database_step(
+					"CREATE TABLE relations(node_id VARCHAR(40), parent_id VARCHAR(40))");
+			}
+
+			if (version <= 1) {
+				// upgrade version 1 to version 2
+			}
+		}
+
+		private uint check_database_version() {
+			Statement tmp;
+
+			this.db.prepare("SELECT tbl_name FROM sqlite_master",
+				-1, out tmp);
+
+			tmp.reset();
+			if (tmp.step() == Sqlite.DONE)
+				return 0;
+
+			return 1;
+		}
+
+		private void upgrade_database_step(string sql) {
+			Statement tmp;
+			this.db.prepare(sql, -1, out tmp);
+			tmp.reset();
+			int res = tmp.step();
+			assert(res == Sqlite.DONE);
 		}
 	}
 
