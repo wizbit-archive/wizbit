@@ -15,10 +15,9 @@ namespace Wiz {
 		public string store_path { get; construct; }
 		public string uuid { get; construct; }
 
-		private Version _primary_tip;
-		public Version primary_tip {
+		public Version #primary_tip {
 			get {
-				return _primary_tip;
+				return new Version(this, this.commits.get_primary_tip());
 			}
 		}
 
@@ -74,7 +73,6 @@ namespace Wiz {
 			this.commits.store_commit(commit);
 
 			var new_version = new Version(this, commit.uuid);
-			this._primary_tip = new_version;
 			return new_version;
 		}
 	}

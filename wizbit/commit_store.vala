@@ -12,6 +12,9 @@ namespace Wiz {
 		private static const string GO_BACKWARDS_SQL =
 			"SELECT r.parent_id FROM relations AS r WHERE r.node_id = ?";
 
+		private static const string GET_PRIMARY_TIP_SQL =
+			"SELECT c.uuid FROM commits AS c ORDER BY c.timestamp DESC LIMIT 1";
+
 		private static const string GET_TIPS_SQL =
 			"SELECT c.uuid FROM commits AS c LEFT OUTER JOIN relations AS r ON c.uuid=r.parent_id WHERE r.parent_id IS NULL";
 
@@ -31,6 +34,7 @@ namespace Wiz {
 
 		private Statement go_forwards_sql;
 		private Statement go_backwards_sql;
+		private Statement get_primary_tip_sql;
 		private Statement get_tips_sql;
 		private Statement insert_commit_sql;
 		private Statement insert_relation_sql;
@@ -57,6 +61,10 @@ namespace Wiz {
 				out this.go_backwards_sql);
 			assert(val == Sqlite.OK);
 
+			val = this.db.prepare(GET_PRIMARY_TIP_SQL, -1,
+				out this.get_primary_tip_sql);
+			assert(val == Sqlite.OK);
+
 			val = this.db.prepare(GET_TIPS_SQL, -1,
 				out this.get_tips_sql);
 			assert(val == Sqlite.OK);
@@ -76,6 +84,13 @@ namespace Wiz {
 			val = this.db.prepare(SELECT_RELATION_SQL, -1,
 				out this.select_relation_sql);
 			assert(val == Sqlite.OK);
+		}
+
+		public string get_primary_tip() {
+			this.get_primary_tip_sql.reset();
+			var res = this.get_primary_tip_sql.step();
+			assert(res == Sqlite.ROW);
+			return "%s".printf(this.get_tips_sql.column_text(1));
 		}
 
 		public List<string> get_tips() {
