@@ -17,7 +17,10 @@ namespace Wiz {
 
 		public Version #primary_tip {
 			get {
-				return new Version(this, this.commits.get_primary_tip());
+				var pt = this.commits.get_primary_tip();
+				if (pt != null)
+					return new Version(this, pt);
+				return null;
 			}
 		}
 

@@ -86,11 +86,14 @@ namespace Wiz {
 			assert(val == Sqlite.OK);
 		}
 
-		public string get_primary_tip() {
+		public string? get_primary_tip() {
 			this.get_primary_tip_sql.reset();
 			var res = this.get_primary_tip_sql.step();
 			assert(res == Sqlite.ROW);
-			return "%s".printf(this.get_tips_sql.column_text(1));
+			var tip = this.get_tips_sql.column_text(1);
+			if (tip != null)
+				return "%s".printf(this.get_tips_sql.column_text(1));
+			return null;
 		}
 
 		public List<string> get_tips() {
