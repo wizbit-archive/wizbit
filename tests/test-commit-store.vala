@@ -65,6 +65,31 @@ public void test_primary_tip() {
 	assert(c1.uuid == pt);
 }
 
+public void test_forwards_and_backwards() {
+	var s = new CommitStore(":memory:", "foo");
+
+	var c1 = new RarCommit();
+	c1.blob = "alskdjalksjdlaks";
+	s.store_commit(c1);
+
+	var c2 = new RarCommit();
+	c2.blob = "asdasd";
+	c2.parents.append(c1.uuid);
+	s.store_commit(c2);
+
+	var tmp = s.get_backwards(c1.uuid);
+	assert(tmp.length() == 0);
+	tmp = s.get_forwards(c1.uuid);
+	assert(tmp.length() == 1);
+	assert(tmp.nth_data(0) == c2.uuid);
+
+	tmp = s.get_backwards(c2.uuid);
+	assert(tmp.length() == 1);
+	assert(tmp.nth_data(0) == c1.uuid);
+	tmp = s.get_forwards(c2.uuid);
+	assert(tmp.length() == 0);
+}
+
 public static void main (string[] args) {
 	if (!FileUtils.test("data", FileTest.IS_DIR)) { 
 		DirUtils.create_with_parents("data", 0755);
@@ -75,5 +100,6 @@ public static void main (string[] args) {
 	Test.add_func("/wizbit/commit_store/commit_lookup", test_commit_lookup);
 	Test.add_func("/wizbit/commit_store/1", test_commit);
 	Test.add_func("/wizbit/commit_store/primary_tip", test_primary_tip);
+	Test.add_func("/wizbit/commit_store/forwards_and_backwards", test_forwards_and_backwards);
 	Test.run();
 }
