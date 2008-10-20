@@ -90,9 +90,9 @@ namespace Wiz {
 			this.get_primary_tip_sql.reset();
 			var res = this.get_primary_tip_sql.step();
 			assert(res == Sqlite.ROW);
-			var tip = this.get_tips_sql.column_text(1);
+			var tip = this.get_primary_tip_sql.column_text(1);
 			if (tip != null)
-				return "%s".printf(this.get_tips_sql.column_text(1));
+				return "%s".printf(tip);
 			return null;
 		}
 
