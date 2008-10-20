@@ -90,7 +90,7 @@ namespace Wiz {
 			this.get_primary_tip_sql.reset();
 			var res = this.get_primary_tip_sql.step();
 			assert(res == Sqlite.ROW);
-			var tip = this.get_primary_tip_sql.column_text(1);
+			var tip = this.get_primary_tip_sql.column_text(0);
 			if (tip != null)
 				return "%s".printf(tip);
 			return null;
@@ -101,7 +101,7 @@ namespace Wiz {
 			this.get_tips_sql.reset();
 			var res = this.get_tips_sql.step();
 			while (res == Sqlite.ROW) {
-				retval.append("%s".printf(this.get_tips_sql.column_text(1)));
+				retval.append("%s".printf(this.get_tips_sql.column_text(0)));
 				res = this.get_tips_sql.step();
 			}
 			assert( res == Sqlite.DONE );
@@ -114,7 +114,7 @@ namespace Wiz {
 			this.go_forwards_sql.bind_text(1, version_uuid);
 			var res = this.go_forwards_sql.step();
 			while (res == Sqlite.ROW) {
-				retval.append("%s".printf(this.go_forwards_sql.column_text(1)));
+				retval.append("%s".printf(this.go_forwards_sql.column_text(0)));
 				res = this.go_forwards_sql.step();
 			}
 			assert( res == Sqlite.DONE );
@@ -127,7 +127,7 @@ namespace Wiz {
 			this.go_backwards_sql.bind_text(1, version_uuid);
 			var res = this.go_backwards_sql.step();
 			while (res == Sqlite.ROW) {
-				retval.append("%s".printf(this.go_backwards_sql.column_text(1)));
+				retval.append("%s".printf(this.go_backwards_sql.column_text(0)));
 				res = this.go_backwards_sql.step();
 			}
 			assert( res == Sqlite.DONE );
@@ -142,14 +142,14 @@ namespace Wiz {
 			this.select_commit_sql.bind_text(1, uuid);
 			var res = this.select_commit_sql.step();
 			assert(res == Sqlite.ROW);
-			c.blob = "%s".printf(this.select_commit_sql.column_text(1));
-			c.committer = "%s".printf(this.select_commit_sql.column_text(2));
-			c.timestamp = this.select_commit_sql.column_int(3);
+			c.blob = "%s".printf(this.select_commit_sql.column_text(0));
+			c.committer = "%s".printf(this.select_commit_sql.column_text(1));
+			c.timestamp = this.select_commit_sql.column_int(2);
 			this.select_relation_sql.reset();
 			this.select_relation_sql.bind_text(1, uuid);
 			res = this.select_relation_sql.step();
 			while (res == Sqlite.ROW) {
-				c.parents.append("%s".printf(this.select_relation_sql.column_text(1)));
+				c.parents.append("%s".printf(this.select_relation_sql.column_text(0)));
 				res = this.select_relation_sql.step();
 			}
 			assert(res == Sqlite.DONE);
