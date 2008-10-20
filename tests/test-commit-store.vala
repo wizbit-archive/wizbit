@@ -53,6 +53,18 @@ public void test_commit() {
 	assert(tips.length() == 1);
 }
 
+public void test_primary_tip() {
+	var s = new CommitStore(":memory:", "foo");
+
+	var c1 = new RarCommit();
+	c1.blob = "rararar";
+	s.store_commit(c1);
+
+	var pt = s.get_primary_tip();
+
+	assert(c1.uuid == pt);
+}
+
 public static void main (string[] args) {
 	if (!FileUtils.test("data", FileTest.IS_DIR)) { 
 		DirUtils.create_with_parents("data", 0755);
@@ -62,5 +74,6 @@ public static void main (string[] args) {
 	Test.add_func("/wizbit/commit_store/store_new", test_store_new);
 	Test.add_func("/wizbit/commit_store/commit_lookup", test_commit_lookup);
 	Test.add_func("/wizbit/commit_store/1", test_commit);
+	Test.add_func("/wizbit/commit_store/primary_tip", test_primary_tip);
 	Test.run();
 }
