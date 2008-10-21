@@ -160,19 +160,27 @@ namespace Wiz {
 		public RarCommit store_commit(RarCommit c) {
 			c.uuid = generate_uuid();
 
+			var res = this.db.exec("BEGIN");
+			assert(res == Sqlite.OK);
+
 			this.insert_commit_sql.reset();
 			this.insert_commit_sql.bind_text(1, c.uuid);
 			this.insert_commit_sql.bind_text(2, c.blob);
 			this.insert_commit_sql.bind_text(3, c.committer);
 			this.insert_commit_sql.bind_int(4, c.timestamp);
-			this.insert_commit_sql.step();
+			res = this.insert_commit_sql.step();
+			assert(res == Sqlite.DONE);
 
 			foreach (var p in c.parents) {
 				this.insert_relation_sql.reset();
 				this.insert_relation_sql.bind_text(1, c.uuid);
 				this.insert_relation_sql.bind_text(2, p);
-				this.insert_relation_sql.step();
+				res = this.insert_relation_sql.step();
+				assert(res == Sqlite.DONE);
 			}
+
+			res = this.db.exec("END");
+			assert(res == Sqlite.OK);
 
 			return c;
 		}
