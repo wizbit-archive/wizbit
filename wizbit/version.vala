@@ -30,15 +30,21 @@ namespace Wiz {
 			}
 		}
 
-		public Version #previous {
+		public Version? #previous {
 			get {
-				return new Version(this.bit, this.bit.commits.get_backward(this.version_uuid));
+				var v = this.bit.commits.get_backward(this.version_uuid);
+				if (v == null)
+					return null;
+				return new Version(this.bit, v);
 			}
 		}
 
-		public Version #next {
+		public Version? #next {
 			get {
-				return new Version(this.bit, this.bit.commits.get_forward(this.version_uuid));
+				var v = this.bit.commits.get_forward(this.version_uuid);
+				if (v == null)
+					return null;
+				return new Version(this.bit, v);
 			}
 		}
 
