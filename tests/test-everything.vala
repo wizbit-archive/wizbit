@@ -17,18 +17,16 @@ public void test_wiz_bit_1() {
 
 	var v1 = obj.create_next_version_from_string("FOOBAR", null);
 	var v2 = obj.create_next_version_from_string("BARFOO", obj.primary_tip);
-}
 
-public void test_wiz_bit_2() {
-	var obj = new Wiz.Bit("SOMENAME", "data/wiz_bit");
+	obj = new Wiz.Bit("SOMENAME", "data/wiz_bit");
 
-	var v2 = obj.primary_tip;
+	v2 = obj.primary_tip;
 	assert( v2 != null );
 	assert( v2.committer != null );
 	assert( v2.parents.length() == 1 );
 	assert( v2.read_as_string() == "BARFOO" );
 
-	var v1 = v2.parents.nth_data(0);
+	v1 = v2.parents.nth_data(0);
 	assert( v1 != null );
 	assert( v1.committer != null);
 	assert( v1.parents.length() == 0 );
@@ -69,7 +67,6 @@ public static void main (string[] args) {
 	Test.init (ref args);
 	Test.add_func("/wizbit/store/1", test_wiz_store);
 	Test.add_func("/wizbit/bit/1", test_wiz_bit_1);
-	Test.add_func("/wizbit/bit/2", test_wiz_bit_2);
 	Test.add_func("/wizbit/refs/1", test_wiz_refs_1);
 	Test.add_func("/wizbit/refs/2", test_wiz_refs_2);
 	Test.add_func("/wizbit/graph/1", test_graph);
