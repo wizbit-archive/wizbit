@@ -7,10 +7,10 @@ namespace Wiz {
 		public string uuid { get; construct; }
 
 		private static const string GO_FORWARDS_SQL =
-			"SELECT r.node_id FROM relations AS r WHERE r.parent_id = ?";
+			"SELECT r.node_id FROM relations AS r, commits AS c WHERE r.parent_id = ? AND r.parent_id=commits.uuid ORDER BY c.timestamp DESC, c.timestamp2 DESC";
 
 		private static const string GO_BACKWARDS_SQL =
-			"SELECT r.parent_id FROM relations AS r WHERE r.node_id = ?";
+			"SELECT r.parent_id FROM relations AS r, commits AS c WHERE r.node_id = ? AND r.node_id=commits.uuid ORDER BY c.timestamp DESC, c.timestamp2 DESC";
 
 		private static const string GET_PRIMARY_TIP_SQL =
 			"SELECT c.uuid FROM commits AS c ORDER BY c.timestamp DESC, c.timestamp2 DESC LIMIT 1";
