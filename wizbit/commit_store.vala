@@ -47,43 +47,18 @@ namespace Wiz {
 		}
 
 		construct {
-			/* test and create commits directory */
-
 			Database.open(this.database, out this.db);
 
 			this.upgrade_database();
 
-			var val = this.db.prepare(GO_FORWARDS_SQL, -1,
-				out this.go_forwards_sql);
-			assert(val == Sqlite.OK);
-
-			val = this.db.prepare(GO_BACKWARDS_SQL, -1,
-				out this.go_backwards_sql);
-			assert(val == Sqlite.OK);
-
-			val = this.db.prepare(GET_PRIMARY_TIP_SQL, -1,
-				out this.get_primary_tip_sql);
-			assert(val == Sqlite.OK);
-
-			val = this.db.prepare(GET_TIPS_SQL, -1,
-				out this.get_tips_sql);
-			assert(val == Sqlite.OK);
-
-			val = this.db.prepare(INSERT_COMMIT_SQL, -1,
-				out this.insert_commit_sql);
-			assert(val == Sqlite.OK);
-
-			val = this.db.prepare(INSERT_RELATION_SQL, -1,
-				out this.insert_relation_sql);
-			assert(val == Sqlite.OK);
-
-			val = this.db.prepare(SELECT_COMMIT_SQL, -1,
-				out this.select_commit_sql);
-			assert(val == Sqlite.OK);
-
-			val = this.db.prepare(SELECT_RELATION_SQL, -1,
-				out this.select_relation_sql);
-			assert(val == Sqlite.OK);
+			this.prepare_statement(GO_FORWARDS_SQL, out go_forwards_sql);
+			this.prepare_statement(GO_BACKWARDS_SQL, out go_backwards_sql);
+			this.prepare_statement(GET_PRIMARY_TIP_SQL, out get_primary_tip_sql);
+			this.prepare_statement(GET_TIPS_SQL, out get_tips_sql);
+			this.prepare_statement(INSERT_COMMIT_SQL, out insert_commit_sql);
+			this.prepare_statement(INSERT_RELATION_SQL, out insert_relation_sql);
+			this.prepare_statement(SELECT_COMMIT_SQL, out select_commit_sql);
+			this.prepare_statement(SELECT_RELATION_SQL, out select_relation_sql);
 		}
 
 		public string? get_primary_tip() {
@@ -189,6 +164,12 @@ namespace Wiz {
 			//assert(res == Sqlite.OK);
 
 			return c;
+		}
+
+		private void prepare_statement(string sql, out Statement stmt) {
+			var result = this.db.prepare(sql, -1, out stmt);
+			if (result != Sqlite.OK)
+				critical("FAILED on '%s'\n%u: %s (%u)\n", sql, result, this.db.errmsg(), this.db.errcode());
 		}
 
 		private void upgrade_database() {
