@@ -79,15 +79,19 @@ public void test_forwards_and_backwards() {
 
 	var tmp = s.get_backwards(c1.uuid);
 	assert(tmp.length() == 0);
+	assert(s.get_backward(c1.uuid) == null);
 	tmp = s.get_forwards(c1.uuid);
 	assert(tmp.length() == 1);
 	assert(tmp.nth_data(0) == c2.uuid);
+	assert(s.get_forward(c1.uuid) == c2.uuid);
 
 	tmp = s.get_backwards(c2.uuid);
 	assert(tmp.length() == 1);
 	assert(tmp.nth_data(0) == c1.uuid);
+	assert(s.get_backward(c2.uuid) == c1.uuid);
 	tmp = s.get_forwards(c2.uuid);
 	assert(tmp.length() == 0);
+	assert(s.get_forward(c2.uuid) == null);
 }
 
 public static void main (string[] args) {
