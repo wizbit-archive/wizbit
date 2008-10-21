@@ -92,11 +92,8 @@ public class SyncSource : Object {
 	}
 
 	public string grab_blob(string version_uuid) {
-		var gs = new Graph.Store(Path.build_filename(this.store.directory, "objects"));
-		var gc = new Graph.Commit.from_uuid(gs, version_uuid);
-		gc.unserialize();
 		var v = this.store.open_version("nomnom", version_uuid);
-		return "%s%s".printf(gc.blob.uuid, v.read_as_string());
+		return "%s%s".printf(v.blob_id, v.read_as_string());
 	}
 
 	public List<string> grab_tips(string bit_uuid) {

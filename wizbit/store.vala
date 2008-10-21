@@ -50,7 +50,7 @@ namespace Wiz {
 		}
 
 		public Version open_version(string uuid, string version_uuid) {
-			return new Version(this.store, version_uuid);
+			return null;
 		}
 	}
 }

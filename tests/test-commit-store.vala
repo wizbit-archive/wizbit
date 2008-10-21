@@ -14,11 +14,11 @@ public void test_store_new() {
 	 */
 	var foo = new List<CommitStore>();
 	for (int i=0; i<10000; i++) {
-		var test = new CommitStore(":memory:");
+		var test = new CommitStore(":memory:", "foo");
 		var c = new RarCommit();
 		c.blob = "1234";
 		test.store_commit(c);
-		assert(test.get_tips("fsfs").length() == 1);
+		assert(test.get_tips().length() == 1);
 		foo.append(test);
 	}
 }
@@ -27,7 +27,7 @@ public void test_commit_lookup() {
 	/*
 	 * Commit to a CommitStore and then try and read it back out
 	 */
-	var s = new CommitStore("data/foo");
+	var s = new CommitStore(":memory:", "foo");
 
 	var c1 = new RarCommit();
 	c1.blob = "1234";
@@ -38,7 +38,7 @@ public void test_commit_lookup() {
 }
 
 public void test_commit() {
-	var s = new CommitStore("data/foo");
+	var s = new CommitStore(":memory:", "foo");
 
 	var c1 = new RarCommit();
 	c1.blob = "rararar";
@@ -49,8 +49,45 @@ public void test_commit() {
 	c2.parents.append(c1.uuid);
 	s.store_commit(c2);
 
-	var tips = s.get_tips("sdsdsd");
+	var tips = s.get_tips();
 	assert(tips.length() == 1);
+}
+
+public void test_primary_tip() {
+	var s = new CommitStore(":memory:", "foo");
+
+	var c1 = new RarCommit();
+	c1.blob = "rararar";
+	s.store_commit(c1);
+
+	var pt = s.get_primary_tip();
+
+	assert(c1.uuid == pt);
+}
+
+public void test_forwards_and_backwards() {
+	var s = new CommitStore(":memory:", "foo");
+
+	var c1 = new RarCommit();
+	c1.blob = "alskdjalksjdlaks";
+	s.store_commit(c1);
+
+	var c2 = new RarCommit();
+	c2.blob = "asdasd";
+	c2.parents.append(c1.uuid);
+	s.store_commit(c2);
+
+	var tmp = s.get_backwards(c1.uuid);
+	assert(tmp.length() == 0);
+	tmp = s.get_forwards(c1.uuid);
+	assert(tmp.length() == 1);
+	assert(tmp.nth_data(0) == c2.uuid);
+
+	tmp = s.get_backwards(c2.uuid);
+	assert(tmp.length() == 1);
+	assert(tmp.nth_data(0) == c1.uuid);
+	tmp = s.get_forwards(c2.uuid);
+	assert(tmp.length() == 0);
 }
 
 public static void main (string[] args) {
@@ -62,5 +99,7 @@ public static void main (string[] args) {
 	Test.add_func("/wizbit/commit_store/store_new", test_store_new);
 	Test.add_func("/wizbit/commit_store/commit_lookup", test_commit_lookup);
 	Test.add_func("/wizbit/commit_store/1", test_commit);
+	Test.add_func("/wizbit/commit_store/primary_tip", test_primary_tip);
+	Test.add_func("/wizbit/commit_store/forwards_and_backwards", test_forwards_and_backwards);
 	Test.run();
 }
