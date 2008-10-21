@@ -143,8 +143,8 @@ namespace Wiz {
 			this.select_commit_sql.bind_text(1, uuid);
 			var res = this.select_commit_sql.step();
 			assert(res == Sqlite.ROW);
-			c.blob = "%s".printf(this.select_commit_sql.column_text(0));
-			c.committer = "%s".printf(this.select_commit_sql.column_text(1));
+			c.blob =this.select_commit_sql.column_text(0);
+			c.committer = this.select_commit_sql.column_text(1);
 			c.timestamp = this.select_commit_sql.column_int(2);
 			this.select_commit_sql.reset();
 
