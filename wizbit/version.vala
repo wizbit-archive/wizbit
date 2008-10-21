@@ -30,6 +30,18 @@ namespace Wiz {
 			}
 		}
 
+		public Version #previous {
+			get {
+				return new Version(this.bit, this.bit.commits.get_backward(this.version_uuid));
+			}
+		}
+
+		public Version #next {
+			get {
+				return new Version(this.bit, this.bit.commits.get_forward(this.version_uuid));
+			}
+		}
+
 		public List<Version> #parents {
 			get {
 				var parents = new List<Version>();
