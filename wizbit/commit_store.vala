@@ -119,7 +119,7 @@ namespace Wiz {
 				res = this.go_forwards_sql.step();
 			}
 			assert( res == Sqlite.DONE );
-			this.get_tips_sql.reset();
+			this.go_forwards_sql.reset();
 			return retval;
 		}
 
