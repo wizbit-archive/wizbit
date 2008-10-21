@@ -87,50 +87,48 @@ namespace Wiz {
 		}
 
 		public string? get_primary_tip() {
-			this.get_primary_tip_sql.reset();
 			var res = this.get_primary_tip_sql.step();
 			assert(res == Sqlite.ROW);
 			var tip = this.get_primary_tip_sql.column_text(0);
-			if (tip != null)
-				return "%s".printf(tip);
-			return null;
+			this.get_primary_tip_sql.reset();
+			return tip;
 		}
 
 		public List<string> get_tips() {
 			var retval = new List<string>();
-			this.get_tips_sql.reset();
 			var res = this.get_tips_sql.step();
 			while (res == Sqlite.ROW) {
-				retval.append("%s".printf(this.get_tips_sql.column_text(0)));
+				retval.append(this.get_tips_sql.column_text(0));
 				res = this.get_tips_sql.step();
 			}
 			assert( res == Sqlite.DONE );
+			this.get_tips_sql.reset();
 			return retval;
 		}
 
 		public List<string> get_forwards(string version_uuid) {
 			var retval = new List<string>();
-			this.go_forwards_sql.reset();
 			this.go_forwards_sql.bind_text(1, version_uuid);
 			var res = this.go_forwards_sql.step();
 			while (res == Sqlite.ROW) {
-				retval.append("%s".printf(this.go_forwards_sql.column_text(0)));
+				retval.append(this.go_forwards_sql.column_text(0));
 				res = this.go_forwards_sql.step();
 			}
 			assert( res == Sqlite.DONE );
+			this.get_tips_sql.reset();
 			return retval;
 		}
 
 		public List<string> get_backwards(string version_uuid) {
 			var retval = new List<string>();
-			this.go_backwards_sql.reset();
 			this.go_backwards_sql.bind_text(1, version_uuid);
 			var res = this.go_backwards_sql.step();
 			while (res == Sqlite.ROW) {
-				retval.append("%s".printf(this.go_backwards_sql.column_text(0)));
+				retval.append(this.go_backwards_sql.column_text(0));
 				res = this.go_backwards_sql.step();
 			}
 			assert( res == Sqlite.DONE );
+			this.go_backwards_sql.reset();
 			return retval;
 		}
 
@@ -138,21 +136,22 @@ namespace Wiz {
 			var c = new RarCommit();
 			c.uuid = uuid;
 
-			this.select_commit_sql.reset();
 			this.select_commit_sql.bind_text(1, uuid);
 			var res = this.select_commit_sql.step();
 			assert(res == Sqlite.ROW);
 			c.blob = "%s".printf(this.select_commit_sql.column_text(0));
 			c.committer = "%s".printf(this.select_commit_sql.column_text(1));
 			c.timestamp = this.select_commit_sql.column_int(2);
-			this.select_relation_sql.reset();
+			this.select_commit_sql.reset();
+
 			this.select_relation_sql.bind_text(1, uuid);
 			res = this.select_relation_sql.step();
 			while (res == Sqlite.ROW) {
-				c.parents.append("%s".printf(this.select_relation_sql.column_text(0)));
+				c.parents.append(this.select_relation_sql.column_text(0));
 				res = this.select_relation_sql.step();
 			}
 			assert(res == Sqlite.DONE);
+			this.select_relation_sql.reset();
 
 			return c;
 		}
@@ -160,27 +159,30 @@ namespace Wiz {
 		public RarCommit store_commit(RarCommit c) {
 			c.uuid = generate_uuid();
 
-			var res = this.db.exec("BEGIN");
-			assert(res == Sqlite.OK);
+			//var res = this.db.exec("BEGIN");
+			//assert(res == Sqlite.OK);
 
-			this.insert_commit_sql.reset();
 			this.insert_commit_sql.bind_text(1, c.uuid);
 			this.insert_commit_sql.bind_text(2, c.blob);
 			this.insert_commit_sql.bind_text(3, c.committer);
 			this.insert_commit_sql.bind_int(4, c.timestamp);
-			res = this.insert_commit_sql.step();
+			var res = this.insert_commit_sql.step();
 			assert(res == Sqlite.DONE);
 
+			this.insert_commit_sql.reset();
+
 			foreach (var p in c.parents) {
-				this.insert_relation_sql.reset();
 				this.insert_relation_sql.bind_text(1, c.uuid);
 				this.insert_relation_sql.bind_text(2, p);
 				res = this.insert_relation_sql.step();
 				assert(res == Sqlite.DONE);
+
+				this.insert_relation_sql.reset();
 			}
 
-			res = this.db.exec("END");
-			assert(res == Sqlite.OK);
+			//res = this.db.exec("END");
+			//debug(this.db.errmsg());
+			//assert(res == Sqlite.OK);
 
 			return c;
 		}
