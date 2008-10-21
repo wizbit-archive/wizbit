@@ -7,10 +7,10 @@ namespace Wiz {
 		public string uuid { get; construct; }
 
 		private static const string GO_FORWARDS_SQL =
-			"SELECT r.node_id FROM relations AS r, commits AS c WHERE r.parent_id = ? AND r.parent_id=commits.uuid ORDER BY c.timestamp DESC, c.timestamp2 DESC";
+			"SELECT r.node_id FROM relations AS r, commits AS c WHERE r.parent_id = ? AND r.parent_id=c.uuid ORDER BY c.timestamp DESC, c.timestamp2 DESC";
 
 		private static const string GO_BACKWARDS_SQL =
-			"SELECT r.parent_id FROM relations AS r, commits AS c WHERE r.node_id = ? AND r.node_id=commits.uuid ORDER BY c.timestamp DESC, c.timestamp2 DESC";
+			"SELECT r.parent_id FROM relations AS r, commits AS c WHERE r.node_id = ? AND r.node_id=c.uuid ORDER BY c.timestamp DESC, c.timestamp2 DESC";
 
 		private static const string GET_PRIMARY_TIP_SQL =
 			"SELECT c.uuid FROM commits AS c ORDER BY c.timestamp DESC, c.timestamp2 DESC LIMIT 1";
@@ -98,6 +98,14 @@ namespace Wiz {
 			return retval;
 		}
 
+		public string? get_forward(string version_uuid) {
+			this.go_forwards_sql.bind_text(1, version_uuid);
+			var res = this.go_forwards_sql.step();
+			var retval = this.go_forwards_sql.column_text(0);
+			this.go_forwards_sql.reset();
+			return retval;
+		}
+
 		public List<string> get_backwards(string version_uuid) {
 			var retval = new List<string>();
 			this.go_backwards_sql.bind_text(1, version_uuid);
@@ -107,6 +115,14 @@ namespace Wiz {
 				res = this.go_backwards_sql.step();
 			}
 			assert( res == Sqlite.DONE );
+			this.go_backwards_sql.reset();
+			return retval;
+		}
+
+		public string? get_backward(string version_uuid) {
+			this.go_backwards_sql.bind_text(1, version_uuid);
+			var res = this.go_backwards_sql.step();
+			var retval = this.go_backwards_sql.column_text(0);
 			this.go_backwards_sql.reset();
 			return retval;
 		}
