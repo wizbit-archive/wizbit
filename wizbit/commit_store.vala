@@ -88,10 +88,14 @@ namespace Wiz {
 
 		public string? get_primary_tip() {
 			var res = this.get_primary_tip_sql.step();
-			assert(res == Sqlite.ROW);
-			var tip = this.get_primary_tip_sql.column_text(0);
+			if (res == Sqlite.ROW) {
+				var tip = this.get_primary_tip_sql.column_text(0);
+				this.get_primary_tip_sql.reset();
+				return tip;
+			}
+			assert(res == Sqlite.DONE);
 			this.get_primary_tip_sql.reset();
-			return tip;
+			return null;
 		}
 
 		public List<string> get_tips() {
