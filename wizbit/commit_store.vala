@@ -13,13 +13,13 @@ namespace Wiz {
 			"SELECT r.parent_id FROM relations AS r WHERE r.node_id = ?";
 
 		private static const string GET_PRIMARY_TIP_SQL =
-			"SELECT c.uuid FROM commits AS c ORDER BY c.timestamp DESC LIMIT 1";
+			"SELECT c.uuid FROM commits AS c ORDER BY c.timestamp DESC, c.timestamp2 DESC LIMIT 1";
 
 		private static const string GET_TIPS_SQL =
 			"SELECT c.uuid FROM commits AS c LEFT OUTER JOIN relations AS r ON c.uuid=r.parent_id WHERE r.parent_id IS NULL";
 
 		private static const string INSERT_COMMIT_SQL =
-			"INSERT INTO commits VALUES (?, ?, ?, ?)";
+			"INSERT INTO commits VALUES (?, ?, ?, ?, null)";
 
 		private static const string INSERT_RELATION_SQL =
 			"INSERT INTO relations VALUES (?, ?)";
@@ -183,7 +183,7 @@ namespace Wiz {
 			if (version <= 0) {
 				// upgrade version 0 to version 1
 				this.upgrade_database_step(
-					"CREATE TABLE commits(uuid VARCHAR(40), blob VARCHAR(40), committer VARCHAR(256), timestamp INTEGER)");
+					"CREATE TABLE commits(uuid VARCHAR(40), blob VARCHAR(40), committer VARCHAR(256), timestamp INTEGER, timestamp2 INTEGER PRIMARY KEY)");
 				this.upgrade_database_step(
 					"CREATE TABLE relations(node_id VARCHAR(40), parent_id VARCHAR(40))");
 			}
