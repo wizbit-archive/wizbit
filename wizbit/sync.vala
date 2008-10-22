@@ -95,20 +95,6 @@ public class SyncSource : Object {
 		var v = this.store.open_version("nomnom", version_uuid);
 		return "%s%s".printf(v.blob_id, v.read_as_string());
 	}
-
-	public List<string> grab_tips(string bit_uuid) {
-		var b = this.store.open_bit(bit_uuid);
-		var retval = new List<string>();
-		if (b.primary_tip != null) {
-			retval.append(b.primary_tip.version_uuid);
-			foreach (var t in b.tips) {
-				if (t.version_uuid != b.primary_tip.version_uuid)
-					retval.append(t.version_uuid);
-			}
-		}
-
-		return retval;
-	}
 }
 
 public class SyncClient : Object {
@@ -151,16 +137,6 @@ public class SyncClient : Object {
 			var blob = server.grab_blob(uuid);
 			this.drop_raw(blob.substring(0,40), blob.substring(40, blob.len()));
 		};
-
-		debug("merging tips (there are %u)", objs.length());
-		foreach (var b in objs) {
-			if (this.store.has_bit(b)) {
-				var bit = this.store.open_bit(b);
-				var remote_tips = server.grab_tips(b);
-			} else {
-				this.drop_tips(b, server.grab_tips(b)); 
-			}
-		}
 	}
 
 	void drop_raw(string uuid, string raw) {
@@ -169,13 +145,5 @@ public class SyncClient : Object {
 			DirUtils.create_with_parents(drop_dir, 0755);
 		string drop_path = Path.build_filename(drop_dir, uuid.substring(2,40));
 		FileUtils.set_contents(drop_path, raw);
-	}
-
-	void drop_tips(string uuid, List<string> tips) {
-		var raw = new StringBuilder();
-		foreach (var t in tips)
-			raw.append("%s\n".printf(t));
-		string drop_path = Path.build_filename(this.store.directory, "refs", uuid);
-		FileUtils.set_contents(drop_path, raw.str);
 	}
 }

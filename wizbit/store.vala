@@ -14,7 +14,7 @@ namespace Wiz {
 			this.uuid = uuid;
 			this.directory = directory;
 		}
-		
+
 		construct {
 		/* The UUID becomes the name of the store
 		 * stores like tomboy, calendars, contacts, email, files, etc...
