@@ -19,7 +19,7 @@ namespace Wiz {
 			"SELECT c.uuid FROM commits AS c LEFT OUTER JOIN relations AS r ON c.uuid=r.parent_id WHERE r.parent_id IS NULL";
 
 		private static const string GET_ROOT_SQL =
-			"SELECT c.uuid FROM commits AS c LEFT OUTER JOIN relations AS r ON c.uuid=r.node_id WHERE r.node_id IS NULL";
+			"SELECT c.uuid FROM commits AS c ORDER BY c.timestamp, c.timestamp2 LIMIT 1";
 
 		private static const string INSERT_COMMIT_SQL =
 			"INSERT INTO commits VALUES (?, ?, ?, ?, null)";
