@@ -94,6 +94,25 @@ public void test_forwards_and_backwards() {
 	assert(s.get_forward(c2.uuid) == null);
 }
 
+public void test_get_root() {
+	var s = new CommitStore(":memory:", "foo");
+
+	assert(s.get_root() == null);
+
+	var c1 = new RarCommit();
+	c1.blob = "dlfsdf";
+	s.store_commit(c1);
+
+	assert(s.get_root() == c1.uuid);
+
+	var c2 = new RarCommit();
+	c2.blob = "dkfkldjf";
+	c2.parents.append(c1.uuid);
+	s.store_commit(c2);
+
+	assert(s.get_root() == c1.uuid);
+}
+
 public static void main (string[] args) {
 	if (!FileUtils.test("data", FileTest.IS_DIR)) { 
 		DirUtils.create_with_parents("data", 0755);
@@ -105,5 +124,6 @@ public static void main (string[] args) {
 	Test.add_func("/wizbit/commit_store/1", test_commit);
 	Test.add_func("/wizbit/commit_store/primary_tip", test_primary_tip);
 	Test.add_func("/wizbit/commit_store/forwards_and_backwards", test_forwards_and_backwards);
+	Test.add_func("/wizbit/commit_store/get_root", test_get_root);
 	Test.run();
 }
