@@ -15,7 +15,7 @@ namespace Wiz {
 		public string store_path { get; construct; }
 		public string uuid { get; construct; }
 
-		public Version #primary_tip {
+		public Version? #primary_tip {
 			get {
 				var pt = this.commits.get_primary_tip();
 				if (pt != null)
@@ -30,6 +30,15 @@ namespace Wiz {
 				foreach (var t in this.commits.get_tips())
 					retval.append(new Version(this, t));
 				return retval;
+			}
+		}
+
+		public Version? #root {
+			get {
+				var root = this.commits.get_root();
+				if (root != null)
+					return new Version(this, root);
+				return null;
 			}
 		}
 
