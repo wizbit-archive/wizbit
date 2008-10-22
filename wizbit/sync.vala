@@ -84,11 +84,17 @@ public class SyncSource : Object {
 	}
 
 	public string grab_commit(string version_uuid) {
-		string outstr;
-		uint outlen;
-                string drop_path = Path.build_filename(this.store.directory, "objects", version_uuid.substring(0,2), version_uuid.substring(2, 40));
-                FileUtils.get_contents(drop_path, out outstr, out outlen);
-		return outstr;
+		// var c = this.store.commits.lookup_commit(version_uuid);
+		RarCommit c;
+
+		var builder = new StringBuilder();
+		builder.append("blob %s\n".printf(c.blob));
+		foreach (var parent in c.parents)
+			builder.append("parent %s\n".printf(parent));
+		builder.append("committer %s\n".printf(c.committer));
+		builder.append("timestamp %d\n".printf(c.timestamp));
+
+		return builder.str;
 	}
 
 	public string grab_blob(string version_uuid) {
@@ -132,11 +138,72 @@ public class SyncClient : Object {
 		debug("there are %u blobs to pull", want.get_length());
 		while (want.get_length() > 0) {
 			var uuid = want.pop_tail();
-			this.drop_raw(uuid, server.grab_commit(uuid));
+			this.drop_commit(uuid, server.grab_commit(uuid));
 
 			var blob = server.grab_blob(uuid);
 			this.drop_raw(blob.substring(0,40), blob.substring(40, blob.len()));
 		};
+	}
+
+	private bool matches (char* begin, string keyword) {
+		char* keyword_array = keyword;
+		long len = keyword.len ();
+		for (int i = 0; i < len; i++)
+			if (begin[i] != keyword_array[i])
+				return false;
+		return true;
+	}
+
+	void drop_commit(string uuid, string raw) {
+		char *bufptr;
+		long size;
+		long mark;
+		long pos;
+
+		var c = new RarCommit();
+
+		bufptr = (char *) raw;
+		size = raw.len();
+
+		if (!matches(bufptr, "blob "))
+			return;
+
+		mark = pos = 5;
+		while (bufptr[pos] != '\n' && pos < size)
+			pos ++;
+
+		c.blob = ((string)bufptr).substring(mark, pos-mark);
+		mark = pos = pos+1;
+
+		while (matches(&bufptr[pos], "parent ")) {
+			mark = pos = pos + 7;
+			while (bufptr[pos] != '\n' && pos < size)
+				pos ++;
+
+			c.parents.append(((string)bufptr).substring(mark, pos-mark));
+			mark = pos = pos+1;
+		}
+
+		if (!matches(&bufptr[pos], "committer "))
+			return;
+
+		mark = pos = pos+10;
+		while (bufptr[pos] != '\n' && pos < size)
+			pos ++;
+
+		c.committer = ((string)bufptr).substring(mark, pos-mark);
+
+
+		if (!matches(&bufptr[pos], "timestamp "))
+			return;
+
+		mark = pos = pos+10;
+		while (bufptr[pos] != '\n' && pos < size)
+			pos ++;
+		string tmptimestamp = ((string)bufptr).substring(mark, pos-mark);
+		c.timestamp = tmptimestamp.to_int();
+
+		// bit.commits.store_commit(c);
 	}
 
 	void drop_raw(string uuid, string raw) {
