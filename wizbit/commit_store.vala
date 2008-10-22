@@ -18,6 +18,9 @@ namespace Wiz {
 		private static const string GET_TIPS_SQL =
 			"SELECT c.uuid FROM commits AS c LEFT OUTER JOIN relations AS r ON c.uuid=r.parent_id WHERE r.parent_id IS NULL";
 
+		private static const string GET_ROOT_SQL =
+			"SELECT c.uuid FROM commits AS c LEFT OUTER JOIN relations AS r ON c.uuid=r.node_id WHERE r.node_id IS NULL";
+
 		private static const string INSERT_COMMIT_SQL =
 			"INSERT INTO commits VALUES (?, ?, ?, ?, null)";
 
@@ -36,6 +39,7 @@ namespace Wiz {
 		private Statement go_backwards_sql;
 		private Statement get_primary_tip_sql;
 		private Statement get_tips_sql;
+		private Statement get_root_sql;
 		private Statement insert_commit_sql;
 		private Statement insert_relation_sql;
 		private Statement select_commit_sql;
@@ -55,6 +59,7 @@ namespace Wiz {
 			this.prepare_statement(GO_BACKWARDS_SQL, out go_backwards_sql);
 			this.prepare_statement(GET_PRIMARY_TIP_SQL, out get_primary_tip_sql);
 			this.prepare_statement(GET_TIPS_SQL, out get_tips_sql);
+			this.prepare_statement(GET_ROOT_SQL, out get_root_sql);
 			this.prepare_statement(INSERT_COMMIT_SQL, out insert_commit_sql);
 			this.prepare_statement(INSERT_RELATION_SQL, out insert_relation_sql);
 			this.prepare_statement(SELECT_COMMIT_SQL, out select_commit_sql);
@@ -125,6 +130,18 @@ namespace Wiz {
 			var retval = this.go_backwards_sql.column_text(0);
 			this.go_backwards_sql.reset();
 			return retval;
+		}
+
+		public string? get_root() {
+			var res = this.get_root_sql.step();
+			if (res == Sqlite.ROW) {
+				var root = this.get_root_sql.column_text(0);
+				this.get_root_sql.reset();
+				return root;
+			}
+			assert(res == Sqlite.DONE);
+			this.get_root_sql.reset();
+			return null;
 		}
 
 		public RarCommit lookup_commit(string uuid) {
