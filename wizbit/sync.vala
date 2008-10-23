@@ -82,9 +82,9 @@ public class SyncSource : Object {
 		return retval;
 	}
 
-	public string grab_commit(string version_uuid) {
-		// var c = this.store.commits.lookup_commit(version_uuid);
-		RarCommit c;
+	public string grab_commit(string bit_uuid, string version_uuid) {
+		var b = this.store.open_bit(bit_uuid);
+		var c = b.commits.lookup_commit(version_uuid);
 
 		var builder = new StringBuilder();
 		builder.append("blob %s\n".printf(c.blob));
@@ -96,8 +96,9 @@ public class SyncSource : Object {
 		return builder.str;
 	}
 
-	public string grab_blob(string version_uuid) {
-		var v = this.store.open_version("nomnom", version_uuid);
+	public string grab_blob(string bit_uuid, string version_uuid) {
+		var b = this.store.open_bit(bit_uuid);
+		var v = new Version(b, version_uuid);
 		return "%s%s".printf(v.blob_id, v.read_as_string());
 	}
 }
@@ -144,10 +145,10 @@ public class SyncClient : Object {
 			while (want.get_length() > 0) {
 				var uuid = want.pop_tail();
 
-				var blob = server.grab_blob(uuid);
+				var blob = server.grab_blob(bit, uuid);
 				this.drop_raw(blob.substring(0,40), blob.substring(40, blob.len()));
 
-				this.drop_commit(uuid, server.grab_commit(uuid));
+				this.drop_commit(bit, uuid, server.grab_commit(bit, uuid));
 			}
 		}
 	}
@@ -161,7 +162,7 @@ public class SyncClient : Object {
 		return true;
 	}
 
-	void drop_commit(string uuid, string raw) {
+	void drop_commit(string bit_uuid, string uuid, string raw) {
 		char *bufptr;
 		long size;
 		long mark;
@@ -210,7 +211,8 @@ public class SyncClient : Object {
 		string tmptimestamp = ((string)bufptr).substring(mark, pos-mark);
 		c.timestamp = tmptimestamp.to_int();
 
-		// bit.commits.store_commit(c);
+		var bit = this.store.open_bit(bit_uuid);
+		bit.commits.store_commit(c);
 	}
 
 	void drop_raw(string uuid, string raw) {
