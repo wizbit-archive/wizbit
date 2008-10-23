@@ -1,3 +1,11 @@
+/*
+ * WARNING: This code is crack!!!
+ * Currently uses both the internal and public API's to get the job done. The iterator and what nots need
+ * refactoring to use the lower level APIs
+ *
+ * Then hopefully grab_commit / grab_blob won't be so rancid..
+ */
+
 using GLib;
 using Wiz;
 
