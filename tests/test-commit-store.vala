@@ -63,6 +63,21 @@ public void test_primary_tip() {
 	assert(c.uuid == pt);
 }
 
+public void test_forward() {
+	var s = new CommitStore(":memory:", "foo");
+	create_dummy_commits(s, 10);
+
+	var foo = s.get_root();
+	var bar = s.get_primary_tip();
+
+	var cur = foo;
+	while (cur != bar) {
+		cur = s.get_forward(cur);
+		assert(cur != null);
+	}
+	assert(s.get_forward(cur) == null);
+}
+
 public void test_forwards() {
 	/* Try and traverse from root to tip and from tip to root */
 	var s = new CommitStore(":memory:", "foo");
@@ -81,6 +96,21 @@ public void test_forwards() {
 	}
 	assert(nxt.length() == 0);
 	assert(cur == bar);
+}
+
+public void test_backward() {
+	var s = new CommitStore(":memory:", "foo");
+	create_dummy_commits(s, 10);
+
+	var bar = s.get_primary_tip();
+	var foo = s.get_root();
+
+	var cur = bar;
+	while (cur != foo) {
+		cur = s.get_backward(cur);
+		assert(cur != null);
+	}
+	assert(s.get_backward(cur) == null);
 }
 
 public void test_backwards() {
@@ -126,7 +156,9 @@ public static void main (string[] args) {
 	Test.add_func("/wizbit/commit_store/commit_lookup", test_commit_lookup);
 	Test.add_func("/wizbit/commit_store/1", test_commit);
 	Test.add_func("/wizbit/commit_store/primary_tip", test_primary_tip);
+	Test.add_func("/wizbit/commit_store/forward", test_forward);
 	Test.add_func("/wizbit/commit_store/forwards", test_forwards);
+	Test.add_func("/wizbit/commit_store/backward", test_backward);
 	Test.add_func("/wizbit/commit_store/backwards", test_backwards);
 	Test.add_func("/wizbit/commit_store/get_root", test_get_root);
 	Test.run();
