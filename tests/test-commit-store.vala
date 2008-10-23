@@ -25,7 +25,7 @@ RarCommit create_merge(CommitStore store, RarCommit c1, RarCommit c2) {
 	return c;
 }
 
-public void test_store_new() {
+void test_store_new() {
 	/*
 	 * This testcase creates 10,000 commit stores in memory
 	 * In each one it creates a commit and then asserts that
@@ -44,7 +44,7 @@ public void test_store_new() {
 	}
 }
 
-public void test_commit_lookup() {
+void test_commit_lookup() {
 	/*
 	 * Commit to a CommitStore and then try and read it back out
 	 */
@@ -56,7 +56,7 @@ public void test_commit_lookup() {
 	assert(c1_lookup.blob == "abc123");
 }
 
-public void test_commit() {
+void test_commit() {
 	var s = new CommitStore(":memory:", "foo");
 	create_dummy_commits(s, 2);
 
@@ -64,7 +64,7 @@ public void test_commit() {
 	assert(tips.length() == 1);
 }
 
-public void test_primary_tip() {
+void test_primary_tip() {
 	var s = new CommitStore(":memory:", "foo");
 	var c = create_dummy_commits(s, 1);
 
@@ -72,7 +72,7 @@ public void test_primary_tip() {
 	assert(c.uuid == pt);
 }
 
-public void test_forward() {
+void test_forward() {
 	var s = new CommitStore(":memory:", "foo");
 	create_dummy_commits(s, 10);
 
@@ -87,7 +87,7 @@ public void test_forward() {
 	assert(s.get_forward(cur) == null);
 }
 
-public void test_forwards() {
+void test_forwards() {
 	/* Try and traverse from root to tip and from tip to root */
 	var s = new CommitStore(":memory:", "foo");
 	create_dummy_commits(s, 10);
@@ -119,7 +119,7 @@ void test_forwards_multiple() {
 	assert(forward.nth_data(1) == tip2.uuid);
 }
 
-public void test_backward() {
+void test_backward() {
 	var s = new CommitStore(":memory:", "foo");
 	create_dummy_commits(s, 10);
 
@@ -134,7 +134,7 @@ public void test_backward() {
 	assert(s.get_backward(cur) == null);
 }
 
-public void test_backwards() {
+void test_backwards() {
 	var s = new CommitStore(":memory:", "foo");
 	create_dummy_commits(s, 10);
 
@@ -166,7 +166,7 @@ void test_backwards_multiple() {
 	assert(back.nth_data(1) == c2.uuid);
 }
 
-public void test_get_root() {
+void test_get_root() {
 	var s = new CommitStore(":memory:", "foo");
 	assert(s.get_root() == null);
 
