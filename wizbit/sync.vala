@@ -11,12 +11,8 @@ public class SyncSource : Object {
 		this.store = store;
 	}
 
-	public List<string> search_for_all_objects() {
+	public List<string> list_all_objects() {
 		var objs = new List<string>();
-
-		/* at the moment we don't have api to list objects so lets enum
-		 * ths tips folder
-		 */
 		var path = Path.build_filename(this.store.directory, "refs");
 		var dir = Dir.open(path);
 		var f = dir.read_name();
@@ -24,9 +20,12 @@ public class SyncSource : Object {
 			objs.append(f);
 			f = dir.read_name();
 		}
+		return objs;
+	}
 
+	public List<string> search_for_all_objects() {
+		var objs = this.lists_all_objects();
 		this.search_for_objects(objs);
-
 		return objs;
 	}
 
@@ -64,7 +63,7 @@ public class SyncSource : Object {
 		/*
 		 * search_for_shas
 		 * @versions: A list of versions to kick out of the iterator
-		 * 
+		 *
 		 * Returns: A list of versions found by the breadth first search
 		 */
 		for (uint i = 0; i < versions.get_length(); i++) {
