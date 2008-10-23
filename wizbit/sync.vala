@@ -24,7 +24,7 @@ public class SyncSource : Object {
 	}
 
 	public List<string> search_for_all_objects() {
-		var objs = this.lists_all_objects();
+		var objs = this.list_all_objects();
 		this.search_for_objects(objs);
 		return objs;
 	}
@@ -119,29 +119,37 @@ public class SyncClient : Object {
 		/* Tell the server what objects we are interested in pulling */
 		var objs = server.search_for_all_objects();
 
-		var want = new Queue<string>();
-		var do_not_want = new Queue<string>();
-		var shas = server.search_for_shas(do_not_want);
+		var bits = server.list_all_objects();
+		foreach (var bit in bits) {
+			var search_for = new List<string>();
+			search_for.append(bit);
+			server.search_for_objects(search_for);
 
-		while (shas.length() > 0) {
-			do_not_want = new Queue<string>();
-			foreach (var sha in shas) {
-				if (this.store.has_version(sha))
-					do_not_want.push_tail(sha);
-				else
-					want.push_tail(sha);
+			var want = new Queue<string>();
+			var do_not_want = new Queue<string>();
+			var shas = server.search_for_shas(do_not_want);
+
+			while (shas.length() > 0) {
+				do_not_want = new Queue<string>();
+				foreach (var sha in shas) {
+					if (this.store.has_version(sha))
+						do_not_want.push_tail(sha);
+					else
+						want.push_tail(sha);
+				}
+				shas = server.search_for_shas(do_not_want);
 			}
-			shas = server.search_for_shas(do_not_want);
+
+			debug("there are %u blobs to pull", want.get_length());
+			while (want.get_length() > 0) {
+				var uuid = want.pop_tail();
+
+				var blob = server.grab_blob(uuid);
+				this.drop_raw(blob.substring(0,40), blob.substring(40, blob.len()));
+
+				this.drop_commit(uuid, server.grab_commit(uuid));
+			}
 		}
-
-		debug("there are %u blobs to pull", want.get_length());
-		while (want.get_length() > 0) {
-			var uuid = want.pop_tail();
-			this.drop_commit(uuid, server.grab_commit(uuid));
-
-			var blob = server.grab_blob(uuid);
-			this.drop_raw(blob.substring(0,40), blob.substring(40, blob.len()));
-		};
 	}
 
 	private bool matches (char* begin, string keyword) {
