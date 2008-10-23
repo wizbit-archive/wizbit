@@ -16,6 +16,15 @@ RarCommit create_dummy_commits(CommitStore store, uint no_commits, RarCommit ?gr
 	return cur;
 }
 
+RarCommit create_merge(CommitStore store, RarCommit c1, RarCommit c2) {
+	var c = new RarCommit();
+	c.parents.append(c1.uuid);
+	c.parents.append(c2.uuid);
+	c.blob = "abc123";
+	store.store_commit(c);
+	return c;
+}
+
 public void test_store_new() {
 	/*
 	 * This testcase creates 10,000 commit stores in memory
@@ -98,6 +107,18 @@ public void test_forwards() {
 	assert(cur == bar);
 }
 
+void test_forwards_multiple() {
+	var s = new CommitStore(":memory:", "foo");
+	var root = create_dummy_commits(s, 1);
+	var tip1 = create_dummy_commits(s, 1, root);
+	var tip2 = create_dummy_commits(s, 1, root);
+
+	var forward = s.get_forwards(root.uuid);
+	assert(forward.length() == 2);
+	assert(forward.nth_data(0) == tip1.uuid);
+	assert(forward.nth_data(1) == tip2.uuid);
+}
+
 public void test_backward() {
 	var s = new CommitStore(":memory:", "foo");
 	create_dummy_commits(s, 10);
@@ -132,6 +153,19 @@ public void test_backwards() {
 	assert(cur == foo);
 }
 
+void test_backwards_multiple() {
+	var s = new CommitStore(":memory:", "foo");
+	var root = create_dummy_commits(s, 1);
+	var c1 = create_dummy_commits(s, 10, root);
+	var c2 = create_dummy_commits(s, 10, root);
+	var tip = create_merge(s, c1, c2);
+
+	var back = s.get_backwards(tip.uuid);
+	assert(back.length() == 2);
+	assert(back.nth_data(0) == c1.uuid);
+	assert(back.nth_data(1) == c2.uuid);
+}
+
 public void test_get_root() {
 	var s = new CommitStore(":memory:", "foo");
 	assert(s.get_root() == null);
@@ -158,8 +192,10 @@ public static void main (string[] args) {
 	Test.add_func("/wizbit/commit_store/primary_tip", test_primary_tip);
 	Test.add_func("/wizbit/commit_store/forward", test_forward);
 	Test.add_func("/wizbit/commit_store/forwards", test_forwards);
+	Test.add_func("/wizbit/commit_store/forwards_multiple", test_forwards_multiple);
 	Test.add_func("/wizbit/commit_store/backward", test_backward);
 	Test.add_func("/wizbit/commit_store/backwards", test_backwards);
+	Test.add_func("/wizbit/commit_store/backwards_multiple", test_backwards_multiple);
 	Test.add_func("/wizbit/commit_store/get_root", test_get_root);
 	Test.run();
 }
