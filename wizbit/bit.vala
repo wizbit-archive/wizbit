@@ -66,6 +66,10 @@ namespace Wiz {
 			this.store_path = store_path;
 		}
 
+		public bool has_version(string uuid) {
+			return this.commits.has_commit(uuid);
+		}
+
 		public OutputStream create_next_version() {
 			return new OutputStream();
 		}

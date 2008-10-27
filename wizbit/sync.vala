@@ -141,7 +141,7 @@ public class SyncClient : Object {
 			while (shas.length() > 0) {
 				do_not_want = new Queue<string>();
 				foreach (var sha in shas) {
-					if (this.store.has_version(sha))
+					if (this.has_version(bit, sha))
 						do_not_want.push_tail(sha);
 					else
 						want.push_tail(sha);
@@ -159,6 +159,11 @@ public class SyncClient : Object {
 				this.drop_commit(bit, uuid, server.grab_commit(bit, uuid));
 			}
 		}
+	}
+
+	private bool has_version(string bit, string version) {
+		var b = this.store.open_bit(bit);
+		return b.has_version(version);
 	}
 
 	private bool matches (char* begin, string keyword) {
