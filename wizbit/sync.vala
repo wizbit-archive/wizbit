@@ -209,6 +209,7 @@ public class SyncClient : Object {
 
 		c.committer = ((string)bufptr).substring(mark, pos-mark);
 
+		pos += 1;
 
 		if (!matches(&bufptr[pos], "timestamp "))
 			return;
