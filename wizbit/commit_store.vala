@@ -177,7 +177,8 @@ namespace Wiz {
 		}
 
 		public RarCommit store_commit(RarCommit c) {
-			c.uuid = generate_uuid();
+			if (c.uuid == null)
+				c.uuid = generate_uuid();
 
 			//var res = this.db.exec("BEGIN");
 			//assert(res == Sqlite.OK);
