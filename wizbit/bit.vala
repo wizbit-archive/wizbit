@@ -70,6 +70,10 @@ namespace Wiz {
 			return this.commits.has_commit(uuid);
 		}
 
+		public Version open_version(string uuid) {
+			return new Version(this, uuid);
+		}
+
 		public OutputStream create_next_version() {
 			return new OutputStream();
 		}

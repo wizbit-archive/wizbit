@@ -12,8 +12,9 @@ using Wiz;
 public class SyncSource : Object {
 	public Wiz.Store store { private get; construct; }
 
-	uint size;
+	Wiz.Bit bit;
 	Wiz.BreadthFirstIterator iter;
+	uint size;
 
 	public SyncSource(Wiz.Store store) {
 		this.store = store;
@@ -31,6 +32,7 @@ public class SyncSource : Object {
 		return objs;
 	}
 
+	/*
 	public List<string> search_for_all_objects() {
 		var objs = this.list_all_objects();
 		this.search_for_objects(objs);
@@ -49,7 +51,7 @@ public class SyncSource : Object {
 		 *
 		 * FIXME: This is a bit FAIL because we can only pull objects
 		 * we know about...
-		 */
+		 *//*
 		this.size = 0;
 		this.iter = new Wiz.BreadthFirstIterator();
 		var retval = new List<string>();
@@ -66,6 +68,19 @@ public class SyncSource : Object {
 		}
 		return retval;
 	}
+	*/
+
+	public void search_for_object(string obj) {
+		this.size = 0;
+		this.iter = new Wiz.BreadthFirstIterator();
+		if (this.store.has_bit(obj)) {
+			this.bit = this.store.open_bit(obj);
+			foreach (var t in bit.tips) {
+				this.iter.add_version(t);
+				this.size++;
+			}
+		}
+	}
 
 	public List<string> search_for_shas(Queue<string> versions) {
 		/*
@@ -76,7 +91,7 @@ public class SyncSource : Object {
 		 */
 		for (uint i = 0; i < versions.get_length(); i++) {
 			var v = versions.peek_nth(i);
-			var wz = this.store.open_version("rarar", v);
+			var wz = this.bit.open_version(v);
 			this.iter.kick_out(wz);
 		}
 
@@ -125,14 +140,9 @@ public class SyncClient : Object {
 	}
 
 	public void pull(SyncSource server) {
-		/* Tell the server what objects we are interested in pulling */
-		var objs = server.search_for_all_objects();
-
 		var bits = server.list_all_objects();
 		foreach (var bit in bits) {
-			var search_for = new List<string>();
-			search_for.append(bit);
-			server.search_for_objects(search_for);
+			server.search_for_object(bit);
 
 			var want = new Queue<string>();
 			var do_not_want = new Queue<string>();
