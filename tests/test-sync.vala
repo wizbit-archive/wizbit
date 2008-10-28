@@ -33,6 +33,19 @@ void test_simple_1()
 	var ta = new SyncSource(a);
 	var tb = new SyncClient(b);
 	sb.pull(ta);
+
+	var a10 = z.create_next_version_from_string("10", a2);
+	var a11 = z.create_next_version_from_string("11", a3);
+
+	assert( z.tips.length() == 4 );
+
+	var ua = new SyncSource(a);
+	var ub = new SyncClient(b);
+	ub.pull(ua);
+
+	var z2 = b.open_bit(z.uuid);
+	assert( z.tips.length() == z2.tips.length() );
+	assert( z.primary_tip.version_uuid == z2.primary_tip.version_uuid );
 }
 
 public static void main (string[] args) {

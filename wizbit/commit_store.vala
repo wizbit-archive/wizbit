@@ -144,12 +144,20 @@ namespace Wiz {
 			return null;
 		}
 
-		public RarCommit lookup_commit(string uuid) {
+		public bool has_commit(string uuid) {
+			return (this.lookup_commit(uuid) != null);
+		}
+
+		public RarCommit? lookup_commit(string uuid) {
 			var c = new RarCommit();
 			c.uuid = uuid;
 
 			this.select_commit_sql.bind_text(1, uuid);
 			var res = this.select_commit_sql.step();
+
+			if (res == Sqlite.DONE)
+				return null;
+
 			assert(res == Sqlite.ROW);
 			c.blob =this.select_commit_sql.column_text(0);
 			c.committer = this.select_commit_sql.column_text(1);
@@ -169,7 +177,8 @@ namespace Wiz {
 		}
 
 		public RarCommit store_commit(RarCommit c) {
-			c.uuid = generate_uuid();
+			if (c.uuid == null)
+				c.uuid = generate_uuid();
 
 			//var res = this.db.exec("BEGIN");
 			//assert(res == Sqlite.OK);

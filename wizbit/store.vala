@@ -33,10 +33,6 @@ namespace Wiz {
 			this.store = new Graph.Store(this.object_dir);
 		}
 
-		public bool has_version(string uuid) {
-			return this.store.exists(uuid);
-		}
-
 		public bool has_bit(string uuid) {
 			return FileUtils.test(Path.build_filename(this.refs_dir, uuid), FileTest.EXISTS);
 		}
