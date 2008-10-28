@@ -182,6 +182,7 @@ public class SyncClient : Object {
 		long pos;
 
 		var c = new RarCommit();
+		c.uuid = uuid;
 
 		bufptr = (char *) raw;
 		size = raw.len();
