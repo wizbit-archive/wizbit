@@ -75,7 +75,6 @@ namespace Wiz {
 		}
 
 		construct {
-			this.bit = bit;
 			this.commit = this.bit.commits.lookup_commit(this.version_uuid);
 		}
 
