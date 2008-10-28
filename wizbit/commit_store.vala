@@ -22,13 +22,13 @@ namespace Wiz {
 			"SELECT c.uuid FROM commits AS c ORDER BY c.timestamp, c.timestamp2 LIMIT 1";
 
 		private static const string INSERT_COMMIT_SQL =
-			"INSERT INTO commits VALUES (?, ?, ?, ?, null)";
+			"INSERT INTO commits VALUES (?, ?, ?, ?, ?)";
 
 		private static const string INSERT_RELATION_SQL =
 			"INSERT INTO relations VALUES (?, ?)";
 
 		private static const string SELECT_COMMIT_SQL =
-			"SELECT c.blob, c.committer, c.timestamp FROM commits AS c WHERE c.uuid=?";
+			"SELECT c.blob, c.committer, c.timestamp, c.timestamp2 FROM commits AS c WHERE c.uuid=?";
 
 		private static const string SELECT_RELATION_SQL =
 			"SELECT r.parent_id FROM relations AS r WHERE r.node_id=?";
@@ -162,6 +162,7 @@ namespace Wiz {
 			c.blob =this.select_commit_sql.column_text(0);
 			c.committer = this.select_commit_sql.column_text(1);
 			c.timestamp = this.select_commit_sql.column_int(2);
+			c.timestamp2 = this.select_commit_sql.column_int(3);
 			this.select_commit_sql.reset();
 
 			this.select_relation_sql.bind_text(1, uuid);
@@ -187,6 +188,7 @@ namespace Wiz {
 			this.insert_commit_sql.bind_text(2, c.blob);
 			this.insert_commit_sql.bind_text(3, c.committer);
 			this.insert_commit_sql.bind_int(4, c.timestamp);
+			this.insert_commit_sql.bind_int(5, c.timestamp2);
 			var res = this.insert_commit_sql.step();
 			assert(res == Sqlite.DONE);
 
@@ -220,7 +222,7 @@ namespace Wiz {
 			if (version <= 0) {
 				// upgrade version 0 to version 1
 				this.upgrade_database_step(
-					"CREATE TABLE commits(uuid VARCHAR(40), blob VARCHAR(40), committer VARCHAR(256), timestamp INTEGER, timestamp2 INTEGER PRIMARY KEY)");
+					"CREATE TABLE commits(uuid VARCHAR(40), blob VARCHAR(40), committer VARCHAR(256), timestamp INTEGER, timestamp2 INTEGER)");
 				this.upgrade_database_step(
 					"CREATE TABLE relations(node_id VARCHAR(40), parent_id VARCHAR(40))");
 			}
@@ -257,7 +259,7 @@ namespace Wiz {
 		public string blob { get; set; }
 		public string committer { get; set; }
 		public int timestamp { get; set; }
-
+		public int timestamp2 {get; set; }
 		public List<string> parents;
 
 		construct {
