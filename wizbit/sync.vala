@@ -114,7 +114,7 @@ public class SyncSource : Object {
 		foreach (var parent in c.parents)
 			builder.append("parent %s\n".printf(parent));
 		builder.append("committer %s\n".printf(c.committer));
-		builder.append("timestamp %d\n".printf(c.timestamp));
+		builder.append("timestamp %d %d\n".printf(c.timestamp, c.timestamp2));
 
 		return builder.str;
 	}
@@ -231,10 +231,16 @@ public class SyncClient : Object {
 			return;
 
 		mark = pos = pos+10;
-		while (bufptr[pos] != '\n' && pos < size)
+		while (bufptr[pos] != ' ' && pos < size)
 			pos ++;
 		string tmptimestamp = ((string)bufptr).substring(mark, pos-mark);
 		c.timestamp = tmptimestamp.to_int();
+
+		mark = pos = pos + 1;
+		while (bufptr[pos] != '\n' && pos < size)
+			pos ++;
+		string tmptimestamp2 = ((string)bufptr).substring(mark, pos-mark);
+		c.timestamp2 = tmptimestamp2.to_int();
 
 		var bit = this.store.open_bit(bit_uuid);
 		bit.commits.store_commit(c);
