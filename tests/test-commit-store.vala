@@ -10,6 +10,12 @@ RarCommit create_dummy_commits(CommitStore store, uint no_commits, RarCommit ?gr
 		if (cur != null)
 			nw.parents.append(cur.uuid);
 		nw.blob = "abc123";
+
+		nw.timestamp = (int) time_t();
+		var t = new TimeVal();
+		t.get_current_time();
+		nw.timestamp2 = t.tv_usec;
+
 		cur = store.store_commit(nw);
 	}
 
@@ -66,10 +72,12 @@ void test_commit() {
 
 void test_primary_tip() {
 	var s = new CommitStore(":memory:", "foo");
-	var c = create_dummy_commits(s, 1);
 
-	var pt = s.get_primary_tip();
-	assert(c.uuid == pt);
+	for (uint i=0; i<20; i++) {
+		var a = create_dummy_commits(s, 1);
+		var pt = s.get_primary_tip();
+		assert(a.uuid == pt);
+	}
 }
 
 void test_forward() {
