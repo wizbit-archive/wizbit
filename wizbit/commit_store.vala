@@ -2,6 +2,17 @@ using GLib;
 using Sqlite;
 
 namespace Wiz {
+  // This is just a helper for timeline :/
+  public class CommitNode : GLib.Object {
+    public string version_uuid { get; construct; }
+    public int timestamp { get; construct; } // probably should be an int :/
+
+    public CommitNode(string version_uuid, int timestamp) {
+      this.version_uuid = version_uuid;
+      this.timestamp = timestamp;
+    }
+  }
+
 	public class CommitStore : Object {
 		public string database { get; construct; }
 		public string uuid { get; construct; }
@@ -30,6 +41,12 @@ namespace Wiz {
 		private static const string SELECT_COMMIT_SQL =
 			"SELECT c.blob, c.committer, c.timestamp, c.timestamp2 FROM commits AS c WHERE c.uuid=?";
 
+    /* KL, This might be crack, but getting nodes as a whole is necessary for saving time in the timeline widget
+     * although adding a upper and lower limit to the timestamps would be a good optimisation.
+     */
+		private static const string SELECT_NODES_SQL =
+			"SELECT c.uuid, c.timestamp FROM commits AS c";
+
 		private static const string SELECT_RELATION_SQL =
 			"SELECT r.parent_id FROM relations AS r WHERE r.node_id=?";
 
@@ -43,6 +60,7 @@ namespace Wiz {
 		private Statement insert_commit_sql;
 		private Statement insert_relation_sql;
 		private Statement select_commit_sql;
+    private Statement select_nodes_sql;
 		private Statement select_relation_sql;
 
 		public CommitStore(string database, string uuid) {
@@ -63,6 +81,7 @@ namespace Wiz {
 			this.prepare_statement(INSERT_COMMIT_SQL, out insert_commit_sql);
 			this.prepare_statement(INSERT_RELATION_SQL, out insert_relation_sql);
 			this.prepare_statement(SELECT_COMMIT_SQL, out select_commit_sql);
+      this.prepare_statement(SELECT_NODES_SQL, out select_nodes_sql);
 			this.prepare_statement(SELECT_RELATION_SQL, out select_relation_sql);
 		}
 
@@ -143,6 +162,20 @@ namespace Wiz {
 			this.get_root_sql.reset();
 			return null;
 		}
+
+    public List<string> get_nodes() {
+      var retval = new List<CommitNode>();
+      var res = this.select_nodes_sql.step();
+			while (res == Sqlite.ROW) {
+        var node = new CommitNode(this.select_nodes_sql.column_text(0),
+                                  this.select_nodes_sql.column_int(1));
+        retval.append(node);
+				res = this.select_nodes_sql.step();
+			}
+			assert(res == Sqlite.DONE);
+			this.select_nodes_sql.reset();
+      return retval;
+    }
 
 		public bool has_commit(string uuid) {
 			return (this.lookup_commit(uuid) != null);

@@ -33,18 +33,19 @@ namespace Wiz {
    * the edges contain the direction of this connection. The node also stores
    * its position and size within the widget.
    */
-  public class Node : Glib.Object {
+  public class Node : Glib.Object { // Probably should specialise from CommitNode in commit_store.vala
     public double size { get; set; }
-    public string version_uuid { get; }
-    public int timestamp { get; }
+    public string version_uuid { get; construct; }
+    public int timestamp { get; construct; }
     public int column { get; set; }
     public double position { get; set; }
-    public List<Edge> edges { get; }
+    public List<Edge> edges { get; construct; }
 
     public Node (string version_uuid, int timestamp) {
       this.version_uuid = version_uuid;
       this.timestamp = timestamp;
       this.edges = new List<Edge>();
+      // Add edges, only one direction is required, we should probably go for children
     }
   }
 
