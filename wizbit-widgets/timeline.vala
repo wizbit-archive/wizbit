@@ -56,6 +56,8 @@ namespace Wiz {
     private Node root;
     private Bit bit;
     private Store store;
+    private int default_width;
+    private int default_height;
     public string selected_version_uuid { get; set; }
     public double zoom { get; set; }
     public int offset { get; set; }
@@ -81,16 +83,18 @@ namespace Wiz {
     construct {
       this.nodes = new List<Node>();
       this.update_from_store();
+      this.default_width = 80;
+      this.default_height = 160;
     }
 
     public void update_from_store () {
+      // Use commit_store get_nodes to retrieve all nodes, each node will then
+      // on construct tie up the edges itself (that's the theory at least)
     }
 
     public void set_view_range(int start_timestamp, int end_timestamp) {
     }
 
-    // FIXME all code past here was taken verbatim from vala-widget example code 
-    // and shouldn't be trusted yet.
     public override void realize () {
       // First set an internal flag telling that we're realized
       this.set_flags (Gtk.WidgetFlags.REALIZED);
@@ -102,7 +106,10 @@ namespace Wiz {
       attrs.window_type = Gdk.WindowType.CHILD;
       attrs.width = this.allocation.width;
       attrs.wclass = Gdk.WindowClass.INPUT_OUTPUT;
-      attrs.event_mask = this.get_events() | Gdk.EventMask.EXPOSURE_MASK;
+      attrs.event_mask = this.get_events() | Gdk.EventMask.EXPOSURE_MASK | 
+                                             Gdk.EventMask.POINTER_MOTION_MASK |
+                                             Gdk.EventMask.BUTTON_PRESS_MASK |
+                                             Gdk.EventMask.BUTTON_RELEASE_MASK;
       this.window = new Gdk.Window (this.get_parent_window (), attrs, 0);
  
       // Associate the gdk.Window with ourselves, Gtk+ needs a reference
@@ -120,18 +127,14 @@ namespace Wiz {
                                this.allocation.width, this.allocation.height);
     }
 
+
     public override void unrealize () {
       this.window.set_user_data (null);
     }
 
     public override void size_request (Gtk.Requisition requisition) {
-      int width, height;
- 
-      // In this case, we say that we want to be as big as the
-      // text is, plus a little border around it.
-      this._layout.get_size (out width, out height);
-      requisition.width = width / Pango.SCALE + this._BORDER_WIDTH*4;
-      requisition.height = height / Pango.SCALE + this._BORDER_WIDTH*4; 
+      requisition.width = this.default_width;
+      requisition.height = this.default_height; 
     }
 
     public override void size_allocate (Gdk.Rectangle allocation) {
@@ -147,24 +150,15 @@ namespace Wiz {
     }
 
     public override bool expose_event (Gdk.EventExpose event) {
-      // In this example, draw a rectangle in the foreground color
       var cr = Gdk.cairo_create (this.window);
-      Gdk.cairo_set_source_color (cr, this.style.fg[this.state]);
+      /*Gdk.cairo_set_source_color (cr, this.style.fg[this.state]);
       cr.rectangle (this._BORDER_WIDTH,
                     this._BORDER_WIDTH,
                     this.allocation.width - 2*this._BORDER_WIDTH,
                     this.allocation.height - 2*this._BORDER_WIDTH);
       cr.set_line_width (5.0);
       cr.set_line_join (Cairo.LineJoin.ROUND);
-      cr.stroke ();
- 
-      // And draw the text in the middle of the allocated space
-      int fontw, fonth;
-      this._layout.get_pixel_size (out fontw, out fonth);
-      cr.move_to ((this.allocation.width - fontw)/2,
-                  (this.allocation.height - fonth)/2);
-      Pango.cairo_update_layout (cr, this._layout);
-      Pango.cairo_show_layout (cr, this._layout);
+      cr.stroke ();*/
       return true;
     }
   }
