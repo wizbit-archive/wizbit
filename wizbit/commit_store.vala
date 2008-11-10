@@ -2,17 +2,6 @@ using GLib;
 using Sqlite;
 
 namespace Wiz {
-  // This is just a helper for timeline :/
-  public class CommitNode : GLib.Object {
-	public string version_uuid { get; construct; }
-	public int timestamp { get; construct; } // probably should be an int :/
-
-	public CommitNode(string version_uuid, int timestamp) {
-	  this.version_uuid = version_uuid;
-	  this.timestamp = timestamp;
-	}
-  }
-
 	public class CommitStore : Object {
 		public string database { get; construct; }
 		public string uuid { get; construct; }
@@ -48,7 +37,7 @@ namespace Wiz {
 		 * although adding a upper and lower limit to the timestamps would be a good optimisation.
 		 */
 		private static const string SELECT_NODES_SQL =
-			"SELECT c.uuid, c.timestamp FROM commits AS c WHERE c.timestamp > ? AND c.timestamp < ? ORDER BY c.timestamp";
+			"SELECT c.uuid, c.timestamp FROM commits AS c WHERE ORDER BY c.timestamp";
 
 		private static const string SELECT_NODE_SQL =
 		  "SELECT c.uuid, c.timestamp FROM commits AS c WHERE c.uuid = ? LIMIT 1";
@@ -185,30 +174,28 @@ namespace Wiz {
 			return null;
 		}
 
-	public List<string> get_nodes(int start, int end) {
-	  var retval = new List<CommitNode>();
-			this.select_nodes_sql.bind_int(1, start);
-			this.select_nodes_sql.bind_int(2, end);
-	  var res = this.select_nodes_sql.step();
+		public List<string> get_nodes() {
+		  var retval = new List<CommitNode>();
+		  var res = this.select_nodes_sql.step();
 			while (res == Sqlite.ROW) {
-		var node = new CommitNode(this.select_nodes_sql.column_text(0),
-								  this.select_nodes_sql.column_int(1));
-		retval.append(node);
+				var node = new TimelineNode(this.select_nodes_sql.column_text(0),
+															  	  this.select_nodes_sql.column_int(1));
+				retval.append(node);
 				res = this.select_nodes_sql.step();
 			}
 			assert(res == Sqlite.DONE);
 			this.select_nodes_sql.reset();
-	  return retval;
-	}
-	public CommitNode get_node(string version_uuid) {
+		  return retval;
+		}
+		public CommitNode get_node(string version_uuid) {
 			this.select_node_sql.bind_text(1, version_uuid);
-	  var res = this.select_node_sql.step();
-	  var node = new CommitNode(this.select_node_sql.column_text(0),
-								this.select_node_sql.column_int(1));
+		  var res = this.select_node_sql.step();
+		  var node = new TimelineNode(this.select_node_sql.column_text(0),
+															  	this.select_node_sql.column_int(1));
 			assert(res == Sqlite.DONE);
 			this.select_node_sql.reset();
-	  return node;
-	}
+		  return node;
+		}
 
 		public bool has_commit(string uuid) {
 			return (this.lookup_commit(uuid) != null);
@@ -229,7 +216,7 @@ namespace Wiz {
 			c.committer = this.select_commit_sql.column_text(1);
 			c.timestamp = this.select_commit_sql.column_int(2);
 			c.timestamp2 = this.select_commit_sql.column_int(3);
-	  int commit_id = this.select_commit_sql.column_int(4);
+		  int commit_id = this.select_commit_sql.column_int(4);
 			this.select_commit_sql.reset();
 
 			this.select_relation_sql.bind_int(1, commit_id);

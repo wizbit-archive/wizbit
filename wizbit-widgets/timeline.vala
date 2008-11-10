@@ -28,8 +28,8 @@ namespace Wiz {
    * child
    */
   public class TimelineEdge : Glib.Object {
-    private Node parent { get; }
-    private Node child { get; }
+    private TimelineNode parent { get; }
+    private TimelineNode child { get; }
 
     public TimelineEdge(TimelineNode parent, TimelineNode child) {
       this.parent = parent;
@@ -45,6 +45,9 @@ namespace Wiz {
     public double size { get; set; }
     public int column { get; set; }
     public double position { get; set; }
+    public bool visible { get; set }
+    public bool root { get; set }
+    public bool tip { get; set }
     public List<Edge> edges { get; construct; }
 
     public TimelineNode (string version_uuid, int timestamp) {
@@ -54,12 +57,7 @@ namespace Wiz {
     }
 
     public AddChild(TimelineNode child) {
-      // Should see if it already exists first
       this.edges.append(new TimelineEdge(this, child));
-    }
-    public AddParent(TimelineNode parent) {
-      // Should see if it already exists first
-      this.edges.append(new TimelineEdge(parent, this));
     }
   }
 
@@ -107,87 +105,52 @@ namespace Wiz {
     }
 
     construct {
-      this.nodes = new List<Node>();
+      this.tips = new List<TimelineNode>();
       this.update_from_store();
       this.default_width = 80;
       this.default_height = 160;
     }
 
-    public void update_from_store (start, end) {
-      // Limit the load start/end to new ones and update the viewable start/end
-      if (end > this.end_timestamp) {
-        start = this.end_timestamp
-        this.end_timestamp = end;
-      }
-      if (start < this.start_timestamp) {
-        end = this.start_timestamp
-        this.start_timestamp = start;
-      }
-
-      var commit_nodes = List<CommitNode>;
-      var new_nodes = List<TimelineNode>;
-      commit_nodes = this.commit_store.get_nodes(start, end);
-
-      // We're always appending to the seen nodes but never taking away, this is 
-      // because we don't want to continue reloading and unloading the nodes for
-      // the life of the widget, and as we want to be a little nippy about it
-      // we should keep things around ffr.
-
-      // Loading the nodes from the commit store
-      foreach (var commit_node in commit_nodes) {
-        new_node = TimelineNode(commit_node.version_uuid, 
-                                commit_node.timestamp)
-        new_nodes.append(new_node);
-        this.nodes.append(new_node);
-
-        if (commit_node.timestamp > this.youngest_timestamp) {
-          this.youngest_timestamp = commit_node.timestamp;
-        }
-        if (commit_node.timestamp < this.oldest_timestamp) {
-          this.oldest_timestamp = commit_node.timestamp;
-        }
-        // Get the offscreen parents/children so we know which direction the
-        // far edges land in, this is probably going to cause some duplicate
-        // parents where branches occur, TODO prevent duplicates :/
-        parents = this.commit_store.get_backwards(commit_node.version_uuid);
-        foreach (parent in parents) {
-          parent_node = this.commit_store.get_node(parent);
-          if (parent_node.timestamp < this.start_timestamp) {
-            new_node = TimelineNode(parent_node.version_uuid, 
-                                    parent_node.timestamp)
-            new_nodes.append(new_node);
-            this.nodes.append(new_node);
-            if (parent_node.timestamp > this.youngest_timestamp) {
-              this.youngest_timestamp = parent_node.timestamp;
-            }
-          }
-        }
-        children = this.commit_store.get_forwards(commit_node.version_uuid);
-        foreach (child in children) {
-          child_node = this.commit_store.get_node(child);
-          if (child_node.timestamp > this.end_timestamp) {
-            new_node = TimelineNode(child_node.version_uuid, 
-                                    child_node.timestamp)
-            new_nodes.append(new_node);
-            this.nodes.append(noew_node);
-            if (child_node.timestamp < this.oldest_timestamp) {
-              this.oldest_timestamp = child_node.timestamp;
-            }
-          }
-        }
-      }
+    public void update_from_store () {
+      this.nodes = this.commit_store.get_nodes();
       // Iterate the new nodes and add edges
-      foreach (var node in new_nodes) {
-        children = new List<string>;
-        children = this.commit_store.get_forwards(node.version_uuid);
-        // Unfortunately we've got to iterate this many times because
-        // we need to tie up seen nodes by edges :/ At least we only have to
-        // do it when the bit changes
-        foreach (var child in children) {
-          foreach (var child_node in this.nodes) {
-            if (child_node.version_uuid == child) {
-              node.AddChild(child_node);
+      string root = this.commit_store.get_root();
+      string primary_tip = this.commit_store.get_primary_tip();
+      var tips = this.commit_store.get_tips();
+      // Try and save a few iterations of the nodes by doing the edges during
+      // the first tip cycle, its not pretty but it works
+      bool edges_done = false;
+      foreach (var tip in tips) {
+        foreach (var node in this.nodes) {
+          if (tip == node.version_uuid) {
+            this.tips.append(node);
+          }
+          if (!edges_done) {
+            children = new List<string>;
+            children = this.commit_store.get_forwards(node.version_uuid);
+            if (node.version_uuid == root) {
+              this.root = node;
             }
+            if (node.version_uuid == primary_tip) {
+              this.primary_tip = node;
+            }
+            // Unfortunately we've got to iterate this many times because
+            // we need to tie up seen nodes by edges :/ At least we only have to
+            // do it when the bit changes
+            foreach (var child in children) {
+              foreach (var child_node in this.nodes) {
+                if (child_node.version_uuid == child) {
+                  node.AddChild(child_node);
+                }
+              }
+            }
+            if (node.timestamp > this.youngest_timestamp) {
+              this.youngest_timestamp = commit_node.timestamp;
+            }
+            if (node.timestamp < this.oldest_timestamp) {
+              this.oldest_timestamp = commit_node.timestamp;
+            }
+            edges_done = true;
           }
         }
       }
