@@ -45,7 +45,10 @@ namespace Wiz {
      * although adding a upper and lower limit to the timestamps would be a good optimisation.
      */
 		private static const string SELECT_NODES_SQL =
-			"SELECT c.uuid, c.timestamp FROM commits AS c WHERE c.timestamp > ? AND c.timetamp < ?";
+			"SELECT c.uuid, c.timestamp FROM commits AS c WHERE c.timestamp > ? AND c.timetamp < ? ORDER BY c.timestamp";
+
+    private static const string SELECT_NODE_SQL =
+      "SELECT c.uuid, c.timestamp FROM commits AS c WHERE c.uuid = ? LIMIT 1";
 
 		private static const string SELECT_RELATION_SQL =
 			"SELECT r.parent_id FROM relations AS r WHERE r.node_id=?";
@@ -61,6 +64,7 @@ namespace Wiz {
 		private Statement insert_relation_sql;
 		private Statement select_commit_sql;
     private Statement select_nodes_sql;
+    private Statement select_node_sql;
 		private Statement select_relation_sql;
 
 		public CommitStore(string database, string uuid) {
@@ -82,6 +86,7 @@ namespace Wiz {
 			this.prepare_statement(INSERT_RELATION_SQL, out insert_relation_sql);
 			this.prepare_statement(SELECT_COMMIT_SQL, out select_commit_sql);
       this.prepare_statement(SELECT_NODES_SQL, out select_nodes_sql);
+      this.prepare_statement(SELECT_NODE_SQL, out select_node_sql);
 			this.prepare_statement(SELECT_RELATION_SQL, out select_relation_sql);
 		}
 
@@ -177,6 +182,15 @@ namespace Wiz {
 			assert(res == Sqlite.DONE);
 			this.select_nodes_sql.reset();
       return retval;
+    }
+    public CommitNode get_node(string version_uuid) {
+			this.select_node_sql.bind_text(1, version_uuid);
+      var res = this.select_node_sql.step();
+      var node = new CommitNode(this.select_node_sql.column_text(0),
+                                this.select_node_sql.column_int(1));
+			assert(res == Sqlite.DONE);
+			this.select_node_sql.reset();
+      return node;
     }
 
 		public bool has_commit(string uuid) {

@@ -80,6 +80,8 @@ namespace Wiz {
                                 // and recalculate when we get a configure event
     private int oldest_timestamp;
     private int youngest_timestamp;
+    private int start_timestamp;
+    private int end_timestamp;
 
     public string bit_uuid {
       get {
@@ -107,11 +109,19 @@ namespace Wiz {
     }
 
     public void update_from_store (start, end) {
+      // Limit the load start/end to new ones and update the viewable start/end
+      if (end > this.end_timestamp) {
+        start = this.end_timestamp
+        this.end_timestamp = end;
+      }
+      if (start < this.start_timestamp) {
+        end = this.start_timestamp
+        this.start_timestamp = start;
+      }
+
       var commit_nodes = List<CommitNode>;
       var new_nodes = List<TimelineNode>;
       commit_nodes = this.commit_store.get_nodes(start, end);
-      // TODO, we also want to load any unloaded parents of the youngest
-      // and any unloaded children of the oldest, that makes this pretty hard :/
 
       // We're always appending to the seen nodes but never taking away, this is 
       // because we don't want to continue reloading and unloading the nodes for
@@ -131,8 +141,36 @@ namespace Wiz {
         if (commit_node.timestamp < this.oldest_timestamp) {
           this.oldest_timestamp = commit_node.timestamp;
         }
+        // Get the offscreen parents/children so we know which direction the
+        // far edges land in, this is probably going to cause some duplicate
+        // parents where branches occur, TODO prevent duplicates :/
+        parents = this.commit_store.get_backwards(commit_node.version_uuid);
+        foreach (parent in parents) {
+          parent_node = this.commit_store.get_node(parent);
+          if (parent_node.timestamp < this.start_timestamp) {
+            new_node = TimelineNode(parent_node.version_uuid, 
+                                parent_node.timestamp)
+            new_nodes.append(new_node);
+            this.nodes.append(new_node);
+            if (parent_node.timestamp > this.youngest_timestamp) {
+              this.youngest_timestamp = parent_node.timestamp;
+            }
+          }
+        }
+        children = this.commit_store.get_forwards(commit_node.version_uuid);
+        foreach (child in children) {
+          child_node = this.commit_store.get_node(child);
+          if (child_node.timestamp > this.end_timestamp) {
+            new_node = TimelineNode(child_node.version_uuid, 
+                                    child_node.timestamp)
+            new_nodes.append(new_node);
+            this.nodes.append(noew_node);
+            if (child_node.timestamp < this.oldest_timestamp) {
+              this.oldest_timestamp = child_node.timestamp;
+            }
+          }
+        }
       }
-      bool not_found = true;
       // Iterate the new nodes and add edges
       foreach (var node in new_nodes) {
         children = new List<string>;
@@ -143,13 +181,8 @@ namespace Wiz {
         foreach (var child in children) {
           foreach (var child_node in this.nodes) {
             if (child_node.version_uuid == child) {
-              node.AddEdge(child_node);
-              not_found = false;
+              node.AddChild(child_node);
             }
-          }
-          if (not_found) {
-            // Get the node from the db (loading the children of the newest)
-            // need something similar to get the parents of the oldest
           }
         }
       }
