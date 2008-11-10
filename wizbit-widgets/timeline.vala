@@ -65,7 +65,14 @@ namespace Wiz {
     private int default_height;
     public string selected_version_uuid { get; set; }
     public double zoom { get; set; }
+    // Dag height/visibility calculated from zoom level
     public int offset { get; set; }
+    private int dag_height;
+    private int dag_width;
+    private int visible_columns;
+    private int total_columns;
+    private int visible_height; // Should use allocation.height for this
+                                // and recalculate when we get a configure event
 
     public string bit_uuid {
       get {
@@ -92,9 +99,9 @@ namespace Wiz {
       this.default_height = 160;
     }
 
-    public void update_from_store () {
+    public void update_from_store (start, end) {
       var commit_nodes = List<CommitNode>;
-      commit_nodes = this.commit_store.get_nodes();
+      commit_nodes = this.commit_store.get_nodes(start, end);
 
       // Loading the nodes from the commit store
       foreach (var commit_node in commit_nodes) {
@@ -135,7 +142,8 @@ namespace Wiz {
       attrs.event_mask = this.get_events() | Gdk.EventMask.EXPOSURE_MASK | 
                                              Gdk.EventMask.POINTER_MOTION_MASK |
                                              Gdk.EventMask.BUTTON_PRESS_MASK |
-                                             Gdk.EventMask.BUTTON_RELEASE_MASK;
+                                             Gdk.EventMask.BUTTON_RELEASE_MASK |
+                                             Gdk.EventMask.BUTTON_CLICK;
       this.window = new Gdk.Window (this.get_parent_window (), attrs, 0);
  
       // Associate the gdk.Window with ourselves, Gtk+ needs a reference
@@ -175,29 +183,60 @@ namespace Wiz {
                                this.allocation.width, this.allocation.height);
     }
 
+    // update_zoom
+    /*
+        has the start timestamp gotten earlier
+            load all nodes from the old start timestamp to the new start
+        has the end timestamp gotten later
+            load all nodes from the old end timestamp to the new end and
+
+        the zoom level is calculate from the newest commit timestamp to the root
+        timestamp vs. what is currently on screen, the offset position is
+        also calculated here, then the visibility of all nodes is updated and
+        and queue draw is called for the whole widget :/
+        it's not pretty...
+    */
+
     //public override bool button_press_event?
     /*
+        set mouse down
         this.press_co-ords = event.x event.y
         are we over the zoom widget
+        create a press timestamp (milliseconds)
     */
     //public override bool button_release_event?
+    /* 
+        unset mouse down
+        set click co-ords
+        compare press/release co-ords
+        create release timestamp (milliseconds)
+        calculate the distance travelled in that time and therefore the speed
+        start a timer which controls the speed/positioning (kinetic scroll)
+     */ 
+    //public override bool button_release_event?
+    /* 
+        unset mouse down
+        set click co-ords
+        did we click on a version
+            highlight version and set selected 
+     */
     //public override bool motion_notify_event?
     /* 
         if the button is down over the zoom widget
             have the x/y co-ords changed since button press
                 update_zoom
+        if the button is down elsewhere 
+            pan widget to current co-ords
     */
 
     public override bool expose_event (Gdk.EventExpose event) {
       var cr = Gdk.cairo_create (this.window);
-      /*Gdk.cairo_set_source_color (cr, this.style.fg[this.state]);
-      cr.rectangle (this._BORDER_WIDTH,
-                    this._BORDER_WIDTH,
-                    this.allocation.width - 2*this._BORDER_WIDTH,
-                    this.allocation.height - 2*this._BORDER_WIDTH);
-      cr.set_line_width (5.0);
-      cr.set_line_join (Cairo.LineJoin.ROUND);
-      cr.stroke ();*/
+      var surface = cr.get_group_target();
+      var cr_background_layer = Cairo.create(surface.create_similar());
+      var cr_node_layer = Cairo.create(surface.create_similar());
+      var cr_controls_layer = Cairo.create(surface.create_similar();
+      // Set up some vars so we don't overload the cpu
+      // Set double buffered
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) {
           // Render the edges onto the underneath surface

@@ -45,7 +45,7 @@ namespace Wiz {
      * although adding a upper and lower limit to the timestamps would be a good optimisation.
      */
 		private static const string SELECT_NODES_SQL =
-			"SELECT c.uuid, c.timestamp FROM commits AS c";
+			"SELECT c.uuid, c.timestamp FROM commits AS c WHERE c.timestamp > ? AND c.timetamp < ?";
 
 		private static const string SELECT_RELATION_SQL =
 			"SELECT r.parent_id FROM relations AS r WHERE r.node_id=?";
@@ -163,8 +163,10 @@ namespace Wiz {
 			return null;
 		}
 
-    public List<string> get_nodes() {
+    public List<string> get_nodes(int start, int end) {
       var retval = new List<CommitNode>();
+			this.select_nodes_sql.bind_int(1, start);
+			this.select_nodes_sql.bind_int(2, end);
       var res = this.select_nodes_sql.step();
 			while (res == Sqlite.ROW) {
         var node = new CommitNode(this.select_nodes_sql.column_text(0),
