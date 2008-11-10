@@ -5,10 +5,7 @@
 /**
  * TODO
  *  1. Signal emitted for selection changed
- *  2. Work out the size allocation stuff
- *  3. Work out the realization stuff, ensure we're grabbing the correct
- *     events, we need button press, and motion notify, possibly configure.
- *  4. Dag loading in update from store
+ *  x. This TODO list is not upto date
  */
 
 using GLib;
@@ -19,11 +16,11 @@ namespace Wiz {
   /* Each edge is a connetion in a certain direction, from the parent to the
    * child
    */
-  public class Edge : Glib.Object {
+  public class TimelineEdge : Glib.Object {
     private Node parent { get; }
     private Node child { get; }
 
-    public Edge(Node parent, Node child) {
+    public TimelineEdge(TimelineNode parent, TimelineNode child) {
       this.parent = parent;
       this.child = child;
     }
@@ -33,19 +30,20 @@ namespace Wiz {
    * the edges contain the direction of this connection. The node also stores
    * its position and size within the widget.
    */
-  public class Node : Glib.Object { // Probably should specialise from CommitNode in commit_store.vala
+  public class TimelineNode : CommitNode {
     public double size { get; set; }
-    public string version_uuid { get; construct; }
-    public int timestamp { get; construct; }
     public int column { get; set; }
     public double position { get; set; }
     public List<Edge> edges { get; construct; }
 
-    public Node (string version_uuid, int timestamp) {
+    public TimelineNode (string version_uuid, int timestamp) {
       this.version_uuid = version_uuid;
       this.timestamp = timestamp;
       this.edges = new List<Edge>();
-      // Add edges, only one direction is required, we should probably go for children
+    }
+
+    public AddChild(TimelineNode child) {
+        this.edges.append(new TimelineEdge(this, child));
     }
   }
 
@@ -56,6 +54,7 @@ namespace Wiz {
     private Node root;
     private Bit bit;
     private Store store;
+    private CommitStore commit_store;
     private int default_width;
     private int default_height;
     public string selected_version_uuid { get; set; }
@@ -68,13 +67,13 @@ namespace Wiz {
       }
       set {
         this.bit = this.store.open_bit(value);
+        this.commit_store = this.bit.commits;
       }
     }
 
     // We can construct with no bit specified, and use bit_uuid to open the bit
     public Timeline(Store store, string? bit_uuid) {
       this.store = store;
-
       if (bit_uuid != null) {
         this.bit_uuid = bit_uuid;
       }
@@ -88,8 +87,29 @@ namespace Wiz {
     }
 
     public void update_from_store () {
-      // Use commit_store get_nodes to retrieve all nodes, each node will then
-      // on construct tie up the edges itself (that's the theory at least)
+      var commit_nodes = List<CommitNode>;
+      commit_nodes = this.commit_store.get_nodes();
+
+      // Loading the nodes from the commit store
+      foreach (var commit_node in commit_nodes) {
+          this.nodes.append(this, TimelineNode(commit_node.version_uuid, 
+                                               commit_node.timestamp));
+      }
+      // Iterate the nodes and add edges
+      foreach (var node in this.nodes) {
+          children = new List<string>;
+          children = this.commit_store.get_forwards(node.version_uuid);
+          // Unfortunately we've got to iterate this many times because
+          // we need to tie up seen nodes by edges :/ At least we only have to
+          // do it when the bit changes
+          foreach (var child in children) {
+            foreach (var child_node in this.nodes) {
+              if (child_node.version_uuid == child) {
+                node.AddEdge(child_node);
+              }
+            }
+          }
+      }
     }
 
     public void set_view_range(int start_timestamp, int end_timestamp) {
@@ -149,6 +169,19 @@ namespace Wiz {
                                this.allocation.width, this.allocation.height);
     }
 
+    //public override bool button_press_event?
+    /*
+        this.press_co-ords = event.x event.y
+        are we over the zoom widget
+    */
+    //public override bool button_release_event?
+    //public override bool motion_notify_event?
+    /* 
+        if the button is down over the zoom widget
+            have the x/y co-ords changed since button press
+                update_zoom
+    */
+
     public override bool expose_event (Gdk.EventExpose event) {
       var cr = Gdk.cairo_create (this.window);
       /*Gdk.cairo_set_source_color (cr, this.style.fg[this.state]);
@@ -159,6 +192,14 @@ namespace Wiz {
       cr.set_line_width (5.0);
       cr.set_line_join (Cairo.LineJoin.ROUND);
       cr.stroke ();*/
+      foreach (var node in this.nodes) {
+        foreach (var edge in node.edges) {
+          // Render the edges onto the underneath surface
+        }
+        // Render the node onto the ontop surface
+      }
+      // composite surfaces together
+      // Render the zoom/scroll widget
       return true;
     }
   }
