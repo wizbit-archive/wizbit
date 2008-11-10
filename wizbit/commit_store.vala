@@ -36,7 +36,7 @@ namespace Wiz {
 			"INSERT INTO commits (uuid, blob, committer, timestamp, timestamp2) VALUES (?, ?, ?, ?, ?)";
 
 		private static const string INSERT_RELATION_SQL =
-			"INSERT INTO relations VALUES (SELECT c.id from commits AS c WHERE c.uuid = ?, SELECT c.id from commits AS c WHERE c.uuid = ?)";
+			"INSERT INTO relations VALUES ( (SELECT c.id from commits AS c WHERE c.uuid = ?), (SELECT c.id from commits AS c WHERE c.uuid = ?))";
 
 		private static const string SELECT_COMMIT_SQL =
 			"SELECT c.blob, c.committer, c.timestamp, c.timestamp2, c.id FROM commits AS c WHERE c.uuid=?";
@@ -45,7 +45,7 @@ namespace Wiz {
      * although adding a upper and lower limit to the timestamps would be a good optimisation.
      */
 		private static const string SELECT_NODES_SQL =
-			"SELECT c.uuid, c.timestamp FROM commits AS c WHERE c.timestamp > ? AND c.timetamp < ? ORDER BY c.timestamp";
+			"SELECT c.uuid, c.timestamp FROM commits AS c WHERE c.timestamp > ? AND c.timestamp < ? ORDER BY c.timestamp";
 
     private static const string SELECT_NODE_SQL =
       "SELECT c.uuid, c.timestamp FROM commits AS c WHERE c.uuid = ? LIMIT 1";
