@@ -11,6 +11,11 @@
  *  5. Setting the selected node will scroll it to center
  *  6. Animations while timeline view changes, don't let zooming/panning
  *     be jumpy.
+ *  7. Prevent duplicate nodes being loaded when appending offscreen
+       adjacent nodes, or simply remove duplicates every time we update
+       nodes.
+ *  8. Rename a bunch of things which are horribly named!
+ *  9. Optimize the shizzle out of it! profile update_from_store especially
  *  x. This TODO list is not upto date
  */
 
@@ -149,7 +154,7 @@ namespace Wiz {
           parent_node = this.commit_store.get_node(parent);
           if (parent_node.timestamp < this.start_timestamp) {
             new_node = TimelineNode(parent_node.version_uuid, 
-                                parent_node.timestamp)
+                                    parent_node.timestamp)
             new_nodes.append(new_node);
             this.nodes.append(new_node);
             if (parent_node.timestamp > this.youngest_timestamp) {
@@ -188,9 +193,6 @@ namespace Wiz {
       }
     }
 
-    public void set_view_range(int start_timestamp, int end_timestamp) {
-    }
-
     public override void realize () {
       // First set an internal flag telling that we're realized
       this.set_flags (Gtk.WidgetFlags.REALIZED);
@@ -223,7 +225,6 @@ namespace Wiz {
       this.window.move_resize (this.allocation.x, this.allocation.y,
                                this.allocation.width, this.allocation.height);
     }
-
 
     public override void unrealize () {
       this.window.set_user_data (null);
