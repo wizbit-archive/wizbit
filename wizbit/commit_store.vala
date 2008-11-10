@@ -18,28 +18,28 @@ namespace Wiz {
 		public string uuid { get; construct; }
 
 		private static const string GO_FORWARDS_SQL =
-			"SELECT r.node_id FROM relations AS r, commits AS c WHERE r.parent_id = ? AND r.parent_id=c.uuid ORDER BY c.timestamp DESC, c.timestamp2 DESC";
+			"SELECT r.node_id FROM relations AS r, commits AS c WHERE c.uuid = ? AND r.parent_id=c.id ORDER BY c.timestamp DESC, c.timestamp2 DESC";
 
 		private static const string GO_BACKWARDS_SQL =
-			"SELECT r.parent_id FROM relations AS r, commits AS c WHERE r.node_id = ? AND r.node_id=c.uuid ORDER BY c.timestamp DESC, c.timestamp2 DESC";
+			"SELECT r.parent_id FROM relations AS r, commits AS c WHERE c.uuid = ? AND r.node_id=c.id ORDER BY c.timestamp DESC, c.timestamp2 DESC";
 
 		private static const string GET_PRIMARY_TIP_SQL =
 			"SELECT c.uuid FROM commits AS c ORDER BY c.timestamp DESC, c.timestamp2 DESC LIMIT 1";
 
 		private static const string GET_TIPS_SQL =
-			"SELECT c.uuid FROM commits AS c LEFT OUTER JOIN relations AS r ON c.uuid=r.parent_id WHERE r.parent_id IS NULL";
+			"SELECT c.uuid FROM commits AS c LEFT OUTER JOIN relations AS r ON c.id=r.parent_id WHERE r.parent_id IS NULL";
 
 		private static const string GET_ROOT_SQL =
 			"SELECT c.uuid FROM commits AS c ORDER BY c.timestamp, c.timestamp2 LIMIT 1";
 
 		private static const string INSERT_COMMIT_SQL =
-			"INSERT INTO commits VALUES (?, ?, ?, ?, ?)";
+			"INSERT INTO commits (uuid, blob, committer, timestamp, timestamp2) VALUES (?, ?, ?, ?, ?)";
 
 		private static const string INSERT_RELATION_SQL =
-			"INSERT INTO relations VALUES (?, ?)";
+			"INSERT INTO relations VALUES (SELECT c.id from commits AS c WHERE c.uuid = ?, SELECT c.id from commits AS c WHERE c.uuid = ?)";
 
 		private static const string SELECT_COMMIT_SQL =
-			"SELECT c.blob, c.committer, c.timestamp, c.timestamp2 FROM commits AS c WHERE c.uuid=?";
+			"SELECT c.blob, c.committer, c.timestamp, c.timestamp2, c.id FROM commits AS c WHERE c.uuid=?";
 
     /* KL, This might be crack, but getting nodes as a whole is necessary for saving time in the timeline widget
      * although adding a upper and lower limit to the timestamps would be a good optimisation.
@@ -212,9 +212,10 @@ namespace Wiz {
 			c.committer = this.select_commit_sql.column_text(1);
 			c.timestamp = this.select_commit_sql.column_int(2);
 			c.timestamp2 = this.select_commit_sql.column_int(3);
+      int commit_id = this.select_commit_sql.column_int(4);
 			this.select_commit_sql.reset();
 
-			this.select_relation_sql.bind_text(1, uuid);
+			this.select_relation_sql.bind_int(1, commit_id);
 			res = this.select_relation_sql.step();
 			while (res == Sqlite.ROW) {
 				c.parents.append(this.select_relation_sql.column_text(0));
@@ -271,9 +272,9 @@ namespace Wiz {
 			if (version <= 0) {
 				// upgrade version 0 to version 1
 				this.upgrade_database_step(
-					"CREATE TABLE commits(uuid VARCHAR(40), blob VARCHAR(40), committer VARCHAR(256), timestamp INTEGER, timestamp2 INTEGER)");
+					"CREATE TABLE commits(id INTEGER PRIMARY KEY, uuid VARCHAR(40), blob VARCHAR(40), committer VARCHAR(256), timestamp INTEGER, timestamp2 INTEGER)");
 				this.upgrade_database_step(
-					"CREATE TABLE relations(node_id VARCHAR(40), parent_id VARCHAR(40))");
+					"CREATE TABLE relations(node_id INTEGER, parent_id INTEGER)");
 			}
 
 			if (version <= 1) {
