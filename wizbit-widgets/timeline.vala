@@ -5,6 +5,12 @@
 /**
  * TODO
  *  1. Signal emitted for selection changed
+ *  2. Add signal handlers for motion, button press/release
+ *  3. Add zoom calculations
+ *  4. Figure out whether or not the node needs to be visible
+ *  5. Setting the selected node will scroll it to center
+ *  6. Animations while timeline view changes, don't let zooming/panning
+ *     be jumpy.
  *  x. This TODO list is not upto date
  */
 
