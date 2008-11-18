@@ -4,7 +4,7 @@ INCLUDES = \
 	-I$(top_srcdir) \
 	-DTESTDATADIR=\"$(srcdir)/data/\"
 
-TEST_PROGS = test-everything test-sync test-commit-store
+TEST_PROGS += test-everything test-sync test-commit-store
 
 noinst_PROGRAMS = $(TEST_PROGS)
 

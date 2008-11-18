@@ -3,11 +3,11 @@ include $(top_srcdir)/Makefile.decl
 NULL = 
 
 AUTOMAKE_OPTIONS = subdir-objects
+ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = \
 	wizbit \
 	tests \
-	po \
 	$(NULL)
 
 AM_CPPFLAGS = \
@@ -17,17 +17,3 @@ AM_CPPFLAGS = \
 
 pkgconfigdir = $(libdir)/pkgconfig
 pkgconfig_DATA = wizbit.pc
-
-EXTRA_DIST = \
-	intltool-extract.in \
-	intltool-update.in \
-	intltool-merge.in \
-	$(NULL)
-
-DISTCLEANFILES = \
-	intltool-extract \
-	intltool-update \
-	intltool-merge \
-	po/.intltool-merge-cache \
-	$(NULL)
-

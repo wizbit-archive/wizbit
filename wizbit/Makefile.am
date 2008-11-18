@@ -20,7 +20,7 @@ libwizbit_la_VALASOURCES = \
 	uuid.vapi \
 	utils.vala \
 	breadthfirst.vala \
-	sync.vala \ 
+	sync.vala \
 	$(NULL)
 
 libwizbit_la_SOURCES = \
@@ -40,7 +40,7 @@ wizbitinclude_HEADERS = \
 	$(libwizbit_la_VALASOURCES:.vala=.h) \
 	$(NULL)
 
-EXTRA_DIST = \
+EXTRA_DIST += \
 	$(libwizbit_la_VALASOURCES) \
 	libwizbit.vala.stamp \
 	$(NULL)

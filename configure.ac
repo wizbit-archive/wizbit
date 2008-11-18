@@ -1,10 +1,7 @@
 AC_INIT([wizbit], [0.1.0], [john.carr@unrouted.co.uk], [wizbit])
 AC_CONFIG_SRCDIR([Makefile.am])
 AC_CONFIG_HEADERS(config.h)
-
-m4_pattern_allow([^AC_WIZ_])
 AC_CONFIG_MACRO_DIR([m4])
-AC_SUBST(ACLOCAL_AMFLAGS, "$ACLOCAL_FLAGS -I m4")
 
 AM_INIT_AUTOMAKE([dist-bzip2])
 AM_MAINTAINER_MODE
@@ -16,13 +13,6 @@ AC_PROG_LIBTOOL
 
 AC_PATH_PROG(VALAC, valac, valac)
 AC_SUBST(VALAC)
-
-AH_TEMPLATE([GETTEXT_PACKAGE], [Package name for gettext])
-GETTEXT_PACKAGE=wizbit
-AC_DEFINE_UNQUOTED(GETTEXT_PACKAGE, "$GETTEXT_PACKAGE")
-AC_SUBST(GETTEXT_PACKAGE)
-AM_GLIB_GNU_GETTEXT
-IT_PROG_INTLTOOL([0.35.0])
 
 AC_SUBST(CFLAGS)
 AC_SUBST(CPPFLAGS)
@@ -39,7 +29,6 @@ AC_CONFIG_FILES([
 	Makefile
 	wizbit/Makefile
 	tests/Makefile
-	po/Makefile.in
 ])
 
 AC_OUTPUT
