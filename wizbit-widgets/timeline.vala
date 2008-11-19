@@ -199,16 +199,11 @@ namespace Wiz {
             // we need to tie up seen nodes by edges :/ At least we only have to
             // do it when the bit changes
             foreach (var child in children) {
-              child_found = false;
               foreach (var child_node in this.nodes) {
                 if (child_node.version_uuid == child) {
                   node.AddChild(child_node);
-                  child_found = true;
                   break;
                 }
-              }
-              if (!child_found) {
-                // Child not found :/
               }
             }
             if (node.timestamp > this.newest_timestamp) {
@@ -287,6 +282,7 @@ namespace Wiz {
       this.queue_draw();//?
     }
 
+    // This has to be done on pan/zoom so that's a lot of events :/
     private void update_visibility() {
         size = 8;
         var parents = new List<string>();
@@ -317,58 +313,80 @@ namespace Wiz {
         this.mouse_press_y = event.y;
     /*
         are we over the zoom widget
-        create a press timestamp (milliseconds) argh, vala time!!!!!
-        this.button_press_timestamp = ?
+        // TODO FFR - This is for kinetic scrolling
+        // create a press timestamp (milliseconds) argh, vala time!!!!!
+        // this.button_press_timestamp = ?
     */
+        return true;
     }
 
     public override bool button_release_event (Gdk.EventButton event) {
         this.mouse_down = false;
         this.mouse_release_x = event.x;
         this.mouse_release_y = event.y;
-    /*
+    /*  TODO
         are we over the controls?
             compute the change in the controls
         else
-            create release timestamp (milliseconds)
-            this.button_release_timestamp = ?
-            calculate the distance travelled in that time and therefore the speed
-            start a timer which controls the speed/positioning (kinetic scroll)
-            horizontal scrolling will change the zoom level
+            // TODO FFR - This is for kinetic scrolling
+            // create release timestamp (milliseconds)
+            // this.button_release_timestamp = ?
+            // calculate the distance travelled in that time and therefore the speed
+            // start a timer which controls the speed/positioning (kinetic scroll)
+            // horizontal scrolling will change the zoom level
      */
+        return true;
     }
 
     public override bool button_click_event (Gdk.EventButton event) {
         this.mouse_down = false;
-    /* 
+    /*  TODO - we have to iterate over the widgets and check the polar distance
+        not hard, but yet another iteration, thankfully we only need to do it on
+        click and not on motion :) We can speed this up by ignoring invisible 
+        widgets.
         did we click on a version
-            set selected 
+            set selected
+            this.queue_draw(); 
      */
+        return true;
     }
 
     public override bool motion_notify_event (Gdk.EventMotion event) {
-    /* 
+    /*  TODO
         if the button is down over the zoom widget
             have the x/y co-ords changed since button press
                 update_zoom
+                set handle positions
         if the button is down elsewhere 
             pan widget to current co-ords
+        else
+            return false;
+        this.queue_draw();
+        return true;
     */
     }
-
+    // TODO
     public void RenderScale(CairoContext cr) {
 
     }
+    // TODO
     public void RenderControls(CairoContext cr) {
+        // Render background
 
+        // Render slider
+
+        // Render left handle
+
+        // Render right handle
     }
+
     public override bool expose_event (Gdk.EventExpose event) {
       var cr = Gdk.cairo_create (this.window);
       var surface = cr.get_group_target();
       var cr_background_layer = Cairo.create(surface.create_similar());
       var cr_foreground_layer = Cairo.create(surface.create_similar());
-      // Set up some vars so we don't overload the cpu
-      // Set double buffered
+      this.set_double_buffered(true);
+
       this.RenderScale(cr_background_layer);
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) {
@@ -380,6 +398,14 @@ namespace Wiz {
       }
       this.RenderControls(cr_foreground_layer);
       // composite surfaces together
+      // Hopefully FILTER_NEAREST is being set internally by now, if not this
+      // is likely to be slow. To work around that we'd have to rework the
+      // rendering order to be able to render the edges under the nodes, that
+      // would mean that we'd have to iterate the nodes again after the edges.
+      cr.set_source_surface(cr_background_layer.get_group_target(), 0, 0);
+      cr.paint();
+      cr.set_source_surface(cr_foreground_layer.get_group_target(), 0, 0);
+      cr.paint();
       return true;
     }
   }
