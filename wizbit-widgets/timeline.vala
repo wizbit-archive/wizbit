@@ -5,12 +5,14 @@
 /**
  * TODO
  *  1. Signal emitted for selection changed
- *  2. Add signal handlers for motion, button press/release
- *  3. Setting the selected node will scroll it to center
- *  4. Animations while timeline view changes, don't let zooming/panning
+ *  2. Update signal handlers, add timing stuff (only required for kinetic scrolling)
+ *     figure out the click zones etc...
+ *  3. Create renderers for widget controls and the scale. (More vala time stuff)
+ *  4. Setting the selected node will scroll it to center
+ *  5. Animations while timeline view changes, don't let zooming/panning
  *     be jumpy.
- *  5. Rename a bunch of things which are horribly named!
- *  6. Optimize the shizzle out of it! profile update_from_store especially
+ *  6. Rename a bunch of things which are horribly named!
+ *  7. Optimize the shizzle out of it! profile update_from_store especially
  *  x. This TODO list is not upto date
  */
 
@@ -122,6 +124,15 @@ namespace Wiz {
     private CommitStore commit_store;
     private int default_width;
     private int default_height;
+    // Event handling, kinetic scrolling properties
+    private bool mouse_down;
+    private int button_press_timestamp;
+    private int button_release_timestamp;
+    private int mouse_press_x;
+    private int mouse_press_y;
+    private int mouse_release_x;
+    private int mouse_release_y;
+    private double velocity;
     // Dag height/visibility calculated from zoom level
     private int dag_height;
     private int dag_width;
@@ -151,6 +162,7 @@ namespace Wiz {
       if (bit_uuid != null) {
         this.bit_uuid = bit_uuid;
       }
+      this.mouse_down = false;
     }
 
     construct {
@@ -299,37 +311,42 @@ namespace Wiz {
         }
     }
 
-    // STILL TODO!!
-    //public override bool button_press_event?
+    public override bool button_press_event (Gdk.EventButton event) {
+        this.mouse_down = true;
+        this.mouse_press_x = event.x;
+        this.mouse_press_y = event.y;
     /*
-        set mouse down
-        this.press_co-ords = event.x event.y
         are we over the zoom widget
-        create a press timestamp (milliseconds)
+        create a press timestamp (milliseconds) argh, vala time!!!!!
+        this.button_press_timestamp = ?
     */
+    }
 
-    //public override bool button_release_event?
-    /* 
-        unset mouse down
-        set click co-ords
-        compare press/release co-ords
+    public override bool button_release_event (Gdk.EventButton event) {
+        this.mouse_down = false;
+        this.mouse_release_x = event.x;
+        this.mouse_release_y = event.y;
+    /*
         are we over the controls?
             compute the change in the controls
         else
             create release timestamp (milliseconds)
+            this.button_release_timestamp = ?
             calculate the distance travelled in that time and therefore the speed
             start a timer which controls the speed/positioning (kinetic scroll)
             horizontal scrolling will change the zoom level
      */
+    }
 
-    //public override bool button_click_event?
+    public override bool button_click_event (Gdk.EventButton event) {
+        this.mouse_down = false;
     /* 
-        unset mouse down
-        set click co-ords
         did we click on a version
-            highlight version and set selected 
+            set selected 
      */
-    //public override bool motion_notify_event?
+    }
+
+    public override bool motion_notify_event (Gdk.EventMotion event) {
     /* 
         if the button is down over the zoom widget
             have the x/y co-ords changed since button press
@@ -337,6 +354,8 @@ namespace Wiz {
         if the button is down elsewhere 
             pan widget to current co-ords
     */
+    }
+
     public void RenderScale(CairoContext cr) {
 
     }
