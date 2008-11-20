@@ -108,6 +108,7 @@ namespace Wiz {
         var dag_height = timeline.dag_height;
         var offset = timeline.offset;
         var total_columns = timeline.total_columns;
+        var graph_width = timeline.get_allocation_width();
         // this probably has a few off by one errors :/ 
         this.x = (graph_width / total_columns) * column;
         this.y = (dag_height * position) - offset;
@@ -117,7 +118,7 @@ namespace Wiz {
         var sat = 0.5;
         var val = 0.3;
         // Convert to rgb for fill fr,fg,fb
-        var val = 0.1;
+        val = 0.1;
         // Convert to rgb for line lr,lg,lb
     }
   }
@@ -145,7 +146,7 @@ namespace Wiz {
     public int dag_height;
     public int dag_width;
     private int visible_columns;
-    private int total_columns;
+    public int total_columns;
     private int oldest_timestamp;
     private int newest_timestamp;
     private int start_timestamp;
@@ -178,6 +179,9 @@ namespace Wiz {
       this.update_from_store();
       this.default_width = 80;
       this.default_height = 160;
+    }
+    public int get_allocation_width() {
+        return this.allocation.width;
     }
 
     public void update_from_store () {
@@ -215,10 +219,10 @@ namespace Wiz {
               }
             }
             if (node.timestamp > this.newest_timestamp) {
-              this.newest_timestamp = commit_node.timestamp;
+              this.newest_timestamp = node.timestamp;
             }
             if (node.timestamp < this.oldest_timestamp) {
-              this.oldest_timestamp = commit_node.timestamp;
+              this.oldest_timestamp = node.timestamp;
             }
           }
         }
@@ -240,8 +244,7 @@ namespace Wiz {
       attrs.event_mask = this.get_events() | Gdk.EventMask.EXPOSURE_MASK | 
                                              Gdk.EventMask.POINTER_MOTION_MASK |
                                              Gdk.EventMask.BUTTON_PRESS_MASK |
-                                             Gdk.EventMask.BUTTON_RELEASE_MASK |
-                                             Gdk.EventMask.BUTTON_CLICK;
+                                             Gdk.EventMask.BUTTON_RELEASE_MASK;
       this.window = new Gdk.Window (this.get_parent_window (), attrs, 0);
  
       // Associate the gdk.Window with ourselves, Gtk+ needs a reference
@@ -285,16 +288,16 @@ namespace Wiz {
       var total = this.newest_timestamp - this.oldest_timestamp;
       this.zoom = range/total;
       this.dag_height = this.allocation.height * (total/range);
-      this.offset = this.dag_height * (self.start_timestamp/total);
+      this.offset = this.dag_height * (this.start_timestamp/total);
       this.update_visibility();
       this.queue_draw();
     }
 
     // This has to be done on pan/zoom so that's a lot of events :/
     private void update_visibility() {
-        size = 8;
+        var size = 8;
         var parents = new List<string>();
-
+        var column = 0;
         foreach (var node in this.nodes) {
             if ((node.timestamp <= this.end_timestamp) && (node.timestamp >= this.start_timestamp)) {
                 node.visible = true;
@@ -318,8 +321,8 @@ namespace Wiz {
 
     public override bool button_press_event (Gdk.EventButton event) {
         this.mouse_down = true;
-        this.mouse_press_x = event.x;
-        this.mouse_press_y = event.y;
+        this.mouse_press_x = (int)event.x;
+        this.mouse_press_y = (int)event.y;
     /*
         are we over the zoom widget
         // TODO FFR - This is for kinetic scrolling
@@ -331,8 +334,8 @@ namespace Wiz {
 
     public override bool button_release_event (Gdk.EventButton event) {
         this.mouse_down = false;
-        this.mouse_release_x = event.x;
-        this.mouse_release_y = event.y;
+        this.mouse_release_x = (int)event.x;
+        this.mouse_release_y = (int)event.y;
     /*  TODO
         are we over the controls?
             compute the change in the controls
@@ -346,19 +349,20 @@ namespace Wiz {
      */
         return true;
     }
-
+/* CAN'T DO BUTTON CLICK ARG! Need to work this into release somehow :/
     public override bool button_click_event (Gdk.EventButton event) {
         this.mouse_down = false;
-    /*  TODO - we have to iterate over the widgets and check the polar distance
+      TODO - we have to iterate over the widgets and check the polar distance
         not hard, but yet another iteration, thankfully we only need to do it on
         click and not on motion :) We can speed this up by ignoring invisible 
         nodes.
         did we click on a version
             set selected - emit selection changed signal
             this.queue_draw(); 
-     */
+
         return true;
     }
+     */
 
     public override bool motion_notify_event (Gdk.EventMotion event) {
     /*  TODO
@@ -412,7 +416,7 @@ namespace Wiz {
         cr.line_to(hpos + 4.5, this.allocation.height - 30.5);
         cr.line_to(hpos + 4.5, this.allocation.height - 39.5);
         cr.line_to(hpos - 4.5, this.allocation.height - 39.5);
-        pattern = Pattern.linear(0,0,9,0);
+        var pattern = Pattern.linear(0,0,9,0);
         pattern.add_stop_rgb(0, 0xee/255.0, 0xee/255.0, 0xec/255.0); 
         pattern.add_stop_rgb(1, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
         cr.set_source (pattern);
@@ -435,7 +439,7 @@ namespace Wiz {
         cr.rectangle(14.5, this.allocation.height - 37.5,
                            this.allocation.width - 14.5,
                            this.allocation.height - 31.5);
-        pattern = Pattern.linear(0,0,0,6);
+        var pattern = Pattern.linear(0,0,0,6);
         pattern.add_stop_rgb(0, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
         pattern.add_stop_rgb(1, 0xee/255.0, 0xee/255.0, 0xec/255.0);
         cr.set_source (pattern);
