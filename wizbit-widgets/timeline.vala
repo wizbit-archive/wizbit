@@ -360,9 +360,18 @@ namespace Wiz {
     public override bool motion_notify_event (Gdk.EventMotion event) {
     /*  TODO
         if the button is down over the zoom widget
-            have the x/y co-ords changed since button press
+            extents of the controls            
+            sx, this.TimestampToHScalePos(this.start_timestamp) - 4.5
+            sy, this.allocation.height - 39.5
+            ex, this.TimestampToHScalePos(this.end_timestamp) + 4.5
+            ey, this.allocation.height - 26.5
+
+            figure out which part of the control we're over 
+            have the x/y co-ords changed
                 set handle positions
                 update_zoom
+
+        // This is really FFR part of kinetic scrolling
         if the button is down elsewhere 
             pan widget to current co-ords
         else
@@ -391,18 +400,13 @@ namespace Wiz {
     }
 
     public void RenderHandle(CairoContext cr, int timestamp) {
-        cr.move_to(this.TimestampToHScalePos(this.start_timestamp) - 4.5,
-                   this.allocation.height - 39.5);
-        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) - 4.5,
-                   this.allocation.height - 30.5);
-        cr.line_to(this.TimestampToHScalePos(this.start_timestamp),
-                   this.allocation.height - 26.5);
-        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) + 4.5,
-                   this.allocation.height - 30.5);
-        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) + 4.5,
-                   this.allocation.height - 39.5);
-        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) - 4.5,
-                   this.allocation.height - 39.5);
+        var hpos = this.TimestampToHScalePos(timestamp);
+        cr.move_to(hpos - 4.5, this.allocation.height - 39.5);
+        cr.line_to(hpos - 4.5, this.allocation.height - 30.5);
+        cr.line_to(hpos, this.allocation.height - 26.5);
+        cr.line_to(hpos + 4.5, this.allocation.height - 30.5);
+        cr.line_to(hpos + 4.5, this.allocation.height - 39.5);
+        cr.line_to(hpos - 4.5, this.allocation.height - 39.5);
         pattern = Pattern.linear(0,0,9,0);
         pattern.add_stop_rgb(0, 0xee/255.0, 0xee/255.0, 0xec/255.0); 
         pattern.add_stop_rgb(1, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
@@ -412,22 +416,15 @@ namespace Wiz {
         cr.stroke();
 
         cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
-        cr.move_to(this.TimestampToHScalePos(this.start_timestamp) - 3.5,
-                   this.allocation.height - 38.5);
-        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) - 3.5,
-                   this.allocation.height - 30.85);
-        cr.line_to(this.TimestampToHScalePos(this.start_timestamp),
-                   this.allocation.height - 28.0);
-        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) + 3.5,
-                   this.allocation.height - 30.85);
-        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) + 3.5,
-                   this.allocation.height - 38.5);
-        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) - 3.5,
-                   this.allocation.height - 38.5);
+        cr.move_to(hpos - 3.5, this.allocation.height - 38.5);
+        cr.line_to(hpos - 3.5, this.allocation.height - 30.85);
+        cr.line_to(hpos, this.allocation.height - 28.0);
+        cr.line_to(hpos + 3.5, this.allocation.height - 30.85);
+        cr.line_to(hpos + 3.5, this.allocation.height - 38.5);
+        cr.line_to(hpos - 3.5, this.allocation.height - 38.5);
         cr.stroke();
     }
-    // TODO
-    // work out the colours
+
     public void RenderControls(CairoContext cr) {
         // Render background
         cr.rectangle(14.5, this.allocation.height - 37.5,
