@@ -174,30 +174,29 @@ namespace Wiz {
 			return null;
 		}
 
-		/*
 		public List<string> get_nodes() {
-		  var retval = new List<CommitNode>();
-		  var res = this.select_nodes_sql.step();
+			var retval = new List<TimelineNode>();
+			var res = this.select_nodes_sql.step();
 			while (res == Sqlite.ROW) {
 				var node = new TimelineNode(this.select_nodes_sql.column_text(0),
-															  	  this.select_nodes_sql.column_int(1));
+											this.select_nodes_sql.column_int(1));
 				retval.append(node);
 				res = this.select_nodes_sql.step();
 			}
 			assert(res == Sqlite.DONE);
 			this.select_nodes_sql.reset();
-		  return retval;
+			return retval;
 		}
-		public CommitNode get_node(string version_uuid) {
+
+		public TimelineNode get_node(string version_uuid) {
 			this.select_node_sql.bind_text(1, version_uuid);
-		  var res = this.select_node_sql.step();
-		  var node = new TimelineNode(this.select_node_sql.column_text(0),
-															  	this.select_node_sql.column_int(1));
+			var res = this.select_node_sql.step();
+			var node = new TimelineNode(this.select_node_sql.column_text(0),
+										this.select_node_sql.column_int(1));
 			assert(res == Sqlite.DONE);
 			this.select_node_sql.reset();
 		  return node;
 		}
-		*/
 
 		public bool has_commit(string uuid) {
 			return (this.lookup_commit(uuid) != null);

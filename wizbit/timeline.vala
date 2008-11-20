@@ -29,8 +29,8 @@ namespace Wiz {
    * child
    */
   public class TimelineEdge : Glib.Object {
-    private TimelineNode parent { get; }
-    private TimelineNode child { get; }
+    public TimelineNode parent { get; construct; }
+    public TimelineNode child { get; construct; }
     private double r;
     private double g;
     private double b;
@@ -39,7 +39,7 @@ namespace Wiz {
       this.parent = parent;
       this.child = child;
     }
-    public SetColor(double r, double g, double b) {
+    public void SetColor(double r, double g, double b) {
         this.r = r;
         this.g = g;
         this.b = b;
@@ -47,7 +47,7 @@ namespace Wiz {
         // shouldn't really have a function for set colour though as the colours
         // would be collected from the parent and child
     }
-    public Render(CairoContext cr) {
+    public void Render(CairoContext cr) {
         // Draw a line from each parent.x/y to child.x/y
         cr.move_to(parent.x, parent.y);
         cr.line_to(child.y, child.y);
@@ -60,12 +60,12 @@ namespace Wiz {
    * the edges contain the direction of this connection. The node also stores
    * its position and size within the widget.
    */
-  public class TimelineNode : CommitNode {
+  public class TimelineNode {
     public double size { get; set; }
-    public bool visible { get; set }
-    public bool root { get; set }
-    public bool tip { get; set }
-    public List<Edge> edges { get; construct; }
+    public bool visible { get; set; }
+    public bool root { get; set; }
+    public bool tip { get; set; }
+    public List<TimelineEdge> edges { get; construct; }
     public int x;
     public int y;
     // Colours! YAY
@@ -83,22 +83,22 @@ namespace Wiz {
       this.edges = new List<TimelineEdge>();
     }
 
-    public AddChild(TimelineNode child) {
+    public void AddChild(TimelineNode child) {
       this.edges.append(new TimelineEdge(this, child));
     }
 
-    public RenderNode(CairoContext cr) {
+    public void RenderNode(CairoContext cr) {
         if (!this.visible)
             return
         // Render a cirle to cr at x/y position of this.size
         cr.arc(this.x, this.y, this.size, 0, 2*M_PI);//?
         cr.set_source_rgb(this.fr,this.fg,this.fb);
-        cr.fill_preserve()
+        cr.fill_preserve();
         cr.set_source_rgb(this.lr,this.lg,this.lb);
         cr.stroke();
     }
 
-    public SetPosition( Timeline timeline, double position, int column, int size ) {
+    public void SetPosition( Timeline timeline, double position, int column, int size ) {
         if (!this.visible)
             return;
         // Some of these will be private
@@ -282,7 +282,7 @@ namespace Wiz {
       var range = this.end_timestamp - this.start_timestamp;
       var total = this.newest_timestamp - this.oldest_timestamp;
       this.zoom = range/total;
-      this.dag_height = this.allocation.height * (total/range)
+      this.dag_height = this.allocation.height * (total/range);
       this.offset = this.dag_height * (self.start_timestamp/total);
       this.update_visibility();
       this.queue_draw();
@@ -292,8 +292,9 @@ namespace Wiz {
     private void update_visibility() {
         size = 8;
         var parents = new List<string>();
-        foreach (node in this.nodes) {
-            if ((node.timestamp <= this.end_timestamp) && (node.timestamp >= this.start_timestamp) {
+
+        foreach (var node in this.nodes) {
+            if ((node.timestamp <= this.end_timestamp) && (node.timestamp >= this.start_timestamp)) {
                 node.visible = true;
                 var parents = node.edges;
                 foreach (var parent in parents) {
@@ -309,7 +310,7 @@ namespace Wiz {
             }
             // TODO Calculate column, this is pretty anoying, we need to increment
             // every time we have a new branch :/ That means iterating forwards
-            node.SetPosition(this, (node.timestamp - this.oldest_timestamp) / this.newest_timestamp, column, size)
+            node.SetPosition(this, (node.timestamp - this.oldest_timestamp) / this.newest_timestamp, column, size);
         }
     }
 
@@ -413,7 +414,7 @@ namespace Wiz {
         pattern.add_stop_rgb(0, 0xee/255.0, 0xee/255.0, 0xec/255.0); 
         pattern.add_stop_rgb(1, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
         cr.set_source (pattern);
-        cr.fill_preserve()
+        cr.fill_preserve();
         cr.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
         cr.stroke();
 
@@ -436,7 +437,7 @@ namespace Wiz {
         pattern.add_stop_rgb(0, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
         pattern.add_stop_rgb(1, 0xee/255.0, 0xee/255.0, 0xec/255.0);
         cr.set_source (pattern);
-        cr.fill_preserve()
+        cr.fill_preserve();
         cr.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
         cr.stroke();
 
@@ -453,10 +454,9 @@ namespace Wiz {
         cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
         // Render some ticks in the middle of the slider
         var pos = this.TimestampToHScalePos(this.start_timestamp) + ((this.end_timestamp - this.start_timestamp)/2.0) - 8.5; 
-        for (var i = ??; i < ??; i + 3) {
+        for (var i = pos; i < pos + 9; i + 3) {
           cr.move_to(pos, this.allocation.height - 37.5);
           cr.line_to(pos, this.allocation.height - 32.5);
-          pos = pos + 3;
         }
         cr.stroke();
         // Slider Highlight

@@ -21,6 +21,7 @@ libwizbit_la_VALASOURCES = \
 	utils.vala \
 	breadthfirst.vala \
 	sync.vala \
+	timeline.vala
 	$(NULL)
 
 libwizbit_la_SOURCES = \
