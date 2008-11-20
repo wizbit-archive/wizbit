@@ -391,7 +391,40 @@ namespace Wiz {
     }
 
     public void RenderHandle(CairoContext cr, int timestamp) {
-        // 4.5
+        cr.move_to(this.TimestampToHScalePos(this.start_timestamp) - 4.5,
+                   this.allocation.height - 39.5);
+        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) - 4.5,
+                   this.allocation.height - 30.5);
+        cr.line_to(this.TimestampToHScalePos(this.start_timestamp),
+                   this.allocation.height - 26.5);
+        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) + 4.5,
+                   this.allocation.height - 30.5);
+        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) + 4.5,
+                   this.allocation.height - 39.5);
+        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) - 4.5,
+                   this.allocation.height - 39.5);
+        pattern = Pattern.linear(0,0,9,0);
+        pattern.add_stop_rgb(0, 0xee/255.0, 0xee/255.0, 0xec/255.0); 
+        pattern.add_stop_rgb(1, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
+        cr.set_source (pattern);
+        cr.fill_preserve()
+        cr.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
+        cr.stroke();
+
+        cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
+        cr.move_to(this.TimestampToHScalePos(this.start_timestamp) - 3.5,
+                   this.allocation.height - 38.5);
+        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) - 3.5,
+                   this.allocation.height - 30.85);
+        cr.line_to(this.TimestampToHScalePos(this.start_timestamp),
+                   this.allocation.height - 28.0);
+        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) + 3.5,
+                   this.allocation.height - 30.85);
+        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) + 3.5,
+                   this.allocation.height - 38.5);
+        cr.line_to(this.TimestampToHScalePos(this.start_timestamp) - 3.5,
+                   this.allocation.height - 38.5);
+        cr.stroke();
     }
     // TODO
     // work out the colours
@@ -411,7 +444,7 @@ namespace Wiz {
         // Render slider
         cr.rectangle (this.TimestampToHScalePos(this.start_timestamp) + 4.5,
                       this.allocation.height - 39.5,
-                      this.TimestampToHScalePos(this.end_timestamo) + 4.5, 
+                      this.TimestampToHScalePos(this.end_timestamo) - 4.5, 
                       this.allocation.height - 30.5);
         pattern = Pattern.linear(0,0,0,9);
         pattern.add_stop_rgb(0, 0x72/255.0,0x9f/255.0,0xcf/255.0);
@@ -420,7 +453,7 @@ namespace Wiz {
         cr.fill_preserve();
         cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
         // Render some ticks in the middle of the slider
-        var pos = this.TimestampToHScalePos(this.start_timestamp) + ((this.end_timestamp - this.start_timestamp)/2.0) - 9; 
+        var pos = this.TimestampToHScalePos(this.start_timestamp) + ((this.end_timestamp - this.start_timestamp)/2.0) - 8.5; 
         for (var i = ??; i < ??; i + 3) {
           cr.move_to(pos, this.allocation.height - 37.5);
           cr.line_to(pos, this.allocation.height - 32.5);
@@ -431,7 +464,7 @@ namespace Wiz {
         cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
         cr.rectangle (this.TimestampToHScalePos(this.start_timestamp) + 5.5, 
                       this.allocation.height - 38.5,
-                      this.TimestampToHScalePos(this.end_timestamo) + 5.5, 
+                      this.TimestampToHScalePos(this.end_timestamo) - 5.5, 
                       this.allocation.height - 31.5);
         cr.stroke();
 
