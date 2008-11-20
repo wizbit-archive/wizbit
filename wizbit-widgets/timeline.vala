@@ -4,16 +4,20 @@
 
 /**
  * TODO
- *  1. Signal emitted for selection changed
- *  2. Update signal handlers, add timing stuff (only required for kinetic scrolling)
- *     figure out the click zones etc...
- *  3. Create renderers for widget controls and the scale. (More vala time stuff)
- *  4. Setting the selected node will scroll it to center
- *  5. Animations while timeline view changes, don't let zooming/panning
- *     be jumpy.
- *  6. Rename a bunch of things which are horribly named!
- *  7. Optimize the shizzle out of it! profile update_from_store especially
- *  x. This TODO list is not upto date
+ * 1. Create renderers for widget controls and the scale. Drawn needs to be 
+ *    converted to cairo code
+ * 2. Update signal handlers figure out the click zones, Control changes (zoom/scroll)
+ * 3. Column calculations, this is pretty difficult, but just takes a little thinking about
+ * 4. Signal emitted for selection changed
+ * 5. Setting the selected node will scroll it to center
+ * 6. Animations while timeline view changes, don't let zooming/panning
+ *    be jumpy.
+ * 7. Rename a bunch of things which are horribly named!
+ * 8. Optimize the shizzle out of it! profile update_from_store especially
+ * 9. use CIEXYZ colourspace for coloum colouring
+ * For Future Release;
+ * x. Kinetic scrolling - add timing/timer stuff into signal handlers
+ * x. This TODO list is not upto date
  */
 
 using GLib;
@@ -40,6 +44,8 @@ namespace Wiz {
         this.g = g;
         this.b = b;
         // TODO Should also have a gradient fill, set up to blend the branching :/
+        // shouldn't really have a function for set colour though as the colours
+        // would be collected from the parent and child
     }
     public Render(CairoContext cr) {
         // Draw a line from each parent.x/y to child.x/y
@@ -343,9 +349,9 @@ namespace Wiz {
     /*  TODO - we have to iterate over the widgets and check the polar distance
         not hard, but yet another iteration, thankfully we only need to do it on
         click and not on motion :) We can speed this up by ignoring invisible 
-        widgets.
+        nodes.
         did we click on a version
-            set selected
+            set selected - emit selection changed signal
             this.queue_draw(); 
      */
         return true;
@@ -355,8 +361,8 @@ namespace Wiz {
     /*  TODO
         if the button is down over the zoom widget
             have the x/y co-ords changed since button press
-                update_zoom
                 set handle positions
+                update_zoom
         if the button is down elsewhere 
             pan widget to current co-ords
         else
@@ -365,19 +371,72 @@ namespace Wiz {
         return true;
     */
     }
+
+    /* Converts a timestamp into a scale horizontal position. */
+    private int TimestampToHScalePos(int timestamp) {
+
+    }
+    /* Get the integer of the month for a timestamp */
+    private int TimestampToMonth(int timestamp) {
+
+    }
+    /* Get the timestamp of a specific d/m/y */
+    private int DateToTimestamp(int d, int m, int y) {
+
+    }
+
     // TODO
     public void RenderScale(CairoContext cr) {
 
     }
+
+    public void RenderHandle(CairoContext cr, int timestamp) {
+        // 4.5
+    }
     // TODO
+    // work out the colours
     public void RenderControls(CairoContext cr) {
         // Render background
+        cr.rectangle(14.5, this.allocation.height - 37.5,
+                           this.allocation.width - 14.5,
+                           this.allocation.height - 31.5);
+        pattern = Pattern.linear(0,0,0,6);
+        pattern.add_stop_rgb(0, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
+        pattern.add_stop_rgb(1, 0xee/255.0, 0xee/255.0, 0xec/255.0);
+        cr.set_source (pattern);
+        cr.fill_preserve()
+        cr.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
+        cr.stroke();
 
         // Render slider
+        cr.rectangle (this.TimestampToHScalePos(this.start_timestamp) + 4.5,
+                      this.allocation.height - 39.5,
+                      this.TimestampToHScalePos(this.end_timestamo) + 4.5, 
+                      this.allocation.height - 30.5);
+        pattern = Pattern.linear(0,0,0,9);
+        pattern.add_stop_rgb(0, 0x72/255.0,0x9f/255.0,0xcf/255.0);
+        pattern.add_stop_rgb(1, 0x34/255.0,0x65/255.0,0xa4/255.0);
+        cr.set_source (pattern);
+        cr.fill_preserve();
+        cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
+        // Render some ticks in the middle of the slider
+        var pos = this.TimestampToHScalePos(this.start_timestamp) + ((this.end_timestamp - this.start_timestamp)/2.0) - 9; 
+        for (var i = ??; i < ??; i + 3) {
+          cr.move_to(pos, this.allocation.height - 37.5);
+          cr.line_to(pos, this.allocation.height - 32.5);
+          pos = pos + 3;
+        }
+        cr.stroke();
+        // Slider Highlight
+        cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
+        cr.rectangle (this.TimestampToHScalePos(this.start_timestamp) + 5.5, 
+                      this.allocation.height - 38.5,
+                      this.TimestampToHScalePos(this.end_timestamo) + 5.5, 
+                      this.allocation.height - 31.5);
+        cr.stroke();
 
-        // Render left handle
-
-        // Render right handle
+        this.RenderHandle(cr, this.start_timestamp);
+        this.RenderHandle(cr, this.end_timestamp);
     }
 
     public override bool expose_event (Gdk.EventExpose event) {
@@ -387,7 +446,7 @@ namespace Wiz {
       var cr_foreground_layer = Cairo.create(surface.create_similar());
       this.set_double_buffered(true);
 
-      this.RenderScale(cr_background_layer);
+      this.RenderScale(cr);
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) {
           // Render the edges onto the underneath surface
@@ -396,7 +455,7 @@ namespace Wiz {
         // Render the node onto the ontop surface
         node.Render(cr_foreground_layer);
       }
-      this.RenderControls(cr_foreground_layer);
+
       // composite surfaces together
       // Hopefully FILTER_NEAREST is being set internally by now, if not this
       // is likely to be slow. To work around that we'd have to rework the
@@ -406,6 +465,7 @@ namespace Wiz {
       cr.paint();
       cr.set_source_surface(cr_foreground_layer.get_group_target(), 0, 0);
       cr.paint();
+      this.RenderControls(cr);
       return true;
     }
   }
