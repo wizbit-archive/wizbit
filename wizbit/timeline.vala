@@ -285,7 +285,7 @@ namespace Wiz {
       this.dag_height = this.allocation.height * (total/range)
       this.offset = this.dag_height * (self.start_timestamp/total);
       this.update_visibility();
-      this.queue_draw();//?
+      this.queue_draw();
     }
 
     // This has to be done on pan/zoom so that's a lot of events :/
