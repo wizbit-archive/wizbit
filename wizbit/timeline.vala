@@ -476,8 +476,8 @@ namespace Wiz {
     public override bool expose_event (Gdk.EventExpose event) {
       var cr = Gdk.cairo_create (this.window);
       var surface = cr.get_group_target();
-      var cr_background_layer = Cairo.create(surface.create_similar());
-      var cr_foreground_layer = Cairo.create(surface.create_similar());
+      var cr_background_layer = Cairo.Context(surface.create_similar());
+      var cr_foreground_layer = Cairo.Context(surface.create_similar());
       this.set_double_buffered(true);
 
       this.RenderScale(cr);
