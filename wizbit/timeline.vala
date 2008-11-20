@@ -154,6 +154,8 @@ namespace Wiz {
     public int offset { get; set; }
     public string selected_version_uuid { get; set; }
     public double zoom { get; set; }
+    private int handle_grabbed;
+    private int grab_offset;
 
     public string bit_uuid {
       get {
@@ -323,12 +325,38 @@ namespace Wiz {
         this.mouse_down = true;
         this.mouse_press_x = (int)event.x;
         this.mouse_press_y = (int)event.y;
-    /*
-        are we over the zoom widget
+
+        var st = this.TimestampToHScalePos(this.start_timestamp);
+        var et = this.TimestampToHScalePos(this.end_timestamp);
+        if (event.x > st - 4.5 &&
+            event.y < this.allocation.height - 39.5 &&
+            event.x < et + 4.5 &&
+            event.y > this.allocation.height - 26.5 ) {
+
+            // figure out which part of the control we're over
+            if (event.x > st - 4.5 &&
+                event.x < st + 4.5) {
+                // Over left handle
+                this.handle_grabbed = 1;
+                this.grab_offset = event.x - st;
+                
+            } else if (event.x > et - 4.5 &&
+                       event.x < et + 4.5) {
+                // Over right handle    
+                this.handle_grabbed = 2;            
+                this.grab_offset = event.x - et;
+            } else {
+                // Over the slider bar
+                this.handle_grabbed = 3;
+                this.grab_offset = event.x - ((et - st)/2) + st;
+            }
+        } else {
+            this.handle_grabbed = 0;
+        }
+
         // TODO FFR - This is for kinetic scrolling
         // create a press timestamp (milliseconds) argh, vala time!!!!!
         // this.button_press_timestamp = ?
-    */
         return true;
     }
 
@@ -365,34 +393,29 @@ namespace Wiz {
      */
 
     public override bool motion_notify_event (Gdk.EventMotion event) {
-    /*  TODO
-        if the button is down over the zoom widget
-            extents of the controls            
-            sx, this.TimestampToHScalePos(this.start_timestamp) - 4.5
-            sy, this.allocation.height - 39.5
-            ex, this.TimestampToHScalePos(this.end_timestamp) + 4.5
-            ey, this.allocation.height - 26.5
+        if (this.mouse_down && this.handle_grabbed > 0) {
+                if (event.x != this.mouse_press_x) {
+                //    set handle positions
+                //    update_zoom
+                }
+            return true;
+        }
 
-            figure out which part of the control we're over 
-            have the x/y co-ords changed
-                set handle positions
-                update_zoom
-
-        // This is really FFR part of kinetic scrolling
-        if the button is down elsewhere 
-            pan widget to current co-ords
-        else
-            return false;
-        this.queue_draw();
-        return true;
-    */
+        // TODO This is really FFR part of kinetic scrolling
+        // if the button is down elsewhere 
+        //    pan widget to current co-ords
+        return false;
     }
 
     /* Converts a timestamp into a scale horizontal position. */
     private int TimestampToHScalePos(int timestamp) {
         var range = this.newest_timestamp - this.oldest_timestamp;
         double pos = (timestamp - this.start_timestamp) / range; // unsure of vala casting?
-        return Math.ceil(pos * this.allocation.width - 29); 
+        return Math.ceil((pos * (this.allocation.width - 29.0)) + 14.5); 
+    }
+    private int HScalePosToTimestamp(int xpos) {
+        double ratio = (xpos - 14.5) / (this.allocation.width - 29.0);
+        return ((this.newest_timestamp - this.oldest_timestamp) * ratio) + this.oldest_timestamp;
     }
     /* Get the integer of the month for a timestamp */
     private int TimestampToMonth(int timestamp) {
