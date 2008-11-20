@@ -28,7 +28,7 @@ namespace Wiz {
   /* Each edge is a connetion in a certain direction, from the parent to the
    * child
    */
-  public class TimelineEdge : Glib.Object {
+  public class TimelineEdge : GLib.Object {
     public TimelineNode parent { get; construct; }
     public TimelineNode child { get; construct; }
     private double r;
@@ -47,7 +47,7 @@ namespace Wiz {
         // shouldn't really have a function for set colour though as the colours
         // would be collected from the parent and child
     }
-    public void Render(CairoContext cr) {
+    public void Render(Cairo.Context cr) {
         // Draw a line from each parent.x/y to child.x/y
         cr.move_to(parent.x, parent.y);
         cr.line_to(child.y, child.y);
@@ -68,6 +68,8 @@ namespace Wiz {
     public List<TimelineEdge> edges { get; construct; }
     public int x;
     public int y;
+    public string version_uuid;
+    public int timestamp;
     // Colours! YAY
     private double lr;
     private double lg;
@@ -87,7 +89,7 @@ namespace Wiz {
       this.edges.append(new TimelineEdge(this, child));
     }
 
-    public void RenderNode(CairoContext cr) {
+    public void Render(Cairo.Context cr) {
         if (!this.visible)
             return
         // Render a cirle to cr at x/y position of this.size
@@ -140,8 +142,8 @@ namespace Wiz {
     private int mouse_release_y;
     private double velocity;
     // Dag height/visibility calculated from zoom level
-    private int dag_height;
-    private int dag_width;
+    public int dag_height;
+    public int dag_width;
     private int visible_columns;
     private int total_columns;
     private int oldest_timestamp;
@@ -398,11 +400,11 @@ namespace Wiz {
     }
 
     // TODO
-    public void RenderScale(CairoContext cr) {
+    public void RenderScale(Cairo.Context cr) {
 
     }
 
-    public void RenderHandle(CairoContext cr, int timestamp) {
+    public void RenderHandle(Cairo.Context cr, int timestamp) {
         var hpos = this.TimestampToHScalePos(timestamp);
         cr.move_to(hpos - 4.5, this.allocation.height - 39.5);
         cr.line_to(hpos - 4.5, this.allocation.height - 30.5);
@@ -428,7 +430,7 @@ namespace Wiz {
         cr.stroke();
     }
 
-    public void RenderControls(CairoContext cr) {
+    public void RenderControls(Cairo.Context cr) {
         // Render background
         cr.rectangle(14.5, this.allocation.height - 37.5,
                            this.allocation.width - 14.5,
@@ -463,7 +465,7 @@ namespace Wiz {
         cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
         cr.rectangle (this.TimestampToHScalePos(this.start_timestamp) + 5.5, 
                       this.allocation.height - 38.5,
-                      this.TimestampToHScalePos(this.end_timestamo) - 5.5, 
+                      this.TimestampToHScalePos(this.end_timestamp) - 5.5, 
                       this.allocation.height - 31.5);
         cr.stroke();
 
