@@ -174,6 +174,7 @@ namespace Wiz {
 			return null;
 		}
 
+		/*
 		public List<string> get_nodes() {
 		  var retval = new List<CommitNode>();
 		  var res = this.select_nodes_sql.step();
@@ -196,6 +197,7 @@ namespace Wiz {
 			this.select_node_sql.reset();
 		  return node;
 		}
+		*/
 
 		public bool has_commit(string uuid) {
 			return (this.lookup_commit(uuid) != null);
