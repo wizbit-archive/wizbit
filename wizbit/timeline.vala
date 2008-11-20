@@ -93,7 +93,7 @@ namespace Wiz {
         if (!this.visible)
             return
         // Render a cirle to cr at x/y position of this.size
-        cr.arc(this.x, this.y, this.size, 0, 2*M_PI);//?
+        cr.arc(this.x, this.y, this.size, 0, 2.0 * Math.PI);
         cr.set_source_rgb(this.fr,this.fg,this.fb);
         cr.fill_preserve();
         cr.set_source_rgb(this.lr,this.lg,this.lb);
@@ -391,8 +391,8 @@ namespace Wiz {
     /* Converts a timestamp into a scale horizontal position. */
     private int TimestampToHScalePos(int timestamp) {
         var range = this.newest_timestamp - this.oldest_timestamp;
-        double pos = this.timestamp / range; // unsure of vala casting?
-        return ceil(pos * this.allocation.width - 29); 
+        double pos = (timestamp - this.start_timestamp) / range; // unsure of vala casting?
+        return Math.ceil(pos * this.allocation.width - 29); 
     }
     /* Get the integer of the month for a timestamp */
     private int TimestampToMonth(int timestamp) {
