@@ -383,11 +383,13 @@ namespace Wiz {
 
     /* Converts a timestamp into a scale horizontal position. */
     private int TimestampToHScalePos(int timestamp) {
-
+        var range = this.newest_timestamp - this.oldest_timestamp;
+        double pos = this.timestamp / range; // unsure of vala casting?
+        return ceil(pos * this.allocation.width - 29); 
     }
     /* Get the integer of the month for a timestamp */
     private int TimestampToMonth(int timestamp) {
-
+        // Vala time... PLEASE GIMME DOCS!!!!!!!!
     }
     /* Get the timestamp of a specific d/m/y */
     private int DateToTimestamp(int d, int m, int y) {
