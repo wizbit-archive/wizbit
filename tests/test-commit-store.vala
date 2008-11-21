@@ -14,7 +14,7 @@ RarCommit create_dummy_commits(CommitStore store, uint no_commits, RarCommit ?gr
 		nw.timestamp = (int) time_t();
 		var t = new TimeVal();
 		t.get_current_time();
-		nw.timestamp2 = t.tv_usec;
+		nw.timestamp2 = (int) t.tv_usec;
 
 		cur = store.store_commit(nw);
 	}

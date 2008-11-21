@@ -95,7 +95,7 @@ namespace Wiz {
 			// and is probably good enough
 			var t = new TimeVal();
 			t.get_current_time();
-			commit.timestamp2 = t.tv_usec;
+			commit.timestamp2 = (int) t.tv_usec;
 
 			this.commits.store_commit(commit);
 
