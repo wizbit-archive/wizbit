@@ -91,7 +91,7 @@ namespace Wiz {
 
     public void Render(Cairo.Context cr) {
         if (!this.visible)
-            return
+            return;
         // Render a cirle to cr at x/y position of this.size
         cr.arc(this.x, this.y, this.size, 0, 2.0 * Math.PI);
         cr.set_source_rgb(this.fr,this.fg,this.fb);
@@ -303,8 +303,7 @@ namespace Wiz {
         foreach (var node in this.nodes) {
             if ((node.timestamp <= this.end_timestamp) && (node.timestamp >= this.start_timestamp)) {
                 node.visible = true;
-                var parents = node.edges;
-                foreach (var parent in parents) {
+                foreach (var parent in node.edges) {
                     if (parent.child.version_uuid == node.version_uuid) {
                     // TODO if distance is less than the radius of the node,
                     // set visibility of parent to false and increase radius
@@ -441,15 +440,15 @@ namespace Wiz {
     /* Get the integer of the month for a timestamp */
     private int TimestampToMonth(int timestamp) {
         // Vala time... PLEASE GIMME DOCS!!!!!!!!
+        return 0;
     }
     /* Get the timestamp of a specific d/m/y */
     private int DateToTimestamp(int d, int m, int y) {
-
+        return 0;
     }
 
     // TODO
     public void RenderScale(Cairo.Context cr) {
-
     }
 
     public void RenderHandle(Cairo.Context cr, int timestamp) {
