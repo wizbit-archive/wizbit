@@ -460,9 +460,9 @@ namespace Wiz {
         cr.line_to(hpos + 4.5, this.allocation.height - 30.5);
         cr.line_to(hpos + 4.5, this.allocation.height - 39.5);
         cr.line_to(hpos - 4.5, this.allocation.height - 39.5);
-        var pattern = Pattern.linear(0,0,9,0);
-        pattern.add_stop_rgb(0, 0xee/255.0, 0xee/255.0, 0xec/255.0); 
-        pattern.add_stop_rgb(1, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
+        var pattern = new Cairo.Pattern.linear(0,0,0,6);
+        pattern.add_color_stop_rgb(0, 0xee/255.0, 0xee/255.0, 0xec/255.0); 
+        pattern.add_color_stop_rgb(1, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
         cr.set_source (pattern);
         cr.fill_preserve();
         cr.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
@@ -483,9 +483,9 @@ namespace Wiz {
         cr.rectangle(14.5, this.allocation.height - 37.5,
                            this.allocation.width - 14.5,
                            this.allocation.height - 31.5);
-        var pattern = Pattern.linear(0,0,0,6);
-        pattern.add_stop_rgb(0, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
-        pattern.add_stop_rgb(1, 0xee/255.0, 0xee/255.0, 0xec/255.0);
+        var pattern = new Cairo.Pattern.linear(0,0,0,6);
+        pattern.add_color_stop_rgb(0, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
+        pattern.add_color_stop_rgb(1, 0xee/255.0, 0xee/255.0, 0xec/255.0);
         cr.set_source (pattern);
         cr.fill_preserve();
         cr.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
@@ -494,11 +494,11 @@ namespace Wiz {
         // Render slider
         cr.rectangle (this.TimestampToHScalePos(this.start_timestamp) + 4.5,
                       this.allocation.height - 39.5,
-                      this.TimestampToHScalePos(this.end_timestamo) - 4.5, 
+                      this.TimestampToHScalePos(this.end_timestamp) - 4.5, 
                       this.allocation.height - 30.5);
-        pattern = Pattern.linear(0,0,0,9);
-        pattern.add_stop_rgb(0, 0x72/255.0,0x9f/255.0,0xcf/255.0);
-        pattern.add_stop_rgb(1, 0x34/255.0,0x65/255.0,0xa4/255.0);
+        pattern = new Cairo.Pattern.linear(0,0,0,6);
+        pattern.add_color_stop_rgb(0, 0x72/255.0,0x9f/255.0,0xcf/255.0);
+        pattern.add_color_stop_rgb(1, 0x34/255.0,0x65/255.0,0xa4/255.0);
         cr.set_source (pattern);
         cr.fill_preserve();
         cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
@@ -524,8 +524,8 @@ namespace Wiz {
     public override bool expose_event (Gdk.EventExpose event) {
       var cr = Gdk.cairo_create (this.window);
       var surface = cr.get_group_target();
-      var cr_background_layer = Cairo.Context(surface.create_similar());
-      var cr_foreground_layer = Cairo.Context(surface.create_similar());
+      var cr_background_layer = new Cairo.Context(new Cairo.Surface.similar(surface, Cairo.Content.COLOR_ALPHA, this.allocation.width, this.allocation.height));
+      var cr_foreground_layer = new Cairo.Context(new Cairo.Surface.similar(surface, Cairo.Content.COLOR_ALPHA, this.allocation.width, this.allocation.height));
       this.set_double_buffered(true);
 
       this.RenderScale(cr);
