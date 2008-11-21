@@ -4,9 +4,9 @@
 
 /**
  * TODO
- * 1. Create renderers for widget controls and the scale. Drawn needs to be 
+ * 1. Create renderers for ~widget controls~ and the scale. Drawn needs to be 
  *    converted to cairo code
- * 2. Update signal handlers figure out the click zones, Control changes (zoom/scroll)
+ * 2. Get it building and fix any rounding/off by one errors in the maths
  * 3. Column calculations, this is pretty difficult, but just takes a little thinking about
  * 4. Signal emitted for selection changed
  * 5. Setting the selected node will scroll it to center
@@ -111,7 +111,7 @@ namespace Wiz {
         var graph_width = timeline.get_allocation_width();
         // this probably has a few off by one errors :/ 
         this.x = (graph_width / total_columns) * column;
-        this.y = (dag_height * position) - offset;
+        this.y = (int)((double)dag_height * position) - offset;
 
         var hue = (column / total_columns);
         // Made up values ;/
@@ -179,8 +179,8 @@ namespace Wiz {
     construct {
       this.tips = new List<TimelineNode>();
       this.update_from_store();
-      this.default_width = 80;
-      this.default_height = 160;
+      this.default_width = 200;
+      this.default_height = 400;
     }
     public int get_allocation_width() {
         return this.allocation.width;
@@ -320,6 +320,28 @@ namespace Wiz {
             node.SetPosition(this, (node.timestamp - this.oldest_timestamp) / this.newest_timestamp, column, size);
         }
     }
+    /*
+     * Update the timestamp's from where the position controls are.
+     *
+     */
+    public void update_controls(int x) {
+        if (this.handle_grabbed < 1) {
+            return; // You don't have to go home but you can't stay here
+        } else {
+            var xpos = x - this.grab_offset;
+
+            if (this.handle_grabbed == 1) {
+                this.start_timestamp = this.HScalePosToTimestamp(xpos);
+            } else if (this.handle_grabbed == 2) {
+                this.end_timestamp = this.HScalePosToTimestamp(xpos);
+            } else if (this.handle_grabbed == 3) {
+                var click_timestamp = this.HScalePosToTimestamp(xpos);
+                var half_time = (this.end_timestamp - this.start_timestamp)/2; 
+                this.start_timestamp = click_timestamp - half_time;
+                this.end_timestamp = click_timestamp + half_time;
+            }
+        }
+    }
 
     public override bool button_press_event (Gdk.EventButton event) {
         this.mouse_down = true;
@@ -338,17 +360,16 @@ namespace Wiz {
                 event.x < st + 4.5) {
                 // Over left handle
                 this.handle_grabbed = 1;
-                this.grab_offset = event.x - st;
-                
+                this.grab_offset = (int)event.x - st;
             } else if (event.x > et - 4.5 &&
                        event.x < et + 4.5) {
                 // Over right handle    
                 this.handle_grabbed = 2;            
-                this.grab_offset = event.x - et;
+                this.grab_offset = (int)event.x - et;
             } else {
                 // Over the slider bar
                 this.handle_grabbed = 3;
-                this.grab_offset = event.x - ((et - st)/2) + st;
+                this.grab_offset = (int)event.x - ((et - st)/2) + st;
             }
         } else {
             this.handle_grabbed = 0;
@@ -364,20 +385,20 @@ namespace Wiz {
         this.mouse_down = false;
         this.mouse_release_x = (int)event.x;
         this.mouse_release_y = (int)event.y;
-    /*  TODO
-        are we over the controls?
-            compute the change in the controls
-        else
+        if (this.handle_grabbed > 0) {
+            this.update_controls(this.mouse_release_x);
+            this.update_zoom();
+        }   // else {
             // TODO FFR - This is for kinetic scrolling
             // create release timestamp (milliseconds)
             // this.button_release_timestamp = ?
             // calculate the distance travelled in that time and therefore the speed
             // start a timer which controls the speed/positioning (kinetic scroll)
             // horizontal scrolling will change the zoom level
-     */
+        this.handle_grabbed = 0;
         return true;
     }
-/* CAN'T DO BUTTON CLICK ARG! Need to work this into release somehow :/
+/* FIXME CAN'T DO BUTTON CLICK ARG! Need to work this into release somehow :/
     public override bool button_click_event (Gdk.EventButton event) {
         this.mouse_down = false;
       TODO - we have to iterate over the widgets and check the polar distance
@@ -394,10 +415,10 @@ namespace Wiz {
 
     public override bool motion_notify_event (Gdk.EventMotion event) {
         if (this.mouse_down && this.handle_grabbed > 0) {
-                if (event.x != this.mouse_press_x) {
-                //    set handle positions
-                //    update_zoom
-                }
+            if (event.x != this.mouse_press_x) {
+                this.update_controls((int)event.x);
+                this.update_zoom();
+            }
             return true;
         }
 
@@ -410,12 +431,12 @@ namespace Wiz {
     /* Converts a timestamp into a scale horizontal position. */
     private int TimestampToHScalePos(int timestamp) {
         var range = this.newest_timestamp - this.oldest_timestamp;
-        double pos = (timestamp - this.start_timestamp) / range; // unsure of vala casting?
-        return Math.ceil((pos * (this.allocation.width - 29.0)) + 14.5); 
+        double pos = ((double)timestamp - (double)this.start_timestamp) / (double)range; // unsure of vala casting?
+        return (int)Math.ceil((pos * ((double)this.allocation.width - 29.0)) + 14.5); 
     }
     private int HScalePosToTimestamp(int xpos) {
         double ratio = (xpos - 14.5) / (this.allocation.width - 29.0);
-        return ((this.newest_timestamp - this.oldest_timestamp) * ratio) + this.oldest_timestamp;
+        return (int)Math.ceil(((this.newest_timestamp - this.oldest_timestamp) * ratio) + this.oldest_timestamp);
     }
     /* Get the integer of the month for a timestamp */
     private int TimestampToMonth(int timestamp) {
