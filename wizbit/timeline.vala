@@ -65,7 +65,7 @@ namespace Wiz {
     public bool visible { get; set; }
     public bool root { get; set; }
     public bool tip { get; set; }
-    public List<TimelineEdge> edges { get; construct; }
+    public weak List<TimelineEdge> edges { get; construct; }
     public int x;
     public int y;
     public string version_uuid;
@@ -82,6 +82,10 @@ namespace Wiz {
     public TimelineNode (string version_uuid, int timestamp) {
       this.version_uuid = version_uuid;
       this.timestamp = timestamp;
+      this.edges = new List<TimelineEdge>();
+    }
+
+    construct {
       this.edges = new List<TimelineEdge>();
     }
 
@@ -129,7 +133,7 @@ namespace Wiz {
     private TimelineNode primary_tip;
     private TimelineNode root;
     private Bit bit;
-    private Store store;
+    public Store store { get; construct; }
     private CommitStore commit_store;
     private int default_width;
     private int default_height;
@@ -162,17 +166,17 @@ namespace Wiz {
         return this.bit.uuid;
       }
       set {
-        this.bit = this.store.open_bit(value);
-        this.commit_store = this.bit.commits;
+        if (value != null) {
+            this.bit = this.store.open_bit(value);
+            this.commit_store = this.bit.commits;
+        }
       }
     }
 
     // We can construct with no bit specified, and use bit_uuid to open the bit
     public Timeline(Store store, string? bit_uuid) {
       this.store = store;
-      if (bit_uuid != null) {
-        this.bit_uuid = bit_uuid;
-      }
+      this.bit_uuid = bit_uuid;
       this.mouse_down = false;
     }
 
@@ -268,7 +272,7 @@ namespace Wiz {
       this.window.set_user_data (null);
     }
 
-    public override void size_request (Gtk.Requisition requisition) {
+    public override void size_request (out Gtk.Requisition requisition) {
       requisition.width = this.default_width;
       requisition.height = this.default_height; 
     }
