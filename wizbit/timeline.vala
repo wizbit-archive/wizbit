@@ -6,13 +6,13 @@
  * TODO
  * 1. Create renderers for ~widget controls~ and the scale. Drawn needs to be 
  *    converted to cairo code
- * 2. Get it building and fix any rounding/off by one errors in the maths
+ * 2. ~Get it building~ and fix any rounding/off by one errors in the maths
  * 3. Column calculations, this is pretty difficult, but just takes a little thinking about
  * 4. Signal emitted for selection changed
  * 5. Setting the selected node will scroll it to center
  * 6. Animations while timeline view changes, don't let zooming/panning
  *    be jumpy.
- * 7. Rename a bunch of things which are horribly named!
+ * 7. Rename a bunch of things which are horribly named! 
  * 8. Optimize the shizzle out of it! profile update_from_store especially
  * 9. use CIEXYZ colourspace for coloum colouring
  * For Future Release;
@@ -40,19 +40,19 @@ namespace Wiz {
       this.child = child;
     }
     public void SetColor(double r, double g, double b) {
-        this.r = r;
-        this.g = g;
-        this.b = b;
-        // TODO Should also have a gradient fill, set up to blend the branching :/
-        // shouldn't really have a function for set colour though as the colours
-        // would be collected from the parent and child
+      this.r = r;
+      this.g = g;
+      this.b = b;
+      // TODO Should also have a gradient fill, set up to blend the branching :/
+      // shouldn't really have a function for set colour though as the colours
+      // would be collected from the parent and child
     }
     public void Render(Cairo.Context cr) {
-        // Draw a line from each parent.x/y to child.x/y
-        cr.move_to(parent.x, parent.y);
-        cr.line_to(child.y, child.y);
-        cr.set_source_rgb(this.r,this.g,this.b);
-        cr.stroke();
+      // Draw a line from each parent.x/y to child.x/y
+      cr.move_to(parent.x, parent.y);
+      cr.line_to(child.y, child.y);
+      cr.set_source_rgb(this.r,this.g,this.b);
+      cr.stroke();
     }
   }
 
@@ -94,36 +94,36 @@ namespace Wiz {
     }
 
     public void Render(Cairo.Context cr) {
-        if (!this.visible)
-            return;
-        // Render a cirle to cr at x/y position of this.size
-        cr.arc(this.x, this.y, this.size, 0, 2.0 * Math.PI);
-        cr.set_source_rgb(this.fr,this.fg,this.fb);
-        cr.fill_preserve();
-        cr.set_source_rgb(this.lr,this.lg,this.lb);
-        cr.stroke();
+      if (!this.visible)
+        return;
+      // Render a cirle to cr at x/y position of this.size
+      cr.arc(this.x, this.y, this.size, 0, 2.0 * Math.PI);
+      cr.set_source_rgb(this.fr,this.fg,this.fb);
+      cr.fill_preserve();
+      cr.set_source_rgb(this.lr,this.lg,this.lb);
+      cr.stroke();
     }
 
     public void SetPosition( Timeline timeline, double position, int column, int size ) {
-        if (!this.visible)
-            return;
+      if (!this.visible)
+        return;
         // Some of these will be private
-        var dag_width = timeline.dag_width;
-        var dag_height = timeline.dag_height;
-        var offset = timeline.offset;
-        var total_columns = timeline.total_columns;
-        var graph_width = timeline.get_allocation_width();
-        // this probably has a few off by one errors :/ 
-        this.x = (graph_width / total_columns) * column;
-        this.y = (int)((double)dag_height * position) - offset;
+      var dag_width = timeline.dag_width;
+      var dag_height = timeline.dag_height;
+      var offset = timeline.offset;
+      var total_columns = timeline.total_columns;
+      var graph_width = timeline.get_allocation_width();
+      // this probably has a few off by one errors :/ 
+      this.x = (graph_width / total_columns) * column;
+      this.y = (int)((double)dag_height * position) - offset;
 
-        var hue = (column / total_columns);
-        // Made up values ;/
-        var sat = 0.5;
-        var val = 0.3;
-        // Convert to rgb for fill fr,fg,fb
-        val = 0.1;
-        // Convert to rgb for line lr,lg,lb
+      var hue = (column / total_columns);
+      // Made up values ;/
+      var sat = 0.5;
+      var val = 0.3;
+      // Convert to rgb for fill fr,fg,fb
+      val = 0.1;
+      // Convert to rgb for line lr,lg,lb
     }
   }
 
@@ -182,15 +182,16 @@ namespace Wiz {
 
     construct {
       this.tips = new List<TimelineNode>();
-      this.update_from_store();
-      this.default_width = 200;
+      this.default_width = 250;
       this.default_height = 400;
+      this.update_from_store();
     }
     public int get_allocation_width() {
         return this.allocation.width;
     }
 
     public void update_from_store () {
+      stdout.printf("Updating the timeline from the bit store\n");
       this.nodes = this.commit_store.get_nodes();
       // Iterate the new nodes and add edges
       string root = this.commit_store.get_root();
@@ -199,8 +200,8 @@ namespace Wiz {
       // Try and save a few iterations of the nodes by doing the edges during
       // the first tip cycle, its not pretty but it works
       bool edges_done = false;
-      bool child_found;
       foreach (var tip in tips) {
+        stdout.printf("Iterating tip %s\n", tip);
         foreach (var node in this.nodes) {
           if (tip == node.version_uuid) {
             this.tips.append(node);
@@ -301,27 +302,27 @@ namespace Wiz {
 
     // This has to be done on pan/zoom so that's a lot of events :/
     private void update_visibility() {
-        var size = 8;
-        var parents = new List<string>();
-        var column = 0;
-        foreach (var node in this.nodes) {
-            if ((node.timestamp <= this.end_timestamp) && (node.timestamp >= this.start_timestamp)) {
-                node.visible = true;
-                foreach (var parent in node.edges) {
-                    if (parent.child.version_uuid == node.version_uuid) {
-                    // TODO if distance is less than the radius of the node,
-                    // set visibility of parent to false and increase radius
-                    // we know our timestamps in nodes are oldest first so we 
-                    // won't overwrite it
-                    }
-                }
-            } else {
-                node.visible = false;
+      var size = 8;
+      var parents = new List<string>();
+      var column = 0;
+      foreach (var node in this.nodes) {
+        if ((node.timestamp <= this.end_timestamp) && (node.timestamp >= this.start_timestamp)) {
+          node.visible = true;
+          foreach (var parent in node.edges) {
+            if (parent.child.version_uuid == node.version_uuid) {
+              // TODO if distance is less than the radius of the node,
+              // set visibility of parent to false and increase radius
+              // we know our timestamps in nodes are oldest first so we 
+              // won't overwrite it
             }
-            // TODO Calculate column, this is pretty anoying, we need to increment
-            // every time we have a new branch :/ That means iterating forwards
-            node.SetPosition(this, (node.timestamp - this.oldest_timestamp) / this.newest_timestamp, column, size);
+          }
+        } else {
+          node.visible = false;
         }
+        // TODO Calculate column, this is pretty anoying, we need to increment
+        // every time we have a new branch :/ That means iterating forwards
+        node.SetPosition(this, (node.timestamp - this.oldest_timestamp) / this.newest_timestamp, column, size);
+      }
     }
     /*
      * Update the timestamp's from where the position controls are.
