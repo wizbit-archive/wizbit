@@ -37,10 +37,10 @@ namespace Wiz {
 		 * although adding a upper and lower limit to the timestamps would be a good optimisation.
 		 */
 		private static const string SELECT_NODES_SQL =
-			"SELECT c.uuid, c.timestamp FROM commits AS c WHERE ORDER BY c.timestamp";
+			"SELECT c.uuid, c.timestamp FROM commits AS c ORDER BY c.timestamp";
 
 		private static const string SELECT_NODE_SQL =
-		  "SELECT c.uuid, c.timestamp FROM commits AS c WHERE c.uuid = ? LIMIT 1";
+			"SELECT c.uuid, c.timestamp FROM commits AS c WHERE c.uuid = ? LIMIT 1";
 
 		private static const string SELECT_RELATION_SQL =
 			"SELECT r.parent_id FROM relations AS r WHERE r.node_id=?";
@@ -79,8 +79,8 @@ namespace Wiz {
 			this.prepare_statement(INSERT_RELATION_SQL, out insert_relation_sql);
 			this.prepare_statement(SELECT_COMMIT_SQL, out select_commit_sql);
 			this.prepare_statement(SELECT_COMMIT_BY_ID_SQL, out select_commit_by_id_sql);
-		  this.prepare_statement(SELECT_NODES_SQL, out select_nodes_sql);
-		  this.prepare_statement(SELECT_NODE_SQL, out select_node_sql);
+			this.prepare_statement(SELECT_NODES_SQL, out select_nodes_sql);
+			this.prepare_statement(SELECT_NODE_SQL, out select_node_sql);
 			this.prepare_statement(SELECT_RELATION_SQL, out select_relation_sql);
 		}
 
@@ -113,7 +113,7 @@ namespace Wiz {
 			this.go_forwards_sql.bind_text(1, version_uuid);
 			var res = this.go_forwards_sql.step();
 			while (res == Sqlite.ROW) {
-			  this.select_commit_by_id_sql.bind_int(1, this.go_forwards_sql.column_int(0));
+				this.select_commit_by_id_sql.bind_int(1, this.go_forwards_sql.column_int(0));
 				this.select_commit_by_id_sql.step();
 				retval.append(this.select_commit_by_id_sql.column_text(0));
 				this.select_commit_by_id_sql.reset();
@@ -128,9 +128,9 @@ namespace Wiz {
 			this.go_forwards_sql.bind_text(1, version_uuid);
 			var res = this.go_forwards_sql.step();
 			this.select_commit_by_id_sql.bind_int(1, this.go_forwards_sql.column_int(0));
-	  	this.select_commit_by_id_sql.step();
+			this.select_commit_by_id_sql.step();
 			var retval = this.select_commit_by_id_sql.column_text(0);
-	  	this.select_commit_by_id_sql.reset();
+			this.select_commit_by_id_sql.reset();
 			this.go_forwards_sql.reset();
 			return retval;
 		}
@@ -140,7 +140,7 @@ namespace Wiz {
 			this.go_backwards_sql.bind_text(1, version_uuid);
 			var res = this.go_backwards_sql.step();
 			while (res == Sqlite.ROW) {
-			  this.select_commit_by_id_sql.bind_int(1, this.go_backwards_sql.column_int(0));
+				this.select_commit_by_id_sql.bind_int(1, this.go_backwards_sql.column_int(0));
 				this.select_commit_by_id_sql.step();
 				retval.append(this.select_commit_by_id_sql.column_text(0));
 				this.select_commit_by_id_sql.reset();
@@ -155,9 +155,9 @@ namespace Wiz {
 			this.go_backwards_sql.bind_text(1, version_uuid);
 			var res = this.go_backwards_sql.step();
 			this.select_commit_by_id_sql.bind_int(1, this.go_backwards_sql.column_int(0));
-	  	this.select_commit_by_id_sql.step();
+			this.select_commit_by_id_sql.step();
 			var retval = this.select_commit_by_id_sql.column_text(0);
-	  	this.select_commit_by_id_sql.reset();
+			this.select_commit_by_id_sql.reset();
 			this.go_backwards_sql.reset();
 			return retval;
 		}
@@ -217,7 +217,7 @@ namespace Wiz {
 			c.committer = this.select_commit_sql.column_text(1);
 			c.timestamp = this.select_commit_sql.column_int(2);
 			c.timestamp2 = this.select_commit_sql.column_int(3);
-		  int commit_id = this.select_commit_sql.column_int(4);
+			int commit_id = this.select_commit_sql.column_int(4);
 			this.select_commit_sql.reset();
 
 			this.select_relation_sql.bind_int(1, commit_id);
