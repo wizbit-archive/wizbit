@@ -29,8 +29,8 @@ namespace Wiz {
    * child
    */
   public class TimelineEdge : GLib.Object {
-    public TimelineNode parent { get; construct; }
-    public TimelineNode child { get; construct; }
+    public TimelineNode parent;
+    public TimelineNode child;
     private double r;
     private double g;
     private double b;
@@ -39,6 +39,7 @@ namespace Wiz {
       this.parent = parent;
       this.child = child;
     }
+
     public void SetColor(double r, double g, double b) {
       this.r = r;
       this.g = g;
@@ -60,7 +61,7 @@ namespace Wiz {
    * the edges contain the direction of this connection. The node also stores
    * its position and size within the widget.
    */
-  public class TimelineNode {
+  public class TimelineNode : GLib.Object {
     public double size { get; set; }
     public bool visible { get; set; }
     public bool root { get; set; }
@@ -132,9 +133,9 @@ namespace Wiz {
     private List<TimelineNode> tips;
     private TimelineNode primary_tip;
     private TimelineNode root;
-    private Bit bit;
-    public Store store { get; construct; }
-    private CommitStore commit_store;
+    private Bit bit = null;
+    private Store store = null;
+    private CommitStore commit_store = null;
     private int default_width;
     private int default_height;
     // Event handling, kinetic scrolling properties
@@ -168,7 +169,9 @@ namespace Wiz {
       set {
         if (value != null) {
             this.bit = this.store.open_bit(value);
+            assert(this.bit.commits != null);
             this.commit_store = this.bit.commits;
+            assert(this.commit_store != null);
         }
       }
     }
@@ -176,22 +179,23 @@ namespace Wiz {
     // We can construct with no bit specified, and use bit_uuid to open the bit
     public Timeline(Store store, string? bit_uuid) {
       this.store = store;
+      stdout.printf("Bit UUID: %s\n", bit_uuid);
       this.bit_uuid = bit_uuid;
-      this.mouse_down = false;
-    }
-
-    construct {
       this.tips = new List<TimelineNode>();
+      this.mouse_down = false;
       this.default_width = 250;
       this.default_height = 400;
       this.update_from_store();
     }
+
+    // FIXME this is dumb, maybe I should just move setposition/render into Timeline from TimelineNode
     public int get_allocation_width() {
         return this.allocation.width;
     }
 
     public void update_from_store () {
       stdout.printf("Updating the timeline from the bit store\n");
+      assert(this.commit_store != null);
       this.nodes = this.commit_store.get_nodes();
       // Iterate the new nodes and add edges
       string root = this.commit_store.get_root();
@@ -225,16 +229,16 @@ namespace Wiz {
                 }
               }
             }
-            if (node.timestamp > this.newest_timestamp) {
-              this.newest_timestamp = node.timestamp;
-            }
-            if (node.timestamp < this.oldest_timestamp) {
-              this.oldest_timestamp = node.timestamp;
-            }
           }
         }
         edges_done = true;
       }
+      this.newest_timestamp = this.primary_tip.timestamp;
+      this.oldest_timestamp = this.root.timestamp;
+      stdout.printf("Oldest: %d\n", this.oldest_timestamp);
+      stdout.printf("Newest: %d\n", this.newest_timestamp);
+      this.start_timestamp = this.oldest_timestamp;
+      this.end_timestamp = this.newest_timestamp;
     }
 
     public override void realize () {
@@ -351,14 +355,14 @@ namespace Wiz {
         this.mouse_down = true;
         this.mouse_press_x = (int)event.x;
         this.mouse_press_y = (int)event.y;
-
         var st = this.TimestampToHScalePos(this.start_timestamp);
         var et = this.TimestampToHScalePos(this.end_timestamp);
+        stdout.printf("%d, %d : %d, %d", this.mouse_press_x, this.mouse_press_y, st, et);
         if (event.x > st - 4.5 &&
             event.y < this.allocation.height - 39.5 &&
             event.x < et + 4.5 &&
             event.y > this.allocation.height - 26.5 ) {
-
+            stdout.printf("grab\n");
             // figure out which part of the control we're over
             if (event.x > st - 4.5 &&
                 event.x < st + 4.5) {
@@ -418,6 +422,7 @@ namespace Wiz {
      */
 
     public override bool motion_notify_event (Gdk.EventMotion event) {
+            stdout.printf("motion\n");
         if (this.mouse_down && this.handle_grabbed > 0) {
             if (event.x != this.mouse_press_x) {
                 this.update_controls((int)event.x);
@@ -458,13 +463,13 @@ namespace Wiz {
 
     public void RenderHandle(Cairo.Context cr, int timestamp) {
         var hpos = this.TimestampToHScalePos(timestamp);
-        cr.move_to(hpos - 4.5, this.allocation.height - 39.5);
-        cr.line_to(hpos - 4.5, this.allocation.height - 30.5);
+        cr.move_to(hpos - 3.5, this.allocation.height - 39.5);
+        cr.line_to(hpos - 3.5, this.allocation.height - 30.5);
         cr.line_to(hpos, this.allocation.height - 26.5);
-        cr.line_to(hpos + 4.5, this.allocation.height - 30.5);
-        cr.line_to(hpos + 4.5, this.allocation.height - 39.5);
-        cr.line_to(hpos - 4.5, this.allocation.height - 39.5);
-        var pattern = new Cairo.Pattern.linear(0,0,0,6);
+        cr.line_to(hpos + 3.5, this.allocation.height - 30.5);
+        cr.line_to(hpos + 3.5, this.allocation.height - 39.5);
+        cr.line_to(hpos - 3.5, this.allocation.height - 39.5);
+        var pattern = new Cairo.Pattern.linear(hpos - 3.5, 0, hpos + 3.5,0);
         pattern.add_color_stop_rgb(0, 0xee/255.0, 0xee/255.0, 0xec/255.0); 
         pattern.add_color_stop_rgb(1, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
         cr.set_source (pattern);
@@ -473,52 +478,53 @@ namespace Wiz {
         cr.stroke();
 
         cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
-        cr.move_to(hpos - 3.5, this.allocation.height - 38.5);
-        cr.line_to(hpos - 3.5, this.allocation.height - 30.85);
+        cr.move_to(hpos - 2.5, this.allocation.height - 38.5);
+        cr.line_to(hpos - 2.5, this.allocation.height - 30.85);
         cr.line_to(hpos, this.allocation.height - 28.0);
-        cr.line_to(hpos + 3.5, this.allocation.height - 30.85);
-        cr.line_to(hpos + 3.5, this.allocation.height - 38.5);
-        cr.line_to(hpos - 3.5, this.allocation.height - 38.5);
+        cr.line_to(hpos + 2.5, this.allocation.height - 30.85);
+        cr.line_to(hpos + 2.5, this.allocation.height - 38.5);
+        cr.line_to(hpos - 2.5, this.allocation.height - 38.5);
         cr.stroke();
     }
 
     public void RenderControls(Cairo.Context cr) {
+        int start_pos = this.TimestampToHScalePos(this.start_timestamp);
+        int end_pos = this.TimestampToHScalePos(this.end_timestamp);
         // Render background
         cr.rectangle(14.5, this.allocation.height - 37.5,
-                           this.allocation.width - 14.5,
-                           this.allocation.height - 31.5);
-        var pattern = new Cairo.Pattern.linear(0,0,0,6);
+                     this.allocation.width - 29.0, 6.0);
+        var pattern = new Cairo.Pattern.linear(0, this.allocation.height - 37.5, 0, this.allocation.height - 31.5);
         pattern.add_color_stop_rgb(0, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
         pattern.add_color_stop_rgb(1, 0xee/255.0, 0xee/255.0, 0xec/255.0);
+        cr.set_line_width(1);
         cr.set_source (pattern);
         cr.fill_preserve();
         cr.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
         cr.stroke();
 
+        stdout.printf("s %d\n", start_pos);
+        stdout.printf("e %d\n", end_pos);
         // Render slider
-        cr.rectangle (this.TimestampToHScalePos(this.start_timestamp) + 4.5,
-                      this.allocation.height - 39.5,
-                      this.TimestampToHScalePos(this.end_timestamp) - 4.5, 
-                      this.allocation.height - 30.5);
-        pattern = new Cairo.Pattern.linear(0,0,0,6);
+        cr.rectangle (start_pos + 3.5, this.allocation.height - 39.5,
+                      end_pos - start_pos - 7, 9);
+        pattern = new Cairo.Pattern.linear(0, this.allocation.height - 39.5, 
+                                           0,this.allocation.height - 30.5);
         pattern.add_color_stop_rgb(0, 0x72/255.0,0x9f/255.0,0xcf/255.0);
         pattern.add_color_stop_rgb(1, 0x34/255.0,0x65/255.0,0xa4/255.0);
         cr.set_source (pattern);
         cr.fill_preserve();
         cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
         // Render some ticks in the middle of the slider
-        var pos = this.TimestampToHScalePos(this.start_timestamp) + ((this.end_timestamp - this.start_timestamp)/2.0) - 8.5; 
-        for (var i = pos; i < pos + 9; i + 3) {
-          cr.move_to(pos, this.allocation.height - 37.5);
-          cr.line_to(pos, this.allocation.height - 32.5);
+        var pos = this.TimestampToHScalePos(this.start_timestamp + ((this.end_timestamp - this.start_timestamp)/2)) - 8.5; 
+        for (var i = 0; i < 3; i++) {
+          cr.move_to(pos + (i * 3), this.allocation.height - 37.5);
+          cr.line_to(pos + (i * 3), this.allocation.height - 32.5);
         }
         cr.stroke();
         // Slider Highlight
         cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
-        cr.rectangle (this.TimestampToHScalePos(this.start_timestamp) + 5.5, 
-                      this.allocation.height - 38.5,
-                      this.TimestampToHScalePos(this.end_timestamp) - 5.5, 
-                      this.allocation.height - 31.5);
+        cr.rectangle (start_pos + 4.5, this.allocation.height - 38.5,
+                      end_pos - start_pos - 9, 7);
         cr.stroke();
 
         this.RenderHandle(cr, this.start_timestamp);
@@ -527,19 +533,21 @@ namespace Wiz {
 
     public override bool expose_event (Gdk.EventExpose event) {
       var cr = Gdk.cairo_create (this.window);
-      var surface = cr.get_group_target();
-      var cr_background_layer = new Cairo.Context(new Cairo.Surface.similar(surface, Cairo.Content.COLOR_ALPHA, this.allocation.width, this.allocation.height));
-      var cr_foreground_layer = new Cairo.Context(new Cairo.Surface.similar(surface, Cairo.Content.COLOR_ALPHA, this.allocation.width, this.allocation.height));
-      this.set_double_buffered(true);
+      //var surface = cr.get_group_target();
+      //var cr_background_layer = new Cairo.Context(new Cairo.Surface.similar(surface, Cairo.Content.COLOR_ALPHA, this.allocation.width, this.allocation.height));
+      //var cr_foreground_layer = new Cairo.Context(new Cairo.Surface.similar(surface, Cairo.Content.COLOR_ALPHA, this.allocation.width, this.allocation.height));
+      //this.set_double_buffered(true);
 
-      this.RenderScale(cr);
+      //this.RenderScale(cr);
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) {
           // Render the edges onto the underneath surface
-          edge.Render(cr_background_layer);
+          //edge.Render(cr_background_layer);
+          stdout.printf("Rendering edge between %s and %s\n", edge.parent.version_uuid, edge.child.version_uuid);
         }
         // Render the node onto the ontop surface
-        node.Render(cr_foreground_layer);
+        //node.Render(cr);
+        stdout.printf("Rendering node %s\n", node.version_uuid);
       }
 
       // composite surfaces together
@@ -547,10 +555,10 @@ namespace Wiz {
       // is likely to be slow. To work around that we'd have to rework the
       // rendering order to be able to render the edges under the nodes, that
       // would mean that we'd have to iterate the nodes again after the edges.
-      cr.set_source_surface(cr_background_layer.get_group_target(), 0, 0);
-      cr.paint();
-      cr.set_source_surface(cr_foreground_layer.get_group_target(), 0, 0);
-      cr.paint();
+      //cr.set_source_surface(cr_background_layer.get_group_target(), 0, 0);
+      //cr.paint();
+      //cr.set_source_surface(cr_foreground_layer.get_group_target(), 0, 0);
+      //cr.paint();
       this.RenderControls(cr);
       return true;
     }
