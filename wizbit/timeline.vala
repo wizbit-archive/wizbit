@@ -4,17 +4,14 @@
 
 /**
  * TODO
- * 1. Create renderers for ~widget controls~ and the scale. Drawn needs to be 
- *    converted to cairo code
- * 2. ~Get it building~ and fix any rounding/off by one errors in the maths
- * 3. Column calculations, this is pretty difficult, but just takes a little thinking about
- * ~4. Signal emitted for selection changed~
- * 5. Setting the selected node will scroll it to center
- * 6. Animations while timeline view changes, don't let zooming/panning
+ * 1. Create renderers for the scale.
+ * 2. Column calculations, this is pretty difficult, but just takes a little thinking about
+ * 3. Setting the selected node will scroll it to center
+ * 4. Animations while timeline view changes, don't let zooming/panning
  *    be jumpy.
- * 7. Rename a bunch of things which are horribly named! 
- * 8. Optimize the shizzle out of it! profile update_from_store especially
- * 9. use CIEXYZ colourspace for coloum colouring
+ * 5. Rename a bunch of things which are horribly named! 
+ * 6. Optimize the shizzle out of it! profile update_from_store especially
+ * 7. use CIEXYZ colourspace for coloum colouring
  * For Future Release;
  * x. Kinetic scrolling - add timing/timer stuff into signal handlers
  * x. This TODO list is not upto date
@@ -196,7 +193,6 @@ namespace Wiz {
     }
 
     public void update_from_store () {
-      stdout.printf("Updating the timeline from the bit store\n");
       assert(this.commit_store != null);
       this.nodes = this.commit_store.get_nodes();
       // Iterate the new nodes and add edges
@@ -207,7 +203,6 @@ namespace Wiz {
       // the first tip cycle, its not pretty but it works
       bool edges_done = false;
       foreach (var tip in tips) {
-        stdout.printf("Iterating tip %s\n", tip);
         foreach (var node in this.nodes) {
           if (tip == node.version_uuid) {
             this.tips.append(node);
@@ -237,8 +232,6 @@ namespace Wiz {
       }
       this.newest_timestamp = this.primary_tip.timestamp;
       this.oldest_timestamp = this.root.timestamp;
-      stdout.printf("Oldest: %d\n", this.oldest_timestamp);
-      stdout.printf("Newest: %d\n", this.newest_timestamp);
       this.start_timestamp = this.oldest_timestamp;
       this.end_timestamp = this.newest_timestamp;
     }
@@ -337,16 +330,24 @@ namespace Wiz {
         return; // You don't have to go home but you can't stay here
       } else {
         var xpos = x - this.grab_offset;
-
+        int tmp_s;
+        int tmp_e;
         if (this.handle_grabbed == 1) {
           this.start_timestamp = this.HScalePosToTimestamp(xpos);
         } else if (this.handle_grabbed == 2) {
           this.end_timestamp = this.HScalePosToTimestamp(xpos);
         } else if (this.handle_grabbed == 3) {
           var click_timestamp = this.HScalePosToTimestamp(xpos);
-          var half_time = (this.end_timestamp - this.start_timestamp)/2; 
-          this.start_timestamp = click_timestamp - half_time;
-          this.end_timestamp = click_timestamp + half_time;
+          var half_time = (this.end_timestamp - this.start_timestamp)/2;
+
+          tmp_s = click_timestamp - half_time;
+          tmp_e = click_timestamp + half_time;
+          //stdout.printf("%d - %d\n", this.oldest_timestamp, tmp);
+          if ((tmp_s >= this.oldest_timestamp) && (tmp_e <= this.newest_timestamp)) {
+            this.start_timestamp = tmp_s;
+            this.end_timestamp = tmp_e;
+          }
+          //this.end_timestamp = click_timestamp + half_time;
         }
         if (this.start_timestamp >= this.end_timestamp) {
           this.start_timestamp = this.end_timestamp - 1;
@@ -371,7 +372,6 @@ namespace Wiz {
       var et = this.TimestampToHScalePos(this.end_timestamp) + 5;
       var sv = this.allocation.height - 40;
       var ev = this.allocation.height - 26;
-      stdout.printf("%d, %d : %d, %d : %d, %d\n", this.mouse_press_x, this.mouse_press_y, st, et, sv, ev);
 
       if (this.mouse_press_y > sv &&
           this.mouse_press_y < ev &&
@@ -381,18 +381,15 @@ namespace Wiz {
         if (this.mouse_press_x <= st + 10) {
           // Over left handle
           this.handle_grabbed = 1;
-          this.grab_offset = (int)event.x - st;
-          stdout.printf("left handle grabbed offset %d\n", this.grab_offset);
+          this.grab_offset = this.mouse_press_x - st;
         } else if (this.mouse_press_x >= et - 10) {
           // Over right handle    
           this.handle_grabbed = 2;
-          this.grab_offset = (int)event.x - et;
-          stdout.printf("right handle grabbed offset %d\n", this.grab_offset);
+          this.grab_offset = this.mouse_press_x - et;
         } else {
           // Over the slider bar
           this.handle_grabbed = 3;
-          this.grab_offset = 0;//(int)event.x - ((et - st)/2) + st;
-          stdout.printf("center handle grabbed offset %d\n", this.grab_offset);
+          this.grab_offset = this.mouse_press_x - (st + ((et - st)/2));
         }
 
       } else {
