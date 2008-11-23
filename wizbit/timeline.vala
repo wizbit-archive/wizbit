@@ -325,7 +325,7 @@ namespace Wiz {
         }
         // TODO Calculate column, this is pretty anoying, we need to increment
         // every time we have a new branch :/ That means iterating forwards
-        node.SetPosition(this, (node.timestamp - this.oldest_timestamp) / this.newest_timestamp, column, size);
+        //node.SetPosition(this, (node.timestamp - this.oldest_timestamp) / this.newest_timestamp, column, size);
       }
     }
     /*
@@ -357,11 +357,15 @@ namespace Wiz {
       this.mouse_press_y = (int)event.y;
       var st = this.TimestampToHScalePos(this.start_timestamp);
       var et = this.TimestampToHScalePos(this.end_timestamp);
-      stdout.printf("%d, %d : %d, %d\n", this.mouse_press_x, this.mouse_press_y, st, et);
-      if (event.x > st - 4.5 &&
-        event.y < this.allocation.height - 39.5 &&
-        event.x < et + 4.5 &&
-        event.y > this.allocation.height - 26.5 ) {
+      var sv = this.allocation.height - 40;
+      var ev = this.allocation.height - 26;
+      stdout.printf("%d, %d : %d, %d : %d, %d\n", this.mouse_press_x, this.mouse_press_y, st, et, sv, ev);
+
+      if (this.mouse_press_y > sv &&
+          this.mouse_press_y < ev &&
+          this.mouse_press_x >= st &&
+          this.mouse_press_x <= et ) {
+
         stdout.printf("grab\n");
         // figure out which part of the control we're over
         if (event.x > st - 4.5 &&
@@ -369,15 +373,18 @@ namespace Wiz {
           // Over left handle
           this.handle_grabbed = 1;
           this.grab_offset = (int)event.x - st;
+          stdout.printf("left\n");
         } else if (event.x > et - 4.5 &&
                    event.x < et + 4.5) {
           // Over right handle    
           this.handle_grabbed = 2;            
           this.grab_offset = (int)event.x - et;
+          stdout.printf("right\n");
         } else {
           // Over the slider bar
           this.handle_grabbed = 3;
           this.grab_offset = (int)event.x - ((et - st)/2) + st;
+          stdout.printf("center\n");
         }
       } else {
         this.handle_grabbed = 0;
@@ -419,11 +426,11 @@ namespace Wiz {
     }
 
     public override bool motion_notify_event (Gdk.EventMotion event) {
-      stdout.printf("motion\n");
       if (this.mouse_down && this.handle_grabbed > 0) {
         if (event.x != this.mouse_press_x) {
           this.update_controls((int)event.x);
           this.update_zoom();
+          this.queue_draw();
         }
         return true;
       }
@@ -533,7 +540,7 @@ namespace Wiz {
       //var surface = cr.get_group_target();
       //var cr_background_layer = new Cairo.Context(new Cairo.Surface.similar(surface, Cairo.Content.COLOR_ALPHA, this.allocation.width, this.allocation.height));
       //var cr_foreground_layer = new Cairo.Context(new Cairo.Surface.similar(surface, Cairo.Content.COLOR_ALPHA, this.allocation.width, this.allocation.height));
-      //this.set_double_buffered(true);
+      this.set_double_buffered(true);
 
       //this.RenderScale(cr);
       foreach (var node in this.nodes) {
