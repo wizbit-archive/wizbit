@@ -365,26 +365,24 @@ namespace Wiz {
           this.mouse_press_y < ev &&
           this.mouse_press_x >= st &&
           this.mouse_press_x <= et ) {
-
-        stdout.printf("grab\n");
         // figure out which part of the control we're over
-        if (event.x > st - 4.5 &&
-            event.x < st + 4.5) {
+        if (this.mouse_press_x > st - 4.5 &&
+            this.mouse_press_x < st + 4.5) {
           // Over left handle
           this.handle_grabbed = 1;
           this.grab_offset = (int)event.x - st;
-          stdout.printf("left\n");
-        } else if (event.x > et - 4.5 &&
-                   event.x < et + 4.5) {
+          stdout.printf("left handle grabbed\n");
+        } else if (this.mouse_press_x > et - 4.5 &&
+                   this.mouse_press_x < et + 4.5) {
           // Over right handle    
           this.handle_grabbed = 2;            
           this.grab_offset = (int)event.x - et;
-          stdout.printf("right\n");
+          stdout.printf("right handle grabbed\n");
         } else {
           // Over the slider bar
           this.handle_grabbed = 3;
           this.grab_offset = (int)event.x - ((et - st)/2) + st;
-          stdout.printf("center\n");
+          stdout.printf("center handle grabbed\n");
         }
       } else {
         this.handle_grabbed = 0;
@@ -444,7 +442,7 @@ namespace Wiz {
     /* Converts a timestamp into a scale horizontal position. */
     private int TimestampToHScalePos(int timestamp) {
       var range = this.newest_timestamp - this.oldest_timestamp;
-      double pos = ((double)timestamp - (double)this.start_timestamp) / (double)range; // unsure of vala casting?
+      double pos = ((double)timestamp - (double)this.oldest_timestamp) / (double)range; // unsure of vala casting?
       return (int)Math.ceil((pos * ((double)this.allocation.width - 29.0)) + 14.5); 
     }
     private int HScalePosToTimestamp(int xpos) {
