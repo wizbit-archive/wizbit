@@ -8,7 +8,7 @@
  *    converted to cairo code
  * 2. ~Get it building~ and fix any rounding/off by one errors in the maths
  * 3. Column calculations, this is pretty difficult, but just takes a little thinking about
- * 4. Signal emitted for selection changed
+ * ~4. Signal emitted for selection changed~
  * 5. Setting the selected node will scroll it to center
  * 6. Animations while timeline view changes, don't let zooming/panning
  *    be jumpy.
@@ -175,6 +175,8 @@ namespace Wiz {
         }
       }
     }
+
+		public signal void selection_changed ();
 
     // We can construct with no bit specified, and use bit_uuid to open the bit
     public Timeline(Store store, string? bit_uuid) {
@@ -415,6 +417,7 @@ namespace Wiz {
         nodes.
         did we click on a version
             set selected - emit selection changed signal
+            this.selection_changed();
             this.queue_draw(); 
 
         return true;
@@ -515,7 +518,7 @@ namespace Wiz {
         cr.fill_preserve();
         cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
         // Render some ticks in the middle of the slider
-        var pos = this.TimestampToHScalePos(this.start_timestamp + ((this.end_timestamp - this.start_timestamp)/2)) - 8.5; 
+        var pos = this.TimestampToHScalePos(this.start_timestamp + ((this.end_timestamp - this.start_timestamp)/2)) - 4.5; 
         for (var i = 0; i < 3; i++) {
           cr.move_to(pos + (i * 3), this.allocation.height - 37.5);
           cr.line_to(pos + (i * 3), this.allocation.height - 32.5);
