@@ -176,7 +176,7 @@ namespace Wiz {
       }
     }
 
-		public signal void selection_changed ();
+    public signal void selection_changed ();
 
     // We can construct with no bit specified, and use bit_uuid to open the bit
     public Timeline(Store store, string? bit_uuid) {
@@ -302,8 +302,6 @@ namespace Wiz {
       this.zoom = range/total;
       this.dag_height = this.allocation.height * (total/range);
       this.offset = this.dag_height * (this.start_timestamp/total);
-      this.update_visibility();
-      this.queue_draw();
     }
 
     // This has to be done on pan/zoom so that's a lot of events :/
@@ -335,129 +333,125 @@ namespace Wiz {
      *
      */
     public void update_controls(int x) {
-        if (this.handle_grabbed < 1) {
-            return; // You don't have to go home but you can't stay here
-        } else {
-            var xpos = x - this.grab_offset;
+      if (this.handle_grabbed < 1) {
+        return; // You don't have to go home but you can't stay here
+      } else {
+        var xpos = x - this.grab_offset;
 
-            if (this.handle_grabbed == 1) {
-                this.start_timestamp = this.HScalePosToTimestamp(xpos);
-            } else if (this.handle_grabbed == 2) {
-                this.end_timestamp = this.HScalePosToTimestamp(xpos);
-            } else if (this.handle_grabbed == 3) {
-                var click_timestamp = this.HScalePosToTimestamp(xpos);
-                var half_time = (this.end_timestamp - this.start_timestamp)/2; 
-                this.start_timestamp = click_timestamp - half_time;
-                this.end_timestamp = click_timestamp + half_time;
-            }
+        if (this.handle_grabbed == 1) {
+          this.start_timestamp = this.HScalePosToTimestamp(xpos);
+        } else if (this.handle_grabbed == 2) {
+          this.end_timestamp = this.HScalePosToTimestamp(xpos);
+        } else if (this.handle_grabbed == 3) {
+          var click_timestamp = this.HScalePosToTimestamp(xpos);
+          var half_time = (this.end_timestamp - this.start_timestamp)/2; 
+          this.start_timestamp = click_timestamp - half_time;
+          this.end_timestamp = click_timestamp + half_time;
         }
+      }
     }
 
     public override bool button_press_event (Gdk.EventButton event) {
-        this.mouse_down = true;
-        this.mouse_press_x = (int)event.x;
-        this.mouse_press_y = (int)event.y;
-        var st = this.TimestampToHScalePos(this.start_timestamp);
-        var et = this.TimestampToHScalePos(this.end_timestamp);
-        stdout.printf("%d, %d : %d, %d", this.mouse_press_x, this.mouse_press_y, st, et);
+      this.mouse_down = true;
+      this.mouse_press_x = (int)event.x;
+      this.mouse_press_y = (int)event.y;
+      var st = this.TimestampToHScalePos(this.start_timestamp);
+      var et = this.TimestampToHScalePos(this.end_timestamp);
+      stdout.printf("%d, %d : %d, %d\n", this.mouse_press_x, this.mouse_press_y, st, et);
+      if (event.x > st - 4.5 &&
+        event.y < this.allocation.height - 39.5 &&
+        event.x < et + 4.5 &&
+        event.y > this.allocation.height - 26.5 ) {
+        stdout.printf("grab\n");
+        // figure out which part of the control we're over
         if (event.x > st - 4.5 &&
-            event.y < this.allocation.height - 39.5 &&
-            event.x < et + 4.5 &&
-            event.y > this.allocation.height - 26.5 ) {
-            stdout.printf("grab\n");
-            // figure out which part of the control we're over
-            if (event.x > st - 4.5 &&
-                event.x < st + 4.5) {
-                // Over left handle
-                this.handle_grabbed = 1;
-                this.grab_offset = (int)event.x - st;
-            } else if (event.x > et - 4.5 &&
-                       event.x < et + 4.5) {
-                // Over right handle    
-                this.handle_grabbed = 2;            
-                this.grab_offset = (int)event.x - et;
-            } else {
-                // Over the slider bar
-                this.handle_grabbed = 3;
-                this.grab_offset = (int)event.x - ((et - st)/2) + st;
-            }
+            event.x < st + 4.5) {
+          // Over left handle
+          this.handle_grabbed = 1;
+          this.grab_offset = (int)event.x - st;
+        } else if (event.x > et - 4.5 &&
+                   event.x < et + 4.5) {
+          // Over right handle    
+          this.handle_grabbed = 2;            
+          this.grab_offset = (int)event.x - et;
         } else {
-            this.handle_grabbed = 0;
+          // Over the slider bar
+          this.handle_grabbed = 3;
+          this.grab_offset = (int)event.x - ((et - st)/2) + st;
         }
+      } else {
+        this.handle_grabbed = 0;
+      }
 
-        // TODO FFR - This is for kinetic scrolling
-        // create a press timestamp (milliseconds) argh, vala time!!!!!
-        // this.button_press_timestamp = ?
-        return true;
+      // TODO FFR - This is for kinetic scrolling
+      // create a press timestamp (milliseconds) argh, vala time!!!!!
+      // this.button_press_timestamp = ?
+      return true;
     }
 
     public override bool button_release_event (Gdk.EventButton event) {
-        this.mouse_down = false;
-        this.mouse_release_x = (int)event.x;
-        this.mouse_release_y = (int)event.y;
-        if (this.handle_grabbed > 0) {
-            this.update_controls(this.mouse_release_x);
-            this.update_zoom();
-        }   // else {
-            // TODO FFR - This is for kinetic scrolling
-            // create release timestamp (milliseconds)
-            // this.button_release_timestamp = ?
-            // calculate the distance travelled in that time and therefore the speed
-            // start a timer which controls the speed/positioning (kinetic scroll)
-            // horizontal scrolling will change the zoom level
-        this.handle_grabbed = 0;
-        return true;
+      this.mouse_down = false;
+      this.mouse_release_x = (int)event.x;
+      this.mouse_release_y = (int)event.y;
+      if (this.handle_grabbed > 0) {
+        this.update_controls(this.mouse_release_x);
+        this.update_zoom();
+        this.update_visibility();
+        this.queue_draw();
+      } // else if Gtk.drag_check_threshold.... {
+        // TODO - we have to iterate over the nodes and check the polar distance
+        // not hard, but yet another iteration, thankfully we only need to do it on
+        // click and not on motion :) We can speed this up by ignoring invisible 
+        // nodes.
+        // did we click on a version
+        //   set selected - emit selection changed signal
+        //   this.selection_changed();
+        //   this.queue_draw(); 
+        // } else {
+        // TODO FFR - This is for kinetic scrolling
+        // create release timestamp (milliseconds)
+        // this.button_release_timestamp = ?
+        // calculate the distance travelled in that time and therefore the speed
+        // start a timer which controls the speed/positioning (kinetic scroll)
+        // horizontal scrolling will change the zoom level
+      this.handle_grabbed = 0;
+      return true;
     }
-/* FIXME CAN'T DO BUTTON CLICK ARG! Need to work this into release somehow :/
-    public override bool button_click_event (Gdk.EventButton event) {
-        this.mouse_down = false;
-      TODO - we have to iterate over the widgets and check the polar distance
-        not hard, but yet another iteration, thankfully we only need to do it on
-        click and not on motion :) We can speed this up by ignoring invisible 
-        nodes.
-        did we click on a version
-            set selected - emit selection changed signal
-            this.selection_changed();
-            this.queue_draw(); 
-
-        return true;
-    }
-     */
 
     public override bool motion_notify_event (Gdk.EventMotion event) {
-            stdout.printf("motion\n");
-        if (this.mouse_down && this.handle_grabbed > 0) {
-            if (event.x != this.mouse_press_x) {
-                this.update_controls((int)event.x);
-                this.update_zoom();
-            }
-            return true;
+      stdout.printf("motion\n");
+      if (this.mouse_down && this.handle_grabbed > 0) {
+        if (event.x != this.mouse_press_x) {
+          this.update_controls((int)event.x);
+          this.update_zoom();
         }
+        return true;
+      }
 
-        // TODO This is really FFR part of kinetic scrolling
-        // if the button is down elsewhere 
-        //    pan widget to current co-ords
-        return false;
+      // TODO This is really FFR part of kinetic scrolling
+      // if the button is down elsewhere 
+      //    pan widget to current co-ords
+      return false;
     }
 
     /* Converts a timestamp into a scale horizontal position. */
     private int TimestampToHScalePos(int timestamp) {
-        var range = this.newest_timestamp - this.oldest_timestamp;
-        double pos = ((double)timestamp - (double)this.start_timestamp) / (double)range; // unsure of vala casting?
-        return (int)Math.ceil((pos * ((double)this.allocation.width - 29.0)) + 14.5); 
+      var range = this.newest_timestamp - this.oldest_timestamp;
+      double pos = ((double)timestamp - (double)this.start_timestamp) / (double)range; // unsure of vala casting?
+      return (int)Math.ceil((pos * ((double)this.allocation.width - 29.0)) + 14.5); 
     }
     private int HScalePosToTimestamp(int xpos) {
-        double ratio = (xpos - 14.5) / (this.allocation.width - 29.0);
-        return (int)Math.ceil(((this.newest_timestamp - this.oldest_timestamp) * ratio) + this.oldest_timestamp);
+      double ratio = (xpos - 14.5) / (this.allocation.width - 29.0);
+      return (int)Math.ceil(((this.newest_timestamp - this.oldest_timestamp) * ratio) + this.oldest_timestamp);
     }
     /* Get the integer of the month for a timestamp */
     private int TimestampToMonth(int timestamp) {
-        // Vala time... PLEASE GIMME DOCS!!!!!!!!
-        return 0;
+      // Vala time... PLEASE GIMME DOCS!!!!!!!!
+      return 0;
     }
     /* Get the timestamp of a specific d/m/y */
     private int DateToTimestamp(int d, int m, int y) {
-        return 0;
+      return 0;
     }
 
     // TODO
@@ -465,73 +459,73 @@ namespace Wiz {
     }
 
     public void RenderHandle(Cairo.Context cr, int timestamp) {
-        var hpos = this.TimestampToHScalePos(timestamp);
-        cr.move_to(hpos - 3.5, this.allocation.height - 39.5);
-        cr.line_to(hpos - 3.5, this.allocation.height - 30.5);
-        cr.line_to(hpos, this.allocation.height - 26.5);
-        cr.line_to(hpos + 3.5, this.allocation.height - 30.5);
-        cr.line_to(hpos + 3.5, this.allocation.height - 39.5);
-        cr.line_to(hpos - 3.5, this.allocation.height - 39.5);
-        var pattern = new Cairo.Pattern.linear(hpos - 3.5, 0, hpos + 3.5,0);
-        pattern.add_color_stop_rgb(0, 0xee/255.0, 0xee/255.0, 0xec/255.0); 
-        pattern.add_color_stop_rgb(1, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
-        cr.set_source (pattern);
-        cr.fill_preserve();
-        cr.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
-        cr.stroke();
+      var hpos = this.TimestampToHScalePos(timestamp);
+      cr.move_to(hpos - 3.5, this.allocation.height - 39.5);
+      cr.line_to(hpos - 3.5, this.allocation.height - 30.5);
+      cr.line_to(hpos, this.allocation.height - 26.5);
+      cr.line_to(hpos + 3.5, this.allocation.height - 30.5);
+      cr.line_to(hpos + 3.5, this.allocation.height - 39.5);
+      cr.line_to(hpos - 3.5, this.allocation.height - 39.5);
+      var pattern = new Cairo.Pattern.linear(hpos - 3.5, 0, hpos + 3.5,0);
+      pattern.add_color_stop_rgb(0, 0xee/255.0, 0xee/255.0, 0xec/255.0); 
+      pattern.add_color_stop_rgb(1, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
+      cr.set_source (pattern);
+      cr.fill_preserve();
+      cr.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
+      cr.stroke();
 
-        cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
-        cr.move_to(hpos - 2.5, this.allocation.height - 38.5);
-        cr.line_to(hpos - 2.5, this.allocation.height - 30.85);
-        cr.line_to(hpos, this.allocation.height - 28.0);
-        cr.line_to(hpos + 2.5, this.allocation.height - 30.85);
-        cr.line_to(hpos + 2.5, this.allocation.height - 38.5);
-        cr.line_to(hpos - 2.5, this.allocation.height - 38.5);
-        cr.stroke();
+      cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
+      cr.move_to(hpos - 2.5, this.allocation.height - 38.5);
+      cr.line_to(hpos - 2.5, this.allocation.height - 30.85);
+      cr.line_to(hpos, this.allocation.height - 28.0);
+      cr.line_to(hpos + 2.5, this.allocation.height - 30.85);
+      cr.line_to(hpos + 2.5, this.allocation.height - 38.5);
+      cr.line_to(hpos - 2.5, this.allocation.height - 38.5);
+      cr.stroke();
     }
 
     public void RenderControls(Cairo.Context cr) {
-        int start_pos = this.TimestampToHScalePos(this.start_timestamp);
-        int end_pos = this.TimestampToHScalePos(this.end_timestamp);
-        // Render background
-        cr.rectangle(14.5, this.allocation.height - 37.5,
-                     this.allocation.width - 29.0, 6.0);
-        var pattern = new Cairo.Pattern.linear(0, this.allocation.height - 37.5, 0, this.allocation.height - 31.5);
-        pattern.add_color_stop_rgb(0, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
-        pattern.add_color_stop_rgb(1, 0xee/255.0, 0xee/255.0, 0xec/255.0);
-        cr.set_line_width(1);
-        cr.set_source (pattern);
-        cr.fill_preserve();
-        cr.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
-        cr.stroke();
+      int start_pos = this.TimestampToHScalePos(this.start_timestamp);
+      int end_pos = this.TimestampToHScalePos(this.end_timestamp);
+      // Render background
+      cr.rectangle(14.5, this.allocation.height - 37.5,
+                   this.allocation.width - 29.0, 6.0);
+      var pattern = new Cairo.Pattern.linear(0, this.allocation.height - 37.5, 0, this.allocation.height - 31.5);
+      pattern.add_color_stop_rgb(0, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
+      pattern.add_color_stop_rgb(1, 0xee/255.0, 0xee/255.0, 0xec/255.0);
+      cr.set_line_width(1);
+      cr.set_source (pattern);
+      cr.fill_preserve();
+      cr.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
+      cr.stroke();
 
-        stdout.printf("s %d\n", start_pos);
-        stdout.printf("e %d\n", end_pos);
-        // Render slider
-        cr.rectangle (start_pos + 3.5, this.allocation.height - 39.5,
-                      end_pos - start_pos - 7, 9);
-        pattern = new Cairo.Pattern.linear(0, this.allocation.height - 39.5, 
-                                           0,this.allocation.height - 30.5);
-        pattern.add_color_stop_rgb(0, 0x72/255.0,0x9f/255.0,0xcf/255.0);
-        pattern.add_color_stop_rgb(1, 0x34/255.0,0x65/255.0,0xa4/255.0);
-        cr.set_source (pattern);
-        cr.fill_preserve();
-        cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
-        // Render some ticks in the middle of the slider
-        var pos = this.TimestampToHScalePos(this.start_timestamp + ((this.end_timestamp - this.start_timestamp)/2)) - 4.5; 
-        for (var i = 0; i < 3; i++) {
-          cr.move_to(pos + (i * 3), this.allocation.height - 37.5);
-          cr.line_to(pos + (i * 3), this.allocation.height - 32.5);
-        }
-        cr.stroke();
-        // Slider Highlight
-        cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
-        cr.rectangle (start_pos + 4.5, this.allocation.height - 38.5,
-                      end_pos - start_pos - 9, 7);
-        cr.stroke();
+      stdout.printf("s %d\n", start_pos);
+      stdout.printf("e %d\n", end_pos);
+      // Render slider
+      cr.rectangle (start_pos + 3.5, this.allocation.height - 39.5,
+                    end_pos - start_pos - 7, 9);
+      pattern = new Cairo.Pattern.linear(0, this.allocation.height - 39.5, 
+                                         0,this.allocation.height - 30.5);
+      pattern.add_color_stop_rgb(0, 0x72/255.0,0x9f/255.0,0xcf/255.0);
+      pattern.add_color_stop_rgb(1, 0x34/255.0,0x65/255.0,0xa4/255.0);
+      cr.set_source (pattern);
+      cr.fill_preserve();
+      cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
+      // Render some ticks in the middle of the slider
+      var pos = this.TimestampToHScalePos(this.start_timestamp + ((this.end_timestamp - this.start_timestamp)/2)) - 3.5; 
+      for (var i = 0; i < 3; i++) {
+        cr.move_to(pos + (i * 3), this.allocation.height - 37.5);
+        cr.line_to(pos + (i * 3), this.allocation.height - 32.5);
+      }
+      cr.stroke();
+      // Slider Highlight
+      cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
+      cr.rectangle (start_pos + 4.5, this.allocation.height - 38.5,
+                    end_pos - start_pos - 9, 7);
+      cr.stroke();
 
-        this.RenderHandle(cr, this.start_timestamp);
-        this.RenderHandle(cr, this.end_timestamp);
+      this.RenderHandle(cr, this.start_timestamp);
+      this.RenderHandle(cr, this.end_timestamp);
     }
 
     public override bool expose_event (Gdk.EventExpose event) {
