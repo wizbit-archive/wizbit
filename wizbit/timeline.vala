@@ -348,6 +348,18 @@ namespace Wiz {
           this.start_timestamp = click_timestamp - half_time;
           this.end_timestamp = click_timestamp + half_time;
         }
+        if (this.start_timestamp >= this.end_timestamp) {
+          this.start_timestamp = this.end_timestamp - 1;
+        }
+        if (this.start_timestamp < this.oldest_timestamp) {
+          this.start_timestamp = this.oldest_timestamp;
+        }
+        if (this.end_timestamp <= this.start_timestamp) {
+          this.end_timestamp = this.start_timestamp + 1;
+        }
+        if (this.end_timestamp > this.newest_timestamp) {
+          this.end_timestamp = this.newest_timestamp;
+        }
       }
     }
 
@@ -355,8 +367,8 @@ namespace Wiz {
       this.mouse_down = true;
       this.mouse_press_x = (int)event.x;
       this.mouse_press_y = (int)event.y;
-      var st = this.TimestampToHScalePos(this.start_timestamp);
-      var et = this.TimestampToHScalePos(this.end_timestamp);
+      var st = this.TimestampToHScalePos(this.start_timestamp) - 5;
+      var et = this.TimestampToHScalePos(this.end_timestamp) + 5;
       var sv = this.allocation.height - 40;
       var ev = this.allocation.height - 26;
       stdout.printf("%d, %d : %d, %d : %d, %d\n", this.mouse_press_x, this.mouse_press_y, st, et, sv, ev);
@@ -366,24 +378,23 @@ namespace Wiz {
           this.mouse_press_x >= st &&
           this.mouse_press_x <= et ) {
         // figure out which part of the control we're over
-        if (this.mouse_press_x > st - 4.5 &&
-            this.mouse_press_x < st + 4.5) {
+        if (this.mouse_press_x <= st + 10) {
           // Over left handle
           this.handle_grabbed = 1;
           this.grab_offset = (int)event.x - st;
-          stdout.printf("left handle grabbed\n");
-        } else if (this.mouse_press_x > et - 4.5 &&
-                   this.mouse_press_x < et + 4.5) {
+          stdout.printf("left handle grabbed offset %d\n", this.grab_offset);
+        } else if (this.mouse_press_x >= et - 10) {
           // Over right handle    
-          this.handle_grabbed = 2;            
+          this.handle_grabbed = 2;
           this.grab_offset = (int)event.x - et;
-          stdout.printf("right handle grabbed\n");
+          stdout.printf("right handle grabbed offset %d\n", this.grab_offset);
         } else {
           // Over the slider bar
           this.handle_grabbed = 3;
-          this.grab_offset = (int)event.x - ((et - st)/2) + st;
-          stdout.printf("center handle grabbed\n");
+          this.grab_offset = 0;//(int)event.x - ((et - st)/2) + st;
+          stdout.printf("center handle grabbed offset %d\n", this.grab_offset);
         }
+
       } else {
         this.handle_grabbed = 0;
       }
@@ -465,12 +476,12 @@ namespace Wiz {
 
     public void RenderHandle(Cairo.Context cr, int timestamp) {
       var hpos = this.TimestampToHScalePos(timestamp);
-      cr.move_to(hpos - 3.5, this.allocation.height - 39.5);
-      cr.line_to(hpos - 3.5, this.allocation.height - 30.5);
+      cr.move_to(hpos - 4.5, this.allocation.height - 39.5);
+      cr.line_to(hpos - 4.5, this.allocation.height - 30.5);
       cr.line_to(hpos, this.allocation.height - 26.5);
-      cr.line_to(hpos + 3.5, this.allocation.height - 30.5);
-      cr.line_to(hpos + 3.5, this.allocation.height - 39.5);
-      cr.line_to(hpos - 3.5, this.allocation.height - 39.5);
+      cr.line_to(hpos + 4.5, this.allocation.height - 30.5);
+      cr.line_to(hpos + 4.5, this.allocation.height - 39.5);
+      cr.line_to(hpos - 4.5, this.allocation.height - 39.5);
       var pattern = new Cairo.Pattern.linear(hpos - 3.5, 0, hpos + 3.5,0);
       pattern.add_color_stop_rgb(0, 0xee/255.0, 0xee/255.0, 0xec/255.0); 
       pattern.add_color_stop_rgb(1, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
@@ -480,12 +491,12 @@ namespace Wiz {
       cr.stroke();
 
       cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
-      cr.move_to(hpos - 2.5, this.allocation.height - 38.5);
-      cr.line_to(hpos - 2.5, this.allocation.height - 30.85);
+      cr.move_to(hpos - 3.5, this.allocation.height - 38.5);
+      cr.line_to(hpos - 3.5, this.allocation.height - 30.85);
       cr.line_to(hpos, this.allocation.height - 28.0);
-      cr.line_to(hpos + 2.5, this.allocation.height - 30.85);
-      cr.line_to(hpos + 2.5, this.allocation.height - 38.5);
-      cr.line_to(hpos - 2.5, this.allocation.height - 38.5);
+      cr.line_to(hpos + 3.5, this.allocation.height - 30.85);
+      cr.line_to(hpos + 3.5, this.allocation.height - 38.5);
+      cr.line_to(hpos - 3.5, this.allocation.height - 38.5);
       cr.stroke();
     }
 
@@ -504,11 +515,9 @@ namespace Wiz {
       cr.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
       cr.stroke();
 
-      stdout.printf("s %d\n", start_pos);
-      stdout.printf("e %d\n", end_pos);
       // Render slider
-      cr.rectangle (start_pos + 3.5, this.allocation.height - 39.5,
-                    end_pos - start_pos - 7, 9);
+      cr.rectangle (start_pos + 4.5, this.allocation.height - 39.5,
+                    end_pos - start_pos - 9, 9);
       pattern = new Cairo.Pattern.linear(0, this.allocation.height - 39.5, 
                                          0,this.allocation.height - 30.5);
       pattern.add_color_stop_rgb(0, 0x72/255.0,0x9f/255.0,0xcf/255.0);
@@ -525,8 +534,8 @@ namespace Wiz {
       cr.stroke();
       // Slider Highlight
       cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
-      cr.rectangle (start_pos + 4.5, this.allocation.height - 38.5,
-                    end_pos - start_pos - 9, 7);
+      cr.rectangle (start_pos + 5.5, this.allocation.height - 38.5,
+                    end_pos - start_pos - 11, 7);
       cr.stroke();
 
       this.RenderHandle(cr, this.start_timestamp);
@@ -545,11 +554,11 @@ namespace Wiz {
         foreach (var edge in node.edges) {
           // Render the edges onto the underneath surface
           //edge.Render(cr_background_layer);
-          stdout.printf("Rendering edge between %s and %s\n", edge.parent.version_uuid, edge.child.version_uuid);
+          //stdout.printf("Rendering edge between %s and %s\n", edge.parent.version_uuid, edge.child.version_uuid);
         }
         // Render the node onto the ontop surface
         //node.Render(cr);
-        stdout.printf("Rendering node %s\n", node.version_uuid);
+        //stdout.printf("Rendering node %s\n", node.version_uuid);
       }
 
       // composite surfaces together
