@@ -78,13 +78,13 @@ namespace Wiz {
 			this.commit = this.bit.commits.lookup_commit(this.version_uuid);
 		}
 
-		public GLib.InputStream read() {
+		public GLib.InputStream read() throws GLib.FileError {
 			this.blob = new Graph.Blob.from_uuid(this.bit.blobs, this.commit.blob);
 			this.file = this.blob.read();
 			return new MemoryInputStream.from_data(file.get_contents(), file.get_length(), null);
 		}
 
-		public string read_as_string() {
+		public string read_as_string() throws GLib.FileError {
 			this.blob = new Graph.Blob.from_uuid(this.bit.blobs, this.commit.blob);
 			this.file = this.blob.read();
 			return ((string)file.get_contents()).substring(0, file.get_length());

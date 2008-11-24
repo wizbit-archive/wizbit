@@ -78,7 +78,7 @@ namespace Wiz {
 			return new OutputStream();
 		}
 
-		public Version create_next_version_from_string(string data, Version ?parent = null) {
+		public Version create_next_version_from_string(string data, Version ?parent = null) throws GLib.FileError {
 			var blob = new Graph.Blob(this.blobs);
 			blob.set_contents((void *)data, data.len());
 			blob.write();

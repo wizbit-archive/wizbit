@@ -20,7 +20,7 @@ public class SyncSource : Object {
 		this.store = store;
 	}
 
-	public List<string> list_all_objects() {
+	public List<string> list_all_objects() throws GLib.FileError {
 		var objs = new List<string>();
 		var path = Path.build_filename(this.store.directory, "refs");
 		var dir = Dir.open(path);
@@ -139,7 +139,7 @@ public class SyncClient : Object {
 		this.iter = new Wiz.BreadthFirstIterator();
 	}
 
-	public void pull(SyncSource server) {
+	public void pull(SyncSource server) throws GLib.FileError {
 		var bits = server.list_all_objects();
 		foreach (var bit in bits) {
 			server.search_for_object(bit);
@@ -246,7 +246,7 @@ public class SyncClient : Object {
 		bit.commits.store_commit(c);
 	}
 
-	void drop_raw(string uuid, string raw) {
+	void drop_raw(string uuid, string raw) throws GLib.FileError {
 		string drop_dir = Path.build_filename(this.store.directory, "objects", uuid.substring(0,2));
 		if (!FileUtils.test(drop_dir, FileTest.IS_DIR))
 			DirUtils.create_with_parents(drop_dir, 0755);
