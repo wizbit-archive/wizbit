@@ -44,9 +44,5 @@ namespace Wiz {
 		public Bit open_bit(string uuid) {
 			return new Bit(uuid, this.directory);
 		}
-
-		public Version open_version(string uuid, string version_uuid) {
-			return null;
-		}
 	}
 }
