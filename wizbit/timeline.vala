@@ -4,7 +4,7 @@
 
 /**
  * TODO
- * 1. Create renderers for the scale.
+ * 1. Create renderer for the scale.
  * 2. Column calculations, this is pretty difficult, but just takes a little thinking about
  * 3. Setting the selected node will scroll it to center
  * 4. Animations while timeline view changes, don't let zooming/panning
@@ -89,6 +89,11 @@ namespace Wiz {
 
     public void AddChild(TimelineNode child) {
       this.edges.append(new TimelineEdge(this, child));
+      child.AddParent(this);
+    }
+
+    public void AddParent(TimelineNode parent) {
+      this.edges.append(new TimelineEdge(parent, this));
     }
 
     public void Render(Cairo.Context cr) {
@@ -297,30 +302,56 @@ namespace Wiz {
       this.offset = this.dag_height * (this.start_timestamp/total);
     }
 
-    // This has to be done on pan/zoom so that's a lot of events :/
-    private void update_visibility() {
-      var size = 8;
-      var parents = new List<string>();
-      var column = 0;
-      foreach (var node in this.nodes) {
-        if ((node.timestamp <= this.end_timestamp) && (node.timestamp >= this.start_timestamp)) {
-          node.visible = true;
-          foreach (var parent in node.edges) {
-            if (parent.child.version_uuid == node.version_uuid) {
-              // TODO if distance is less than the radius of the node,
-              // set visibility of parent to false and increase radius
-              // we know our timestamps in nodes are oldest first so we 
-              // won't overwrite it
+    private void update_nodes (TimelineNode node) {
+      int column;
+      int total_cols = 1;
+      int direction = -1; //flip flops as we iterate over the primary reflog
+      string child_uuid = "";
+
+      // Step backward over parents until we hit the root
+      while (node != this.root) {
+        if (node.edges.length > 1) { // this is off by one, all nodes will have a min of two edges except the root and tips. :/
+          total_cols = total_cols + (node.edges.length / 2) - 1; // probably not correct but hey, lets find out!
+          foreach (var edge in node.edges) {
+            if ((edge.child.version_uuid != child_uuid) &&
+                (edge.parent == node)) { // if we're the parent of the node and it isn't the last child in the primary reflog
+              this.recurse_children(edge.child, direction);
+              direction = direction * -1;
             }
           }
+        }
+        if ((node.timestamp <= this.end_timestamp) && (node.timestamp >= this.start_timestamp)) {
+          node.visible = true;
         } else {
           node.visible = false;
         }
-        // TODO Calculate column, this is pretty anoying, we need to increment
-        // every time we have a new branch :/ That means iterating forwards
-        //node.SetPosition(this, (node.timestamp - this.oldest_timestamp) / this.newest_timestamp, column, size);
+        column = 0;
+        child_uuid = node.version_uuid;
+        node.SetPosition(this, (node.timestamp - this.oldest_timestamp) / this.newest_timestamp, column, size);
+        foreach (var edge in node.edges) {
+          if (edge.child == node) {
+            node = edge.parent;
+            break;
+          }
+        } 
       }
     }
+
+    private void recurse_children (TimelineNode node, int column) {
+      // step forwards over children until we reach a tip, for every branch, add a new recursion, therefore no iteration in this function
+      foreach (var edge in node.edges) {
+        if (edge.parent == node) {
+              this.recurse_children(edge.child, column + 1);
+        }
+      }
+      if ((node.timestamp <= this.end_timestamp) && (node.timestamp >= this.start_timestamp)) {
+        node.visible = true;
+      } else {
+        node.visible = false;
+      }
+      node.SetPosition(this, (node.timestamp - this.oldest_timestamp) / this.newest_timestamp, column, size);
+    }
+
     /*
      * Update the timestamp's from where the position controls are.
      *
@@ -409,7 +440,7 @@ namespace Wiz {
       if (this.handle_grabbed > 0) {
         this.update_controls(this.mouse_release_x);
         this.update_zoom();
-        this.update_visibility();
+        this.update_nodes();
         this.queue_draw();
       } // else if Gtk.drag_check_threshold.... {
         // TODO - we have to iterate over the nodes and check the polar distance
@@ -548,14 +579,16 @@ namespace Wiz {
 
       //this.RenderScale(cr);
       foreach (var node in this.nodes) {
-        foreach (var edge in node.edges) {
-          // Render the edges onto the underneath surface
-          //edge.Render(cr_background_layer);
-          //stdout.printf("Rendering edge between %s and %s\n", edge.parent.version_uuid, edge.child.version_uuid);
+        foreach (var edge in node.edges) { 
+          if (edge.parent == node) {
+            // Render the edges onto the underneath surface
+            //edge.Render(cr_background_layer);
+            stdout.printf("Rendering edge between %s and %s\n", edge.parent.version_uuid, edge.child.version_uuid);
+          }
         }
         // Render the node onto the ontop surface
         //node.Render(cr);
-        //stdout.printf("Rendering node %s\n", node.version_uuid);
+        stdout.printf("Rendering node %s\n", node.version_uuid);
       }
 
       // composite surfaces together
