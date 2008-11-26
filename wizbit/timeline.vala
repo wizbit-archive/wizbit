@@ -303,15 +303,15 @@ namespace Wiz {
     }
 
     private void update_nodes (TimelineNode node) {
+      int size = 8;
       int column;
-      int total_cols = 1;
       int direction = -1; //flip flops as we iterate over the primary reflog
       string child_uuid = "";
 
       // Step backward over parents until we hit the root
       while (node != this.root) {
-        if (node.edges.length > 1) { // this is off by one, all nodes will have a min of two edges except the root and tips. :/
-          total_cols = total_cols + (node.edges.length / 2) - 1; // probably not correct but hey, lets find out!
+        if (node.edges.length() > 1) { // this is off by one, all nodes will have a min of two edges except the root and tips. :/
+          this.total_columns = this.total_columns + ((int)node.edges.length() / 2) - 1; // probably not correct but hey, lets find out!
           foreach (var edge in node.edges) {
             if ((edge.child.version_uuid != child_uuid) &&
                 (edge.parent == node)) { // if we're the parent of the node and it isn't the last child in the primary reflog
@@ -325,9 +325,8 @@ namespace Wiz {
         } else {
           node.visible = false;
         }
-        column = 0;
         child_uuid = node.version_uuid;
-        node.SetPosition(this, (node.timestamp - this.oldest_timestamp) / this.newest_timestamp, column, size);
+        node.SetPosition(this, (node.timestamp - this.oldest_timestamp) / this.newest_timestamp, 0, size); // All primary reflog nodes are at col 0
         foreach (var edge in node.edges) {
           if (edge.child == node) {
             node = edge.parent;
@@ -339,9 +338,18 @@ namespace Wiz {
 
     private void recurse_children (TimelineNode node, int column) {
       // step forwards over children until we reach a tip, for every branch, add a new recursion, therefore no iteration in this function
+      int nextcol;
+      int size = 8;
+
       foreach (var edge in node.edges) {
         if (edge.parent == node) {
-              this.recurse_children(edge.child, column + 1);
+              if (column < 0) {
+                nextcol = column - 1;
+              } else {
+                nextcol = column + 1;
+              }
+              this.total_columns = this.total_columns + ((int)node.edges.length() / 2) - 1; // probably not correct but hey, lets find out!
+              this.recurse_children(edge.child, nextcol);
         }
       }
       if ((node.timestamp <= this.end_timestamp) && (node.timestamp >= this.start_timestamp)) {
@@ -440,7 +448,7 @@ namespace Wiz {
       if (this.handle_grabbed > 0) {
         this.update_controls(this.mouse_release_x);
         this.update_zoom();
-        this.update_nodes();
+        this.update_nodes(this.primary_tip);
         this.queue_draw();
       } // else if Gtk.drag_check_threshold.... {
         // TODO - we have to iterate over the nodes and check the polar distance
