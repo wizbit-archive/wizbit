@@ -17,22 +17,50 @@ public static void main(string[] args) {
 	 *
 	 */
 
-	Wiz.Version branch_tip;
+	Wiz.Version a, b, c, d; // Branches
 	stdout.printf("Creating a faux history\n");
-	obj.test_create_next_version_from_string("FOO", null, 1227395050);
-	branch_tip = obj.primary_tip;
+	obj.test_create_next_version_from_string("FOO", null, 1225274400);            // ROOT
+	obj.test_create_next_version_from_string("BAR", obj.primary_tip, 1225360800); // NODE 1
+	obj.test_create_next_version_from_string("QUX", obj.primary_tip, 1225447200); // NODE 2
+  b = obj.primary_tip;
+  c = obj.primary_tip;
+	obj.test_create_next_version_from_string("QUUX", obj.primary_tip, 1225558800);// NODE 3
+  a = obj.primary_tip;
+  d = obj.primary_tip;
 
-	obj.test_create_next_version_from_string("BAR", branch_tip, 1227395100);
-	branch_tip = obj.primary_tip;
+	obj.test_create_next_version_from_string("BAZ", b, 1225620000);               // NODE 4
+  b = obj.primary_tip;
 
-	obj.test_create_next_version_from_string("QUX", branch_tip, 1227395150);
-	obj.test_create_next_version_from_string("QUUX", obj.primary_tip, 1227395160);
+	obj.test_create_next_version_from_string("CORGE", d, 1225620600);             // NODE 5
+  d = obj.primary_tip;
 
-	obj.test_create_next_version_from_string("BAZ", branch_tip, 1227395180);
-	branch_tip = obj.primary_tip;
+	obj.test_create_next_version_from_string("CORGE", c, 1225706400);             // TIP 1
 
-	obj.test_create_next_version_from_string("CORGE", branch_tip, 1227395200);
-	obj.test_create_next_version_from_string("GRAULT", branch_tip, 1227395220);
+	obj.test_create_next_version_from_string("GRAULT", b, 1225707000);            // Node 6
+  b = obj.primary_tip;
+
+	obj.test_create_next_version_from_string("BAZ", d, 1225707600);               // NODE 7
+  d = obj.primary_tip;
+	obj.test_create_next_version_from_string("BAZ", d, 1225792800);               // TIP 2
+
+	obj.test_create_next_version_from_string("BAZ", b, 1225879200);               // NODE 8
+  b = obj.primary_tip;
+
+	obj.test_create_next_version_from_string("GRAULT", a, 1225879800);            // NODE 9
+  a = obj.primary_tip;
+  d = obj.primary_tip;
+
+	obj.test_create_next_version_from_string("CORGE", d, 1225904400);             // NODE 10
+  d = obj.primary_tip;
+	obj.test_create_next_version_from_string("CORGE", d, 1225965600);             // TIP 3
+
+	obj.test_create_next_version_from_string("GRAULT", b, 1225966200);            // TIP 4
+
+	obj.test_create_next_version_from_string("CORGE", a, 1225990800);             // NODE 11
+  a = obj.primary_tip;
+	obj.test_create_next_version_from_string("CORGE", a, 1226052000);             // NODE 12
+  a = obj.primary_tip;
+	obj.test_create_next_version_from_string("CORGE", a, 1226077200);             // PRIMARY TIP
 
 	stdout.printf("Creating a timeline widget\n");
 	Wiz.Timeline t = new Wiz.Timeline (store, obj.uuid);
