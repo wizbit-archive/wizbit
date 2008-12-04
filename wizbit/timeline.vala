@@ -234,6 +234,7 @@ namespace Wiz {
     private List<TimelineNode> tips;
     private List<TimelineBranch> branches;
     private int lowest_branch_position;
+    private int highest_branch_position;
 
     // Scale ranges 
     private int oldest_timestamp;
@@ -284,7 +285,8 @@ namespace Wiz {
     // FIXME this.orientation_* 
     public int branch_width {
       get {
-        return this.graph_width / (int)this.branches.length(); 
+        int rows = this.highest_branch_position - this.lowest_branch_position + 1;
+        return this.graph_width / rows; 
       }
     }
 
@@ -492,7 +494,10 @@ namespace Wiz {
           branch.position = d;
         } else if (branch.position < this.lowest_branch_position) {
           this.lowest_branch_position = branch.position;
+        } else if (branch.position > this.highest_branch_position) {
+          this.highest_branch_position = branch.position;
         }
+
       }
     }
 
@@ -772,7 +777,7 @@ namespace Wiz {
       for (var i = 0; i < this.branches.length(); i++ ) {
         var branch = this.branches.nth_data(i);
         var real_pos = ((double)branch.position - (double)this.lowest_branch_position + 0.5);
-        branch.px_position = (int)(real_pos * (double)this.branch_width) + 22;
+        branch.px_position = (int)(real_pos * (double)this.branch_width);
       }
 
       var cr = Gdk.cairo_create (this.window);
@@ -787,6 +792,7 @@ namespace Wiz {
                           );
       cr_background.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
       cr_background.paint();
+      cr_background.translate(0, (double)TimelineProperties.PADDING);
 
       var cr_foreground = new Cairo.Context(
                             new Cairo.Surface.similar(surface, 
@@ -794,6 +800,7 @@ namespace Wiz {
                                                       this.graph_width, 
                                                       this.graph_height)
                           );
+      cr_foreground.translate(0, (double)TimelineProperties.PADDING);
 
       cr.rectangle((double)TimelineProperties.PADDING, (double)TimelineProperties.PADDING,
                    this.graph_width, this.graph_height);
@@ -801,9 +808,10 @@ namespace Wiz {
       cr.stroke();
       //this.RenderScale(cr);
       int y = 8, r, t = this.newest_timestamp - this.oldest_timestamp;
-      double p, j, zoom = (double)(this.graph_height)/ this.calculate_zoom();
+      double graph_height = (double)this.graph_height - ((double)TimelineProperties.PADDING * 2.0) + 1.0;
+      double p, j, zoom = graph_height/ this.calculate_zoom();
       int offset = (int)(zoom * ((double)(this.start_timestamp - this.oldest_timestamp) / (double)t));
-      offset = this.graph_height - (int)zoom + offset;
+      offset = (int)graph_height - (int)zoom + offset;
 
       cr_foreground.translate(0, offset);
       cr_background.translate(0, offset);
