@@ -132,15 +132,32 @@ namespace Wiz {
       this.child = child;
     }
 
-    public void Render(Cairo.Context cr) {
+    public void Render(Cairo.Context cr, double max_angle) {
       // Draw a line from each parent.x/y to child.x/y
-      int x = parent.branch.px_position;
-      int y = parent.px_position;
-      cr.move_to(x, y);
+      int px = parent.branch.px_position;
+      int py = parent.px_position;
+      int cx = child.branch.px_position;
+      int cy = child.px_position;
+      int kx, ky; // Kink position
 
-      x = child.branch.px_position;
-      y = child.px_position;      
-      cr.line_to(x, y);      
+      double odist = py - cy;
+      double adist = px - cx;
+
+      if (odist < 0) {
+        odist = odist * -1;
+      }
+      if (adist < 0) {
+        adist = adist * -1;
+      }
+      double angle = Math.atan( odist/adist ) * (180.0/Math.PI);
+
+      cr.move_to(px, py);
+      if (angle > max_angle) {
+        kx = cx;
+        ky = (int)(Math.tan(max_angle*(Math.PI/180.0)) * adist);
+        cr.line_to(kx, py-ky);
+      }
+      cr.line_to(cx, cy);      
       cr.set_source_rgb(child.branch.stroke_r, 
                         child.branch.stroke_g,
                         child.branch.stroke_b);
@@ -206,18 +223,52 @@ namespace Wiz {
     public void AddParent(TimelineNode node) {
       this.edges.append(new TimelineEdge(node, this));
     }
+
     public void Render(Cairo.Context cr) {
       int x = this.branch.px_position;
       int y = this.px_position;
-      cr.arc(x, y, this.size, 0, 2.0 * Math.PI);
-      cr.set_source_rgb(this.branch.fill_r, 
-                        this.branch.fill_g,
-                        this.branch.fill_b);
-      cr.fill_preserve();
-      cr.set_source_rgb(this.branch.stroke_r, 
-                        this.branch.stroke_g,
-                        this.branch.stroke_b);
-      cr.stroke();
+      if (this.node_type == TimelineNodeType.PRIMARY_TIP) {
+        cr.arc_negative(x, y, this.size, 0, Math.PI);
+        cr.move_to(x+this.size,y);
+        cr.line_to(x,y+this.size);
+        cr.line_to(x-this.size,y);
+        cr.set_source_rgb(0x34/255.0,0x65/255.0,0xa4/255.0);
+        cr.fill_preserve();
+        cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
+        cr.stroke();
+      } else if (this.node_type == TimelineNodeType.TIP) {
+        cr.arc_negative(x, y, this.size, 0, Math.PI);
+        cr.move_to(x+this.size,y);
+        cr.line_to(x,y+this.size);
+        cr.line_to(x-this.size,y);
+        cr.set_source_rgb(0x73/255.0,0xd2/255.0,0x16/255.0);
+        cr.fill_preserve();
+        cr.set_source_rgb(0x4e/255.0,0x9a/255.0,0x06/255.0);
+        cr.stroke();
+      } else if (this.node_type == TimelineNodeType.ROOT) {
+        cr.arc(x, y, this.size, 0, Math.PI);
+        cr.move_to(x+this.size,y);
+        cr.line_to(x,y-this.size);
+        cr.line_to(x-this.size,y);
+        cr.set_source_rgb(this.branch.fill_r, 
+                          this.branch.fill_g,
+                          this.branch.fill_b);
+        cr.fill_preserve();
+        cr.set_source_rgb(this.branch.stroke_r, 
+                          this.branch.stroke_g,
+                          this.branch.stroke_b);
+        cr.stroke();        
+      } else {
+        cr.arc(x, y, this.size, 0, 2.0 * Math.PI);
+        cr.set_source_rgb(this.branch.fill_r, 
+                          this.branch.fill_g,
+                          this.branch.fill_b);
+        cr.fill_preserve();
+        cr.set_source_rgb(this.branch.stroke_r, 
+                          this.branch.stroke_g,
+                          this.branch.stroke_b);
+        cr.stroke();
+      }
     }
   }
 
@@ -399,7 +450,7 @@ namespace Wiz {
           if ((node.uuid == primary_tip) && (this.primary_tip == null)) {
             this.primary_tip = node;
             node.node_type = TimelineNodeType.PRIMARY_TIP;  
-          } else if (node.uuid == tip) {
+          } else if ((node.uuid == tip) && (node.node_type != TimelineNodeType.PRIMARY_TIP)) {
             this.tips.append(node);
             node.node_type = TimelineNodeType.TIP;
           } else if (!edges_done) {
@@ -773,11 +824,65 @@ namespace Wiz {
       this.RenderHandle(cr, this.end_timestamp);
     }
 
-    public override bool expose_event (Gdk.EventExpose event) {
+    public override bool configure_event (Gdk.EventConfigure event) {
+      stdout.printf("Configure event????\n");
       for (var i = 0; i < this.branches.length(); i++ ) {
         var branch = this.branches.nth_data(i);
         var real_pos = ((double)branch.position - (double)this.lowest_branch_position + 0.5);
         branch.px_position = (int)(real_pos * (double)this.branch_width);
+      }
+      return true;
+    }
+
+    public override bool expose_event (Gdk.EventExpose event) {
+      // FIXME we only need to do this on configure
+      for (var i = 0; i < this.branches.length(); i++ ) {
+        var branch = this.branches.nth_data(i);
+        var real_pos = ((double)branch.position - (double)this.lowest_branch_position + 0.5);
+        branch.px_position = (int)(real_pos * (double)this.branch_width);
+      }
+
+      // FIXME we only need to do this on controls change, controls change
+      // should also happen on configure
+      double graph_height = (double)this.graph_height - (double)this.branch_width;      
+      int r, t = this.newest_timestamp - this.oldest_timestamp;
+      double p, j, zoom = graph_height/ this.calculate_zoom();
+      int offset = (int)(zoom * ((double)(this.start_timestamp - this.oldest_timestamp) / (double)t));
+      offset = (int)graph_height - (int)zoom + offset;
+      foreach (var node in this.nodes) {
+        r = node.timestamp - this.oldest_timestamp;
+        j = (double)t - (double)r;
+        p = j/(double)t;
+        node.px_position = (int)(p * zoom);
+      }
+      // Working out the max angle, thereby where the kink resides :)
+      double edge_angle_max = 45.0;
+      double odist, adist, angle;
+      foreach (var node in this.nodes) {
+        foreach (var edge in node.edges) { 
+          if (edge.child == node) {
+            var other_node = edge.parent;
+            if (other_node.branch.px_position != node.branch.px_position) {
+              //stdout.printf("Branch 1 %d, Branch 2 %d\n", other_node.branch.px_position, node.branch.px_position);
+              // Opposite and adjacent distances
+              odist = other_node.px_position - node.px_position;
+              adist = other_node.branch.px_position - node.branch.px_position;
+
+              if (odist < 0) {
+                odist = odist * -1;
+              }
+              if (adist < 0) {
+                adist = adist * -1;
+              }
+              // Do a polar conversion and get the angle, distance isn't important
+              // if the angle is less than the edge_angle_max set the new edge angle
+              angle = Math.atan( odist/adist ) * (180.0/Math.PI);
+              if (angle < edge_angle_max) {
+                edge_angle_max = angle;
+              }
+            }
+          }
+        }
       }
 
       var cr = Gdk.cairo_create (this.window);
@@ -792,7 +897,7 @@ namespace Wiz {
                           );
       cr_background.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
       cr_background.paint();
-      cr_background.translate(0, (double)TimelineProperties.PADDING);
+      cr_background.translate(0, (double)this.branch_width/2.0 + offset);
 
       var cr_foreground = new Cairo.Context(
                             new Cairo.Surface.similar(surface, 
@@ -800,33 +905,18 @@ namespace Wiz {
                                                       this.graph_width, 
                                                       this.graph_height)
                           );
-      cr_foreground.translate(0, (double)TimelineProperties.PADDING);
+      cr_foreground.translate(0, (double)this.branch_width/2.0 + offset);
 
       cr.rectangle((double)TimelineProperties.PADDING, (double)TimelineProperties.PADDING,
                    this.graph_width, this.graph_height);
       cr.set_source_rgb(0.0,0.0,0.0);
       cr.stroke();
       //this.RenderScale(cr);
-      int y = 8, r, t = this.newest_timestamp - this.oldest_timestamp;
-      double graph_height = (double)this.graph_height - ((double)TimelineProperties.PADDING * 2.0) + 1.0;
-      double p, j, zoom = graph_height/ this.calculate_zoom();
-      int offset = (int)(zoom * ((double)(this.start_timestamp - this.oldest_timestamp) / (double)t));
-      offset = (int)graph_height - (int)zoom + offset;
-
-      cr_foreground.translate(0, offset);
-      cr_background.translate(0, offset);
-
       foreach (var node in this.nodes) {
-        y = y + 16;
-        node.px_position = y;
-        r = node.timestamp - this.oldest_timestamp;
-        j = (double)t - (double)r;
-        p = j/(double)t;
-        node.px_position = (int)(p * zoom);
         foreach (var edge in node.edges) { 
           if (edge.child == node) {
             // Render the edges onto the underneath surface
-            edge.Render(cr_background);
+            edge.Render(cr_background, edge_angle_max);
           }
         }
         // Render the node onto the ontop surface
