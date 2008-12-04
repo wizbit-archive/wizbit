@@ -772,7 +772,7 @@ namespace Wiz {
       for (var i = 0; i < this.branches.length(); i++ ) {
         var branch = this.branches.nth_data(i);
         var real_pos = ((double)branch.position - (double)this.lowest_branch_position + 0.5);
-        branch.px_position = (int)(real_pos * (double)this.branch_width + 14.5);
+        branch.px_position = (int)(real_pos * (double)this.branch_width) + 22;
       }
 
       var cr = Gdk.cairo_create (this.window);
@@ -801,9 +801,10 @@ namespace Wiz {
       cr.stroke();
       //this.RenderScale(cr);
       int y = 8, r, t = this.newest_timestamp - this.oldest_timestamp;
-      double p, j, zoom = (double)this.graph_height / this.calculate_zoom();
+      double p, j, zoom = (double)(this.graph_height)/ this.calculate_zoom();
       int offset = (int)(zoom * ((double)(this.start_timestamp - this.oldest_timestamp) / (double)t));
-      offset = (int)(zoom * ((double)(this.end_timestamp - this.start_timestamp) / (double)t)) - (int)zoom + offset;
+      offset = this.graph_height - (int)zoom + offset;
+
       cr_foreground.translate(0, offset);
       cr_background.translate(0, offset);
 
