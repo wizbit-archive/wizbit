@@ -5,18 +5,16 @@
 /**
  * TODO
  * 1.  Create renderer for the scale.
- * 2.  Clean up some of the calculations
- * 3.  Optimize the shizzle out of it! 
+ * 2x  Clean up some of the calculations
+ * 3_  Optimize the shizzle out of it! 
        - Merge update_from_store and update_branches
          - Separate nicely from DB
        * Push out update_branch_positions to on configure not on expose
        * Push oout update_node_positions to when zoom has changed not on expose
- * 4.  Rename a bunch of things which are horribly named!
-
+ * 4_  Rename a bunch of things which are horribly named!
  * 5.  Node click zones calculations
  * 6.  Setting the selected node will scroll it to center
  * 7.  Work out the node globbing (nodes close to each other combind and size increases)
-
  * 8x  work out the horizontal/vertical positioning stuff
  * 9.  Fix hugging bug for negative columns
  * 10. Animations while timeline view changes, don't let zooming/panning
@@ -35,8 +33,8 @@ namespace Wiz {
   public enum TimelineProperties {
     HORIZONTAL = 0,
     VERTICAL = 1,
-    PADDING = 14,
-    SCALE_INDENT = 60 // TODO 4
+    PADDING = 8,
+    SCALE_INDENT = 50 // TODO 4
   }
   // TODO 4 (width = length?)
   public enum TimelineHandle {
@@ -241,7 +239,6 @@ namespace Wiz {
       this.edges.append(new TimelineEdge(node, this));
     }
 
-    // TODO 8
     public void Render(Cairo.Context cr, int orientation) {
       int x, y;
       if (orientation == (int)TimelineProperties.VERTICAL) {
@@ -621,7 +618,6 @@ namespace Wiz {
         }*/
     }
 
-    // TODO 8
     private void update_branch_positions() {
       for (var i = 0; i < this.branches.length(); i++ ) {
         var branch = this.branches.nth_data(i);
@@ -630,7 +626,6 @@ namespace Wiz {
       }
     }
 
-    // TODO 8
     private void update_node_positions() {
       double odist, adist, angle;
       double t = this.newest_timestamp - this.oldest_timestamp;
@@ -660,8 +655,6 @@ namespace Wiz {
         }
         node.px_position = position;
       }
-      // TODO 8 minimum is different for different orientations
-      // Working out the max angle, thereby where the kink resides :)
       this.edge_angle_max = 45.0;
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) { 
