@@ -38,12 +38,12 @@ namespace Graph {
 			return FileUtils.test(this.get_path_for_uuid(uuid), FileTest.EXISTS);
 		}
 
-		public MappedFile read(string uuid) {
+		public MappedFile read(string uuid) throws GLib.FileError {
 			string path = this.get_path_for_uuid(uuid);
 			return new MappedFile(path, false);
 		}
 
-		public string write(Object obj) {
+		public string write(Object obj) throws GLib.FileError{
 			void *bufptr;
 			long size;
 			obj.serialize(out bufptr, out size);
@@ -71,7 +71,7 @@ namespace Graph {
 			this.parsed = false;
 		}
 
-		public void write() {
+		public void write() throws GLib.FileError{
 			this.uuid = this.store.write(this);
 		}
 
@@ -83,7 +83,7 @@ namespace Graph {
 		private void *bufptr;
 		private long size;
 
-		public MappedFile read() {
+		public MappedFile read() throws GLib.FileError {
 			return this.store.read(this.uuid);
 		}
 
@@ -103,7 +103,7 @@ namespace Graph {
 			this.size = size;
 		}
 
-		public void set_contents_from_file(string path) {
+		public void set_contents_from_file(string path) throws GLib.FileError {
 			this.file = new MappedFile(path, false);
 			this.bufptr = file.get_contents();
 			this.size = file.get_length();

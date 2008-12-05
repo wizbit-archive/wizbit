@@ -78,7 +78,7 @@ namespace Wiz {
 			return new OutputStream();
 		}
 
-		public Version create_next_version_from_string(string data, Version ?parent = null) {
+		public Version create_next_version_from_string(string data, Version ?parent = null) throws GLib.FileError {
 			var blob = new Graph.Blob(this.blobs);
 			blob.set_contents((void *)data, data.len());
 			blob.write();
@@ -93,7 +93,7 @@ namespace Wiz {
 
 			// my brain can imagine edge cases where this is wrong, but its only a heuristic
 			// and is probably good enough
-			var t = new TimeVal();
+			TimeVal t;
 			t.get_current_time();
 			commit.timestamp2 = (int) t.tv_usec;
 
