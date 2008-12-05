@@ -133,6 +133,7 @@ namespace Wiz {
       // Draw a line from each parent.x/y to child.x/y
       int kx, ky; // Kink position
       int px, py, cx, cy;
+      double odist, adist;
       if (orientation == (int)TimelineProperties.VERTICAL) {
         px = parent.branch.px_position;
         py = parent.px_position;
@@ -144,27 +145,32 @@ namespace Wiz {
         cy = child.branch.px_position;
         cx = child.px_position;
       }
-      double odist = py - cy;
-      double adist = px - cx;
-
+      if (orientation == (int)TimelineProperties.VERTICAL) {
+        odist = py - cy;
+        adist = px - cx;
+      } else {
+        odist = px - cx;
+        adist = py - cy;
+      }
       if (odist < 0) { odist = odist * -1; }
       if (adist < 0) { adist = adist * -1; }
       double angle = Math.atan( odist/adist ) * (180.0/Math.PI);
 
       cr.move_to(px, py);
-      if (angle < max_angle) {
-        if (orientation == (int)TimelineProperties.VERTICAL) {
+      if (orientation == (int)TimelineProperties.VERTICAL) {
+        if (angle < max_angle) {
           kx = cx;
           ky = (int)(Math.tan(max_angle*(Math.PI/180.0)) * adist);
           cr.line_to(kx, py-ky);
-        } else {
+        }
+      } else {
+        if (angle > max_angle) {
           ky = cy;
           kx = (int)(Math.tan(max_angle*(Math.PI/180.0)) * adist);
           cr.line_to(px+kx, ky);
         }
-      } else {
-        stdout.printf("angle %f max angle %f\n", angle, max_angle); 
       }
+      
       cr.line_to(cx, cy);
       cr.set_source_rgb(child.branch.stroke_r, 
                         child.branch.stroke_g,
@@ -247,28 +253,50 @@ namespace Wiz {
       }
 
       if (this.node_type == TimelineNodeType.PRIMARY_TIP) {
-        cr.arc_negative(x, y, this.size, 0, Math.PI);
-        cr.move_to(x+this.size,y);
-        cr.line_to(x,y+this.size);
-        cr.line_to(x-this.size,y);
+        if (orientation == (int)TimelineProperties.VERTICAL) {
+          cr.arc_negative(x, y, this.size, 0, Math.PI);
+          cr.move_to(x+this.size,y);
+          cr.line_to(x,y+this.size);
+          cr.line_to(x-this.size,y);
+        } else {
+          cr.arc_negative(x, y, this.size, Math.PI/2, Math.PI+(Math.PI/2));
+          cr.move_to(x,y-this.size);
+          cr.line_to(x-this.size,y);
+          cr.line_to(x,y+this.size);
+        }
         cr.set_source_rgb(0x34/255.0,0x65/255.0,0xa4/255.0);
         cr.fill_preserve();
         cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
         cr.stroke();
       } else if (this.node_type == TimelineNodeType.TIP) {
-        cr.arc_negative(x, y, this.size, 0, Math.PI);
-        cr.move_to(x+this.size,y);
-        cr.line_to(x,y+this.size);
-        cr.line_to(x-this.size,y);
+        if (orientation == (int)TimelineProperties.VERTICAL) {
+          cr.arc_negative(x, y, this.size, 0, Math.PI);
+          cr.move_to(x+this.size,y);
+          cr.line_to(x,y+this.size);
+          cr.line_to(x-this.size,y);
+        } else {
+          cr.arc_negative(x, y, this.size, Math.PI/2, Math.PI+(Math.PI/2));
+          cr.move_to(x,y-this.size);
+          cr.line_to(x-this.size,y);
+          cr.line_to(x,y+this.size);
+        }
         cr.set_source_rgb(0x73/255.0,0xd2/255.0,0x16/255.0);
         cr.fill_preserve();
         cr.set_source_rgb(0x4e/255.0,0x9a/255.0,0x06/255.0);
         cr.stroke();
       } else if (this.node_type == TimelineNodeType.ROOT) {
-        cr.arc(x, y, this.size, 0, Math.PI);
-        cr.move_to(x+this.size,y);
-        cr.line_to(x,y-this.size);
-        cr.line_to(x-this.size,y);
+        if (orientation == (int)TimelineProperties.VERTICAL) {
+          cr.arc(x, y, this.size, 0, Math.PI);
+          cr.move_to(x+this.size,y);
+          cr.line_to(x,y-this.size);
+          cr.line_to(x-this.size,y);
+        } else {
+          cr.arc(x, y, this.size, Math.PI/2, Math.PI+(Math.PI/2));
+          cr.move_to(x,y+this.size);
+          cr.line_to(x+this.size,y);
+          cr.line_to(x,y-this.size);
+        }
+
         cr.set_source_rgb(this.branch.fill_r, 
                           this.branch.fill_g,
                           this.branch.fill_b);
@@ -632,13 +660,9 @@ namespace Wiz {
         }
         node.px_position = position;
       }
-      // TODO minimum is different for different orientations
+      // TODO 8 minimum is different for different orientations
       // Working out the max angle, thereby where the kink resides :)
-      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
-        this.edge_angle_max = 45.0;
-      } else {
-        this.edge_angle_max = 0.0;
-      }
+      this.edge_angle_max = 45.0;
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) { 
           if (edge.child != node) {
@@ -651,16 +675,11 @@ namespace Wiz {
           // Opposite and adjacent distances
           odist = edge.parent.px_position - node.px_position;
           adist = edge.parent.branch.px_position - node.branch.px_position;
+
           if (odist < 0) { odist = odist * -1; }
           if (adist < 0) { adist = adist * -1; }
-
           angle = Math.atan( odist/adist ) * (180.0/Math.PI);
-          if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
-            if (angle < this.edge_angle_max) { this.edge_angle_max = angle; }
-          } else {
-            if (angle < this.edge_angle_max) { this.edge_angle_max = angle; }
-            //if (this.edge_angle_max > 45.0) { this.edge_angle_max = 45.0; }
-          }
+          if (angle < this.edge_angle_max) { this.edge_angle_max = angle; }
         }
       }
     }
