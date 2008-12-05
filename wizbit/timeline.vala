@@ -539,32 +539,16 @@ namespace Wiz {
       var child_node = this.get_node(first_child, false);
       node.AddEdge(child_node);
       this.recurse_children(child_node, branch);
-      /*
-      for (i = 0; i < node.edges.length(); i++ ) {
-        // First child is on the same branch
-        edge = node.edges.nth_data(i);
-        if (edge.parent == node) {
-          this.recurse_children(edge.child, branch);
-          break;
-        }
-      }*/
+
+
       var children = this.commit_store.get_forwards(node.uuid);
       foreach (var child in children) {
+        // All other children are on new branches
         if (child == first_child) { continue; }
         var child_node = this.get_node(child, false);
         node.AddEdge(child_node);
         this.recurse_children(child_node, new TimelineBranch(branch));
       }
-      /*
-      // All other children are on new branches
-      for (j = (i+1); j < node.edges.length(); j++ ) {
-        edge = node.edges.nth_data(j);
-        if (edge.parent == node) {
-          this.recurse_children(edge.child, new TimelineBranch(branch));
-          break;
-        }
-      }*/
-
     }
 
     // TODO 10
