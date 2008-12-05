@@ -35,12 +35,15 @@ namespace Wiz {
 
 		/* KL, This might be crack, but getting nodes as a whole is necessary for saving time in the timeline widget
 		 * although adding a upper and lower limit to the timestamps would be a good optimisation.
+     * FIXME timeline.vala deprecated crud
 		 */
 		private static const string SELECT_NODES_SQL =
 			"SELECT c.uuid, c.timestamp FROM commits AS c ORDER BY c.timestamp";
-
 		private static const string SELECT_NODE_SQL =
 			"SELECT c.uuid, c.timestamp FROM commits AS c WHERE c.uuid = ? LIMIT 1";
+    /* TODO the new way KL */
+    private static const string SELECT_VERSION_TIMESTAMP_SQL = 
+      "SELECT c.timestamp FROM commits AS c WHERE c.uuid = ? LIMIT 1";
 
 		private static const string SELECT_RELATION_SQL =
 			"SELECT r.parent_id FROM relations AS r WHERE r.node_id=?";
@@ -58,6 +61,7 @@ namespace Wiz {
 		private Statement select_commit_by_id_sql;
 		private Statement select_nodes_sql;
 		private Statement select_node_sql;
+    private Statement select_version_timestamp_sql;
 		private Statement select_relation_sql;
 
 		public CommitStore(string database, string uuid) {
@@ -81,6 +85,7 @@ namespace Wiz {
 			this.prepare_statement(SELECT_COMMIT_BY_ID_SQL, out select_commit_by_id_sql);
 			this.prepare_statement(SELECT_NODES_SQL, out select_nodes_sql);
 			this.prepare_statement(SELECT_NODE_SQL, out select_node_sql);
+      this.prepare_statement(SELECT_VERSION_TIMESTAMP_SQL, out select_version_timestamp_sql);
 			this.prepare_statement(SELECT_RELATION_SQL, out select_relation_sql);
 		}
 
@@ -197,6 +202,14 @@ namespace Wiz {
 			this.select_node_sql.reset();
 		  return node;
 		}
+
+    public int get_timestamp(string version_uuid) {
+			this.select_version_timestamp_sql.bind_text(1, version_uuid);
+			var res = this.select_version_timestamp_sql.step();
+      int retval = this.select_version_timestamp_sql.column_int(0);
+			this.select_version_timestamp_sql.reset();
+      return retval;
+    }
 
 		public bool has_commit(string uuid) {
 			return (this.lookup_commit(uuid) != null);

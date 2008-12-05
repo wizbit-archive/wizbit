@@ -5,30 +5,26 @@
 /**
  * TODO
  * 1.  Create renderer for the scale.
- * 2.  Setting the selected node will scroll it to center
- * 3.  Animations while timeline view changes, don't let zooming/panning
- *     be jumpy. Branches can slide and fade...
+ * 2.  Clean up some of the calculations
+ * 3.  Optimize the shizzle out of it! 
+       * Merge update_from_store and update_branches
+         * Separate nicely from DB
+       * Push out update_branch_positions to on configure not on expose
+       * Push oout update_node_positions to when zoom has changed not on expose
  * 4.  Rename a bunch of things which are horribly named!
- *     node_type -> ?
- * 5.  Fix column positioning it's not centered properly...
- * 6.  work out the horizontal/vertical positioning stuff
- * 7.  Clean up some of the calculations
- * 8.  Make sure the primary tip and root aren't hanging around at the edge
- * 9.  Work out the node globbing (nodes close to each other combind and size increases)
- * 10. Fix hugging bug for negative columns
- * 11. Node click zones calculations
- * 12. Maximum angle acuteness for branch angles. 
- * 13. Separate from the database properly
- * 14. Merge update_from_store and update_branches simplifies graph loading
- * 15. Separate from the database fudgeness, create a cleaner separation
- * 16. Optimize the shizzle out of it! profile update_from_store especially
- *     update_from_store and update_columns could conceivably be integratied into
- *     a single routine. 
- * 17. use CIEXYZ colourspace for branch colouring
- * 18. Create the gradient blend for the column edges.
- * For Future Release;
+
+ * 5.  Node click zones calculations
+ * 6.  Setting the selected node will scroll it to center
+ * 7.  Work out the node globbing (nodes close to each other combind and size increases)
+
+ * 8.  work out the horizontal/vertical positioning stuff
+ * 9.  Fix hugging bug for negative columns
+ * 10. Animations while timeline view changes, don't let zooming/panning
+ *     be jumpy. Branches can slide and fade...
+ * 11. use CIEXYZ colourspace for branch colouring
+ * 12. Create the gradient blend for the column edges.
+ * For Future Release (FFR);
  * x. Kinetic scrolling - add timing/timer stuff into signal handlers
- * x. This TODO list is not upto date
  */
 
 using GLib;
@@ -40,8 +36,9 @@ namespace Wiz {
     HORIZONTAL = 0,
     VERTICAL = 1,
     PADDING = 14,
-    SCALE_INDENT = 60
+    SCALE_INDENT = 60 // TODO 4
   }
+  // TODO 4 (width = length?)
   public enum TimelineHandle {
     NONE = 0,
     LIMIT_OLD = 1,
@@ -52,6 +49,7 @@ namespace Wiz {
     INDENT = 14
   }
 
+  // TODO 4
   public enum TimelineNodeType {
     NORMAL,
     ROOT,
@@ -60,6 +58,7 @@ namespace Wiz {
   }
 
   // A class for animated branchess
+  // TODO 10, 11
   public class TimelineBranch : GLib.Object {
     public int position;             // The position of this branch
     public double opacity;           // The current opacity
@@ -104,8 +103,6 @@ namespace Wiz {
     /* Figure out if we're hiding or showing dependent on the state of the nodes
      * This is called on all branchs on a button release event, causing the 
      * branchs to re-organise on screen.
-     > FIXME This function must work in time with the overall zooming in/out
-     > which occurs after a button release event.
      */
     public void Animate() {
       foreach (var node in this.nodes) {
@@ -143,12 +140,8 @@ namespace Wiz {
       double odist = py - cy;
       double adist = px - cx;
 
-      if (odist < 0) {
-        odist = odist * -1;
-      }
-      if (adist < 0) {
-        adist = adist * -1;
-      }
+      if (odist < 0) { odist = odist * -1; }
+      if (adist < 0) { adist = adist * -1; }
       double angle = Math.atan( odist/adist ) * (180.0/Math.PI);
 
       cr.move_to(px, py);
@@ -157,7 +150,7 @@ namespace Wiz {
         ky = (int)(Math.tan(max_angle*(Math.PI/180.0)) * adist);
         cr.line_to(kx, py-ky);
       }
-      cr.line_to(cx, cy);      
+      cr.line_to(cx, cy);
       cr.set_source_rgb(child.branch.stroke_r, 
                         child.branch.stroke_g,
                         child.branch.stroke_b);
@@ -172,7 +165,7 @@ namespace Wiz {
   public class TimelineNode : GLib.Object {
     private TimelineBranch t_branch = null;
     public bool visible { get; set; }
-    public int node_type { get; set; }
+    public int node_type { get; set; } // TODO 4
     public int px_position;
     public int size;
     public string uuid;
@@ -188,6 +181,7 @@ namespace Wiz {
       set {
         if (this.t_branch != null) {
           this.t_branch.nodes.remove(this);
+          // Update the oldest node timestamp?
         }
         this.t_branch = value;
         if (this.t_branch != null) {
@@ -208,7 +202,8 @@ namespace Wiz {
       this.uuid = uuid;
       this.timestamp = timestamp;
       this.edges = new List<TimelineEdge>();
-      this.size = 15;
+      this.size = 15; // Edge size should be set based on branch_width
+                      // and globbing of nodes
     }
 
     public void AddEdge(TimelineNode node) {
@@ -224,6 +219,7 @@ namespace Wiz {
       this.edges.append(new TimelineEdge(node, this));
     }
 
+    // TODO 8, needs to know which way up to draw the tips... i think :)
     public void Render(Cairo.Context cr) {
       int x = this.branch.px_position;
       int y = this.px_position;
@@ -280,7 +276,7 @@ namespace Wiz {
     // The dag itself
     private TimelineNode primary_tip = null;
     private TimelineNode root = null;
-    private TimelineNode selected = null;
+    private TimelineNode selected = null; // TODO 6
     private List<TimelineNode> nodes;
     private List<TimelineNode> tips;
     private List<TimelineBranch> branches;
@@ -310,17 +306,16 @@ namespace Wiz {
 
     // Drawing information, what's our currentt zoom level and offset from
     // the start of the timeline
-    public int offset { get; set; }
-    public double zoom { get; set; }
+    private double offset { get; set; }
+    private double edge_angle_max { get; set; }
 
     // Orientation of the timeline and controls
-    // FIXME each should be independent
     public bool orientation_timeline = TimelineProperties.VERTICAL;
     public bool orientation_controls = TimelineProperties.HORIZONTAL;
 
     // The size of the graph, we exclude the padding and position occupied by  
     // the controls.
-    // FIXME this.orientation_*    
+    // TODO 8
     public int graph_height {
       get {
         return this.widget_height - (int)TimelineProperties.SCALE_INDENT;
@@ -333,7 +328,7 @@ namespace Wiz {
     }
 
     // Pixel width of an individual branch
-    // FIXME this.orientation_* 
+    // TODO 8
     public int branch_width {
       get {
         int rows = this.highest_branch_position - this.lowest_branch_position + 1;
@@ -434,7 +429,7 @@ namespace Wiz {
       this.window.set_user_data (null);
     }
 
-    // GRAPH HANDLING :S
+    // TODO 3
     public void update_from_store () {
       assert(this.commit_store != null);
       this.nodes = this.commit_store.get_nodes();
@@ -484,6 +479,7 @@ namespace Wiz {
       this.update_branches();
     }
 
+    // TODO 3
     private void update_branches () {
       string child_uuid = "";
       int i, j, d;
@@ -532,12 +528,12 @@ namespace Wiz {
           } else if (branch.oldest < branch_match.oldest) {
             branch.position = branch_match.position + 1;
           } else if (branch.oldest > branch_match.oldest) {
-            // FIXME There'll be a bug in negatives here easy to fix though
+            // TODO 9
             if ((branch_match.position + branch.position) > branch_match.position) {
               branch.position = branch.position * -1; 
             }
           } else {
-            // This should never happen
+            // This should never ever happen
             branch.position = branch_match.position * -1;
           }
         }
@@ -579,6 +575,7 @@ namespace Wiz {
       }
     }
 
+    // TODO 10
     private void update_visibility() {/*
         if ((node.timestamp <= this.end_timestamp) && (node.timestamp >= this.start_timestamp)) {
           node.visible = true;
@@ -587,10 +584,58 @@ namespace Wiz {
         }*/
     }
 
+    // TODO 8
+    private void update_branch_positions() {
+      for (var i = 0; i < this.branches.length(); i++ ) {
+        var branch = this.branches.nth_data(i);
+        var real_pos = (branch.position - this.lowest_branch_position + 0.5);
+        branch.px_position = (int)(real_pos * this.branch_width);
+      }
+    }
+
+    // TODO 8
+    private void update_node_positions() {
+      double odist, adist, angle;
+      double t = this.newest_timestamp - this.oldest_timestamp;
+      double r = this.end_timestamp - this.start_timestamp;
+      double graph_height = this.graph_height - this.branch_width;
+      double zoomed_height = graph_height / (r / t);
+      double offset = this.start_timestamp - this.oldest_timestamp;
+      offset = zoomed_height * (offset / t);
+      this.offset = graph_height - zoomed_height + offset;
+
+      foreach (var node in this.nodes) {
+        r = node.timestamp - this.oldest_timestamp;
+        node.px_position = (int)(((t - r) / t) * zoomed_height);
+      }
+      // Working out the max angle, thereby where the kink resides :)
+      this.edge_angle_max = 45.0;
+      foreach (var node in this.nodes) {
+        foreach (var edge in node.edges) { 
+          if (edge.child != node) {
+            continue;
+          }
+          // TODO 7
+          if (edge.parent.branch.px_position == node.branch.px_position) {
+            continue;
+          }
+          // Opposite and adjacent distances
+          odist = edge.parent.px_position - node.px_position;
+          adist = edge.parent.branch.px_position - node.branch.px_position;
+          if (odist < 0) { odist = odist * -1; }
+          if (adist < 0) { adist = adist * -1; }
+
+          angle = Math.atan( odist/adist ) * (180.0/Math.PI);
+          if (angle < this.edge_angle_max) { this.edge_angle_max = angle; }
+        }
+      }
+    }
+
     /*
      * Update the timestamp's from where the position controls are.
      *
      */
+    // TODO 8
     public void update_controls(int x) {
       if (this.grab_handle > (int)TimelineHandle.NONE) {
         var xpos = x - this.grab_offset;
@@ -623,29 +668,15 @@ namespace Wiz {
       }
     }
 
-    private int calculate_offset(int height) {
-      return (int) ((double) height * ((double) this.start_timestamp /
-                    (double) (this.newest_timestamp - this.oldest_timestamp))
-                   );
-    }
-
-    private int calculate_height(double zoom) {
-      return (int)((double)this.widget_height / zoom);
-    }
-
-    private double calculate_zoom() {
-      var range = this.end_timestamp - this.start_timestamp;
-      var total = this.newest_timestamp - this.oldest_timestamp;
-      return (double)range/(double)total;
-    }
-
     /* Converts a timestamp into a scale horizontal position. */
+    // TODO 8
     private int TimestampToHScalePos(int timestamp) {
       var range = this.newest_timestamp - this.oldest_timestamp;
       double pos = (double)(timestamp - this.oldest_timestamp) / (double)range;
       return (int)Math.ceil((pos * (double)this.widget_width) + (double)TimelineProperties.PADDING + 0.5); 
     }
 
+    // TODO 8
     private int HScalePosToTimestamp(int xpos) {
       double ratio = (xpos - (double)TimelineProperties.PADDING + 0.5) / (this.widget_width);
       return (int) Math.ceil(((this.newest_timestamp - this.oldest_timestamp) * 
@@ -653,20 +684,21 @@ namespace Wiz {
                              ) + this.oldest_timestamp
                             );
     }
+
+    // TODO 1 & 8
     /* Get the integer of the month for a timestamp */
     private int TimestampToMonth(int timestamp) {
       // Vala time... PLEASE GIMME DOCS!!!!!!!!
       return 0;
     }
+
+    // TODO 1 & 8
     /* Get the timestamp of a specific d/m/y */
     private int DateToTimestamp(int d, int m, int y) {
       return 0;
     }
 
-    private void update_node_position( TimelineNode node ) {
-
-    }
-
+    // TODO 8
     public override bool button_press_event (Gdk.EventButton event) {
       this.mouse_down = true;
       this.mouse_press_x = (int)event.x;
@@ -710,11 +742,13 @@ namespace Wiz {
       this.mouse_release_x = (int)event.x;
       this.mouse_release_y = (int)event.y;
       if (this.grab_handle > (int)TimelineHandle.NONE) {
+        // TODO 8 - update controls should pick point by orientation
         this.update_controls(this.mouse_release_x);
         this.queue_draw();
       } // else if Gtk.drag_check_threshold.... {
-        // TODO - we have to iterate over the nodes and check the polar distance
-        // not hard, but yet another iteration, thankfully we only need to do it on
+        // TODO 5, 6
+        // we have to iterate over the nodes and check the polar distance not
+        // hard, but yet another iteration, thankfully we only need to do it on
         // click and not on motion :) We can speed this up by ignoring invisible 
         // nodes.
         // did we click on a version
@@ -732,6 +766,7 @@ namespace Wiz {
       return true;
     }
 
+    // TODO 8
     public override bool motion_notify_event (Gdk.EventMotion event) {
       if (this.mouse_down && this.grab_handle > (int)TimelineHandle.NONE) {
         if (event.x != this.mouse_press_x) {
@@ -741,16 +776,17 @@ namespace Wiz {
         return true;
       }
 
-      // TODO This is really FFR part of kinetic scrolling
+      // TODO FFR part of kinetic scrolling
       // if the button is down elsewhere 
       //    pan widget to current co-ords
       return false;
     }
 
-    // TODO
+    // TODO 1 & 8
     public void RenderScale(Cairo.Context cr) {
     }
 
+    // TODO 8
     public void RenderHandle(Cairo.Context cr, int timestamp) {
       var hpos = this.TimestampToHScalePos(timestamp);
       // Handle outline
@@ -782,6 +818,7 @@ namespace Wiz {
       cr.stroke();
     }
 
+    // TODO 8
     public void RenderControls(Cairo.Context cr) {
       int start_pos = this.TimestampToHScalePos(this.start_timestamp);
       int end_pos = this.TimestampToHScalePos(this.end_timestamp);
@@ -824,66 +861,21 @@ namespace Wiz {
       this.RenderHandle(cr, this.end_timestamp);
     }
 
+    // FIXME configure doesn't currently work
+    // TODO 3
     public override bool configure_event (Gdk.EventConfigure event) {
       stdout.printf("Configure event????\n");
-      for (var i = 0; i < this.branches.length(); i++ ) {
-        var branch = this.branches.nth_data(i);
-        var real_pos = ((double)branch.position - (double)this.lowest_branch_position + 0.5);
-        branch.px_position = (int)(real_pos * (double)this.branch_width);
-      }
+      this.update_branch_positions();
       return true;
     }
 
     public override bool expose_event (Gdk.EventExpose event) {
-      // FIXME we only need to do this on configure
-      for (var i = 0; i < this.branches.length(); i++ ) {
-        var branch = this.branches.nth_data(i);
-        var real_pos = ((double)branch.position - (double)this.lowest_branch_position + 0.5);
-        branch.px_position = (int)(real_pos * (double)this.branch_width);
-      }
-
-      // FIXME we only need to do this on controls change, controls change
-      // should also happen on configure
-      double graph_height = (double)this.graph_height - (double)this.branch_width;      
-      int r, t = this.newest_timestamp - this.oldest_timestamp;
-      double p, j, zoom = graph_height/ this.calculate_zoom();
-      int offset = (int)(zoom * ((double)(this.start_timestamp - this.oldest_timestamp) / (double)t));
-      offset = (int)graph_height - (int)zoom + offset;
-      foreach (var node in this.nodes) {
-        r = node.timestamp - this.oldest_timestamp;
-        j = (double)t - (double)r;
-        p = j/(double)t;
-        node.px_position = (int)(p * zoom);
-      }
-      // Working out the max angle, thereby where the kink resides :)
-      double edge_angle_max = 45.0;
-      double odist, adist, angle;
-      foreach (var node in this.nodes) {
-        foreach (var edge in node.edges) { 
-          if (edge.child == node) {
-            var other_node = edge.parent;
-            if (other_node.branch.px_position != node.branch.px_position) {
-              //stdout.printf("Branch 1 %d, Branch 2 %d\n", other_node.branch.px_position, node.branch.px_position);
-              // Opposite and adjacent distances
-              odist = other_node.px_position - node.px_position;
-              adist = other_node.branch.px_position - node.branch.px_position;
-
-              if (odist < 0) {
-                odist = odist * -1;
-              }
-              if (adist < 0) {
-                adist = adist * -1;
-              }
-              // Do a polar conversion and get the angle, distance isn't important
-              // if the angle is less than the edge_angle_max set the new edge angle
-              angle = Math.atan( odist/adist ) * (180.0/Math.PI);
-              if (angle < edge_angle_max) {
-                edge_angle_max = angle;
-              }
-            }
-          }
-        }
-      }
+      // TODO 3
+      // FIXME we only need to do this on configure, or when orientation changes
+      // or the bit has changed.
+      this.update_branch_positions();
+      // FIXME we only need to do this when the zoom changes
+      this.update_node_positions();
 
       var cr = Gdk.cairo_create (this.window);
       this.set_double_buffered(true);
@@ -897,7 +889,8 @@ namespace Wiz {
                           );
       cr_background.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
       cr_background.paint();
-      cr_background.translate(0, (double)this.branch_width/2.0 + offset);
+      // TODO 8
+      cr_background.translate(0, (double)this.branch_width/2.0 + this.offset);
 
       var cr_foreground = new Cairo.Context(
                             new Cairo.Surface.similar(surface, 
@@ -905,7 +898,8 @@ namespace Wiz {
                                                       this.graph_width, 
                                                       this.graph_height)
                           );
-      cr_foreground.translate(0, (double)this.branch_width/2.0 + offset);
+      // TODO 8
+      cr_foreground.translate(0, (double)this.branch_width/2.0 + this.offset);
 
       cr.rectangle((double)TimelineProperties.PADDING, (double)TimelineProperties.PADDING,
                    this.graph_width, this.graph_height);
@@ -916,8 +910,12 @@ namespace Wiz {
         foreach (var edge in node.edges) { 
           if (edge.child == node) {
             // Render the edges onto the underneath surface
-            edge.Render(cr_background, edge_angle_max);
+            edge.Render(cr_background, this.edge_angle_max);
           }
+          // TODO 12
+          // Don't render all of strokes one after the other, wait until all of
+          // the nodes have drawn their lines and stroke it all at once with
+          // a pattern generated from the branch positions
         }
         // Render the node onto the ontop surface
         node.Render(cr_foreground);
