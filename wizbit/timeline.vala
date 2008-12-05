@@ -17,7 +17,7 @@
  * 6.  Setting the selected node will scroll it to center
  * 7.  Work out the node globbing (nodes close to each other combind and size increases)
 
- * 8.  work out the horizontal/vertical positioning stuff
+ * 8x  work out the horizontal/vertical positioning stuff
  * 9.  Fix hugging bug for negative columns
  * 10. Animations while timeline view changes, don't let zooming/panning
  *     be jumpy. Branches can slide and fade...
@@ -129,14 +129,21 @@ namespace Wiz {
       this.child = child;
     }
 
-    public void Render(Cairo.Context cr, double max_angle) {
+    public void Render(Cairo.Context cr, double max_angle, int orientation) {
       // Draw a line from each parent.x/y to child.x/y
-      int px = parent.branch.px_position;
-      int py = parent.px_position;
-      int cx = child.branch.px_position;
-      int cy = child.px_position;
       int kx, ky; // Kink position
-
+      int px, py, cx, cy;
+      if (orientation == (int)TimelineProperties.VERTICAL) {
+        px = parent.branch.px_position;
+        py = parent.px_position;
+        cx = child.branch.px_position;
+        cy = child.px_position;
+      } else {
+        py = parent.branch.px_position;
+        px = parent.px_position;
+        cy = child.branch.px_position;
+        cx = child.px_position;
+      }
       double odist = py - cy;
       double adist = px - cx;
 
@@ -145,10 +152,18 @@ namespace Wiz {
       double angle = Math.atan( odist/adist ) * (180.0/Math.PI);
 
       cr.move_to(px, py);
-      if (angle > max_angle) {
-        kx = cx;
-        ky = (int)(Math.tan(max_angle*(Math.PI/180.0)) * adist);
-        cr.line_to(kx, py-ky);
+      if (angle < max_angle) {
+        if (orientation == (int)TimelineProperties.VERTICAL) {
+          kx = cx;
+          ky = (int)(Math.tan(max_angle*(Math.PI/180.0)) * adist);
+          cr.line_to(kx, py-ky);
+        } else {
+          ky = cy;
+          kx = (int)(Math.tan(max_angle*(Math.PI/180.0)) * adist);
+          cr.line_to(px+kx, ky);
+        }
+      } else {
+        stdout.printf("angle %f max angle %f\n", angle, max_angle); 
       }
       cr.line_to(cx, cy);
       cr.set_source_rgb(child.branch.stroke_r, 
@@ -220,10 +235,17 @@ namespace Wiz {
       this.edges.append(new TimelineEdge(node, this));
     }
 
-    // TODO 8, needs to know which way up to draw the tips... i think :)
-    public void Render(Cairo.Context cr) {
-      int x = this.branch.px_position;
-      int y = this.px_position;
+    // TODO 8
+    public void Render(Cairo.Context cr, int orientation) {
+      int x, y;
+      if (orientation == (int)TimelineProperties.VERTICAL) {
+        x = this.branch.px_position;
+        y = this.px_position;
+      } else {
+        y = this.branch.px_position;
+        x = this.px_position;
+      }
+
       if (this.node_type == TimelineNodeType.PRIMARY_TIP) {
         cr.arc_negative(x, y, this.size, 0, Math.PI);
         cr.move_to(x+this.size,y);
@@ -311,29 +333,40 @@ namespace Wiz {
     private double edge_angle_max { get; set; }
 
     // Orientation of the timeline and controls
-    public bool orientation_timeline = TimelineProperties.VERTICAL;
-    public bool orientation_controls = TimelineProperties.HORIZONTAL;
+    public int orientation_timeline = TimelineProperties.HORIZONTAL;
+    public int orientation_controls = TimelineProperties.HORIZONTAL;
 
     // The size of the graph, we exclude the padding and position occupied by  
     // the controls.
-    // TODO 8
     public int graph_height {
       get {
-        return this.widget_height - (int)TimelineProperties.SCALE_INDENT;
+        if (this.orientation_controls == (int)TimelineProperties.HORIZONTAL) { 
+          return this.widget_height - (int)TimelineProperties.SCALE_INDENT;
+        } else {
+          return this.widget_height;
+        }
       }
     }
     public int graph_width {
       get {
-        return this.widget_width;
+        if (this.orientation_controls == (int)TimelineProperties.HORIZONTAL) { 
+          return this.widget_width;
+        } else {
+          return this.widget_width - (int)TimelineProperties.SCALE_INDENT;
+        }
       }
     }
 
     // Pixel width of an individual branch
-    // TODO 8
     public int branch_width {
       get {
-        int rows = this.highest_branch_position - this.lowest_branch_position + 1;
-        return this.graph_width / rows; 
+        if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) { 
+          int rows = this.highest_branch_position - this.lowest_branch_position + 1;
+          return this.graph_width / rows;
+        } else {
+          int rows = this.highest_branch_position - this.lowest_branch_position + 1;
+          return this.graph_height / rows;
+        } 
       }
     }
 
@@ -378,8 +411,8 @@ namespace Wiz {
     }
 
     public override void size_request (out Gtk.Requisition requisition) {
-      requisition.width = 250;
-      requisition.height = 400;
+      requisition.width = 400;
+      requisition.height = 220;
     }
 
     public override void size_allocate (Gdk.Rectangle allocation) {
@@ -540,7 +573,6 @@ namespace Wiz {
       node.AddEdge(child_node);
       this.recurse_children(child_node, branch);
 
-
       var children = this.commit_store.get_forwards(node.uuid);
       foreach (var child in children) {
         // All other children are on new branches
@@ -575,18 +607,38 @@ namespace Wiz {
       double odist, adist, angle;
       double t = this.newest_timestamp - this.oldest_timestamp;
       double r = this.end_timestamp - this.start_timestamp;
-      double graph_height = this.graph_height - this.branch_width;
-      double zoomed_height = graph_height / (r / t);
       double offset = this.start_timestamp - this.oldest_timestamp;
-      offset = zoomed_height * (offset / t);
-      this.offset = graph_height - zoomed_height + offset;
-
+      int position;
+      double zoomed_height, zoomed_width;
+      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+        double graph_height = this.graph_height - this.branch_width;
+        zoomed_height = graph_height / (r / t);
+        offset = zoomed_height * (offset / t);
+        this.offset = graph_height - zoomed_height + offset;
+      } else {
+        // Gotta invert offset again :/
+        double graph_width = this.graph_width - this.branch_width;
+        zoomed_width = graph_width / (r / t);
+        offset = zoomed_width * (offset / t);
+        this.offset = 0 - graph_width + zoomed_width - offset - this.branch_width;
+      }
       foreach (var node in this.nodes) {
         r = node.timestamp - this.oldest_timestamp;
-        node.px_position = (int)(((t - r) / t) * zoomed_height);
+        if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+          position = (int)(((t - r) / t) * zoomed_height);
+        } else {
+          position = (int)(((t - r) / t) * zoomed_width);
+          position = graph_width - position;
+        }
+        node.px_position = position;
       }
+      // TODO minimum is different for different orientations
       // Working out the max angle, thereby where the kink resides :)
-      this.edge_angle_max = 45.0;
+      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+        this.edge_angle_max = 45.0;
+      } else {
+        this.edge_angle_max = 0.0;
+      }
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) { 
           if (edge.child != node) {
@@ -603,7 +655,12 @@ namespace Wiz {
           if (adist < 0) { adist = adist * -1; }
 
           angle = Math.atan( odist/adist ) * (180.0/Math.PI);
-          if (angle < this.edge_angle_max) { this.edge_angle_max = angle; }
+          if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+            if (angle < this.edge_angle_max) { this.edge_angle_max = angle; }
+          } else {
+            if (angle < this.edge_angle_max) { this.edge_angle_max = angle; }
+            //if (this.edge_angle_max > 45.0) { this.edge_angle_max = 45.0; }
+          }
         }
       }
     }
@@ -876,18 +933,23 @@ namespace Wiz {
                           );
       cr_background.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
       cr_background.paint();
-      // TODO 8
-      cr_background.translate(0, (double)this.branch_width/2.0 + this.offset);
 
+      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+        cr_background.translate(0, (double)this.branch_width/2.0 + this.offset);
+      } else {
+        cr_background.translate((double)this.branch_width/2.0 + this.offset, 0);
+      }
       var cr_foreground = new Cairo.Context(
                             new Cairo.Surface.similar(surface, 
                                                       Cairo.Content.COLOR_ALPHA, 
                                                       this.graph_width, 
                                                       this.graph_height)
                           );
-      // TODO 8
-      cr_foreground.translate(0, (double)this.branch_width/2.0 + this.offset);
-
+      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+        cr_foreground.translate(0, (double)this.branch_width/2.0 + this.offset);
+      } else {
+        cr_foreground.translate((double)this.branch_width/2.0 + this.offset, 0);
+      }
       cr.rectangle((double)TimelineProperties.PADDING, (double)TimelineProperties.PADDING,
                    this.graph_width, this.graph_height);
       cr.set_source_rgb(0.0,0.0,0.0);
@@ -897,7 +959,7 @@ namespace Wiz {
         foreach (var edge in node.edges) { 
           if (edge.child == node) {
             // Render the edges onto the underneath surface
-            edge.Render(cr_background, this.edge_angle_max);
+            edge.Render(cr_background, this.edge_angle_max, (int)this.orientation_timeline);
           }
           // TODO 12
           // Don't render all of strokes one after the other, wait until all of
@@ -905,7 +967,7 @@ namespace Wiz {
           // a pattern generated from the branch positions
         }
         // Render the node onto the ontop surface
-        node.Render(cr_foreground);
+        node.Render(cr_foreground, (int)this.orientation_timeline);
       }
       // composite surfaces together
       cr.set_source_surface(cr_background.get_group_target(), 
