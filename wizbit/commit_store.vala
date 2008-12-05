@@ -33,15 +33,6 @@ namespace Wiz {
 		private static const string SELECT_COMMIT_BY_ID_SQL = 
 			"SELECT c.uuid FROM commits AS c WHERE c.id=? LIMIT 1";
 
-		/* KL, This might be crack, but getting nodes as a whole is necessary for saving time in the timeline widget
-		 * although adding a upper and lower limit to the timestamps would be a good optimisation.
-     * FIXME timeline.vala deprecated crud
-		 */
-		private static const string SELECT_NODES_SQL =
-			"SELECT c.uuid, c.timestamp FROM commits AS c ORDER BY c.timestamp";
-		private static const string SELECT_NODE_SQL =
-			"SELECT c.uuid, c.timestamp FROM commits AS c WHERE c.uuid = ? LIMIT 1";
-    /* TODO the new way KL */
     private static const string SELECT_VERSION_TIMESTAMP_SQL = 
       "SELECT c.timestamp FROM commits AS c WHERE c.uuid = ? LIMIT 1";
 
@@ -59,8 +50,6 @@ namespace Wiz {
 		private Statement insert_relation_sql;
 		private Statement select_commit_sql;
 		private Statement select_commit_by_id_sql;
-		private Statement select_nodes_sql;
-		private Statement select_node_sql;
     private Statement select_version_timestamp_sql;
 		private Statement select_relation_sql;
 
@@ -83,8 +72,6 @@ namespace Wiz {
 			this.prepare_statement(INSERT_RELATION_SQL, out insert_relation_sql);
 			this.prepare_statement(SELECT_COMMIT_SQL, out select_commit_sql);
 			this.prepare_statement(SELECT_COMMIT_BY_ID_SQL, out select_commit_by_id_sql);
-			this.prepare_statement(SELECT_NODES_SQL, out select_nodes_sql);
-			this.prepare_statement(SELECT_NODE_SQL, out select_node_sql);
       this.prepare_statement(SELECT_VERSION_TIMESTAMP_SQL, out select_version_timestamp_sql);
 			this.prepare_statement(SELECT_RELATION_SQL, out select_relation_sql);
 		}
@@ -177,30 +164,6 @@ namespace Wiz {
 			assert(res == Sqlite.DONE);
 			this.get_root_sql.reset();
 			return null;
-		}
-
-		public List<string> get_nodes() {
-			var retval = new List<TimelineNode>();
-			var res = this.select_nodes_sql.step();
-			while (res == Sqlite.ROW) {
-				var node = new TimelineNode(this.select_nodes_sql.column_text(0),
-											this.select_nodes_sql.column_int(1));
-				retval.append(node);
-				res = this.select_nodes_sql.step();
-			}
-			assert(res == Sqlite.DONE);
-			this.select_nodes_sql.reset();
-			return retval;
-		}
-
-		public TimelineNode get_node(string version_uuid) {
-			this.select_node_sql.bind_text(1, version_uuid);
-			var res = this.select_node_sql.step();
-			var node = new TimelineNode(this.select_node_sql.column_text(0),
-										this.select_node_sql.column_int(1));
-			assert(res == Sqlite.DONE);
-			this.select_node_sql.reset();
-		  return node;
 		}
 
     public int get_timestamp(string version_uuid) {

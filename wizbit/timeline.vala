@@ -7,8 +7,8 @@
  * 1.  Create renderer for the scale.
  * 2.  Clean up some of the calculations
  * 3.  Optimize the shizzle out of it! 
-       * Merge update_from_store and update_branches
-         * Separate nicely from DB
+       - Merge update_from_store and update_branches
+         - Separate nicely from DB
        * Push out update_branch_positions to on configure not on expose
        * Push oout update_node_positions to when zoom has changed not on expose
  * 4.  Rename a bunch of things which are horribly named!
@@ -202,6 +202,7 @@ namespace Wiz {
       this.uuid = uuid;
       this.timestamp = timestamp;
       this.edges = new List<TimelineEdge>();
+      this.node_type = TimelineNodeType.NORMAL;
       this.size = 15; // Edge size should be set based on branch_width
                       // and globbing of nodes
     }
@@ -429,98 +430,71 @@ namespace Wiz {
       this.window.set_user_data (null);
     }
 
-    // TODO 3
+    private TimelineNode get_node(string uuid, bool prepend) {
+      foreach (var node in this.nodes) {
+        if (node.uuid == uuid) {
+          return node;
+        }
+      }
+      var node = new TimelineNode(uuid, this.commit_store.get_timestamp(uuid));
+      if (prepend) {
+        this.nodes.prepend(node);
+      } else {
+        this.nodes.append(node);
+      }
+      return node;
+    }
+
     public void update_from_store () {
       assert(this.commit_store != null);
-      this.nodes = this.commit_store.get_nodes();
-      // Iterate the new nodes and add edges
+      string child_uuid = "";
       string root = this.commit_store.get_root();
-      string primary_tip = this.commit_store.get_primary_tip();
-      var tips = this.commit_store.get_tips();
-      // Try and save a few iterations of the nodes by doing the edges during
-      // the first tip cycle, its not pretty but it works
-      bool edges_done = false;
-      foreach (var tip in tips) {
-        foreach (var node in this.nodes) {
-          if ((node.uuid == primary_tip) && (this.primary_tip == null)) {
-            this.primary_tip = node;
-            node.node_type = TimelineNodeType.PRIMARY_TIP;  
-          } else if ((node.uuid == tip) && (node.node_type != TimelineNodeType.PRIMARY_TIP)) {
-            this.tips.append(node);
-            node.node_type = TimelineNodeType.TIP;
-          } else if (!edges_done) {
-            if (node.uuid == root) {
-              this.root = node;
-              node.node_type = TimelineNodeType.ROOT;
-            } else {
-              node.node_type = TimelineNodeType.NORMAL;
-            }
-            // Unfortunately we've got to iterate this many times because
-            // we need to tie up seen nodes by edges :/ At least we only have to
-            // do it when the bit changes
-            var children = this.commit_store.get_forwards(node.uuid);
-            foreach (var child in children) {
-              foreach (var child_node in this.nodes) {
-                if (child_node.uuid == child) {
-                  node.AddEdge(child_node);
-                  break;
-                }
-              }
-            }
-          }          
+      string primary_tip = this.commit_store.get_primary_tip();      
+      this.primary_tip = this.get_node(primary_tip, false);
+      this.tips.append(this.primary_tip);
+      this.primary_tip.node_type = TimelineNodeType.PRIMARY_TIP;
+      TimelineNode node = this.primary_tip;
+
+      TimelineBranch branch = new TimelineBranch(null);
+      this.branches.append(branch);
+      branch.position = 0;
+
+      // Step backward over parents until we hit the root
+      while (true) {
+        var children = this.commit_store.get_forwards(node.uuid);
+        foreach (var child in children) {
+          if (child == child_uuid) { continue; }
+          var child_node = this.get_node(child, false);
+          node.AddEdge(child_node);
+          this.recurse_children(child_node, new TimelineBranch(branch));
         }
-        edges_done = true;
+        child_uuid = node.uuid;
+        node.branch = branch;
+        if (node.uuid == root) {
+          this.root = node;
+          this.root.node_type = TimelineNodeType.ROOT;
+          break;
+        }
+        var last_node = node;
+        node = this.get_node(this.commit_store.get_backward(node.uuid), true);
+        node.AddEdge(last_node);
       }
       this.newest_timestamp = this.primary_tip.timestamp;
       this.oldest_timestamp = this.root.timestamp;
       this.start_timestamp = this.oldest_timestamp;
       this.end_timestamp = this.newest_timestamp;
-
       this.update_branches();
     }
 
-    // TODO 3
     private void update_branches () {
-      string child_uuid = "";
       int i, j, d;
-      TimelineNode node = this.primary_tip;
-      TimelineEdge edge;
-      TimelineBranch branch = new TimelineBranch(null);
-      TimelineBranch branch_match;
-      this.branches.append(branch);
-      branch.position = 0;
- 
-      // Step backward over parents until we hit the root
-      while (true) {
-        if (node.edges.length() > 2) {
-          for (i = 0; i < node.edges.length(); i++ ) {
-            edge = node.edges.nth_data(i);
-            if ((edge.child.uuid != child_uuid) &&
-                (edge.parent == node)) { // Branch for every child too much
-              this.recurse_children(edge.child, new TimelineBranch(branch));
-            }
-          }
-        }
-        child_uuid = node.uuid;
-        node.branch = branch;
-        if (node == this.root) {
-          break;
-        }
-        for (i = 0; i < node.edges.length(); i++ ) {
-          edge = node.edges.nth_data(i);
-          if (edge.child == node) {
-            node = edge.parent;
-            break;
-          }
-        }
-      }
       // Now that all the branches exist, and the reflogs of each tip assigned
       // to a branch. We can arrange the branches into the densest space.
       for (i = 1; i < this.branches.length(); i++ ) {
         d = 1;
-        branch = this.branches.nth_data(i);
+        var branch = this.branches.nth_data(i);
         for (j = 1; j < i; j++ ) {
-          branch_match = this.branches.nth_data(j);
+          var branch_match = this.branches.nth_data(j);
           /* HUGGING */ 
           if ((branch.oldest > branch_match.newest) ||
               (branch.newest < branch_match.oldest)) {
@@ -556,6 +530,16 @@ namespace Wiz {
         this.branches.append(branch);
       }
 
+      var first_child = this.commit_store.get_forward(node.uuid);
+      if (first_child == null) {
+        node.node_type = TimelineNodeType.TIP;
+        this.tips.append(node);
+        return;
+      }
+      var child_node = this.get_node(first_child, false);
+      node.AddEdge(child_node);
+      this.recurse_children(child_node, branch);
+      /*
       for (i = 0; i < node.edges.length(); i++ ) {
         // First child is on the same branch
         edge = node.edges.nth_data(i);
@@ -563,8 +547,15 @@ namespace Wiz {
           this.recurse_children(edge.child, branch);
           break;
         }
+      }*/
+      var children = this.commit_store.get_forwards(node.uuid);
+      foreach (var child in children) {
+        if (child == first_child) { continue; }
+        var child_node = this.get_node(child, false);
+        node.AddEdge(child_node);
+        this.recurse_children(child_node, new TimelineBranch(branch));
       }
-
+      /*
       // All other children are on new branches
       for (j = (i+1); j < node.edges.length(); j++ ) {
         edge = node.edges.nth_data(j);
@@ -572,11 +563,13 @@ namespace Wiz {
           this.recurse_children(edge.child, new TimelineBranch(branch));
           break;
         }
-      }
+      }*/
+
     }
 
     // TODO 10
-    private void update_visibility() {/*
+    private void update_visibility() {
+        /*
         if ((node.timestamp <= this.end_timestamp) && (node.timestamp >= this.start_timestamp)) {
           node.visible = true;
         } else {
@@ -819,13 +812,12 @@ namespace Wiz {
     }
 
     // TODO 8
-    public void RenderControls(Cairo.Context cr) {
-      int start_pos = this.TimestampToHScalePos(this.start_timestamp);
-      int end_pos = this.TimestampToHScalePos(this.end_timestamp);
-      // Render background
-      cr.rectangle((double)TimelineProperties.PADDING + 0.5, this.widget_height - 22.5,
+    public void RenderControlsBackground(Cairo.Context cr) {
+      cr.rectangle((double)TimelineProperties.PADDING + 0.5, 
+                   this.widget_height - 22.5,
                    this.widget_width, 6.0);
-      var pattern = new Cairo.Pattern.linear(0, this.widget_height - 22.5, 0, this.widget_height - 16.5);
+      var pattern = new Cairo.Pattern.linear(0, this.widget_height - 22.5, 
+                                             0, this.widget_height - 16.5);
       pattern.add_color_stop_rgb(0, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
       pattern.add_color_stop_rgb(1, 0xee/255.0, 0xee/255.0, 0xec/255.0);
       cr.set_line_width(1);
@@ -833,11 +825,18 @@ namespace Wiz {
       cr.fill_preserve();
       cr.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
       cr.stroke();
+    }
 
-      // Render slider
+    // TODO 8
+    public void RenderSlider(Cairo.Context cr) {
+      int start_pos = this.TimestampToHScalePos(this.start_timestamp);
+      int end_pos = this.TimestampToHScalePos(this.end_timestamp);
+      double center = this.start_timestamp + ((this.end_timestamp - this.start_timestamp)/2);
+      center = (double)this.TimestampToHScalePos((int)center) - 3.5; 
+
       cr.rectangle (start_pos + 4.5, this.widget_height - 24.5,
                     end_pos - start_pos - 9, 9);
-      pattern = new Cairo.Pattern.linear(0, this.widget_height - 24.5, 
+      var pattern = new Cairo.Pattern.linear(0, this.widget_height - 24.5, 
                                          0,this.widget_height - 15.5);
       pattern.add_color_stop_rgb(0, 0x72/255.0,0x9f/255.0,0xcf/255.0);
       pattern.add_color_stop_rgb(1, 0x34/255.0,0x65/255.0,0xa4/255.0);
@@ -845,10 +844,9 @@ namespace Wiz {
       cr.fill_preserve();
       cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
       // Render some ticks in the middle of the slider
-      var pos = this.TimestampToHScalePos(this.start_timestamp + ((this.end_timestamp - this.start_timestamp)/2)) - 3.5; 
       for (var i = 0; i < 3; i++) {
-        cr.move_to(pos + (i * 3), this.widget_height - 22.5);
-        cr.line_to(pos + (i * 3), this.widget_height - 17.5);
+        cr.move_to(center + (i * 3), this.widget_height - 22.5);
+        cr.line_to(center + (i * 3), this.widget_height - 17.5);
       }
       cr.stroke();
       // Slider Highlight
@@ -856,7 +854,12 @@ namespace Wiz {
       cr.rectangle (start_pos + 5.5, this.widget_height - 23.5,
                     end_pos - start_pos - 11, 7);
       cr.stroke();
+    }
 
+    // TODO 8
+    public void RenderControls(Cairo.Context cr) {
+      this.RenderControlsBackground(cr);
+      this.RenderSlider(cr);
       this.RenderHandle(cr, this.start_timestamp);
       this.RenderHandle(cr, this.end_timestamp);
     }
