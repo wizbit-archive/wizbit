@@ -560,9 +560,15 @@ namespace Wiz {
           } else if (branch.oldest < branch_match.oldest) {
             branch.position = branch_match.position + 1;
           } else if (branch.oldest > branch_match.oldest) {
-            // TODO 9
-            if ((branch_match.position + branch.position) > branch_match.position) {
-              branch.position = branch.position * -1; 
+            // TODO 9 I think this now works... not sure with a much more complex graph...
+            if (branch.position > 0) {
+              if ((branch_match.position + branch.position) > branch_match.position) {
+                branch.position = branch.position * -1; 
+              }
+            } else if (branch_match.position < 0) {
+              if ((branch_match.position + branch.position) < branch_match.position) {
+                branch.position = branch.position * -1; 
+              }
             }
           } else {
             // This should never ever happen
