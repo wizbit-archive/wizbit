@@ -4,19 +4,19 @@
 
 /**
  * TODO
- * 1.  Create renderer for the scale.
+ * 1_  Create renderer for the scale.
  * 2x  Clean up some of the calculations
- * 3_  Optimize the shizzle out of it! 
+ * 3x  Optimize the shizzle out of it! 
        - Merge update_from_store and update_branches
          - Separate nicely from DB
-       * Push out update_branch_positions to on configure not on expose
-       * Push oout update_node_positions to when zoom has changed not on expose
+       - Push out update_branch_positions to on configure not on expose
+       - Push oout update_node_positions to when zoom has changed not on expose
  * 4_  Rename a bunch of things which are horribly named!
  * 5.  Node click zones calculations
  * 6.  Setting the selected node will scroll it to center
  * 7.  Work out the node globbing (nodes close to each other combind and size increases)
  * 8x  work out the horizontal/vertical positioning stuff
- * 9.  Fix hugging bug for negative columns
+ * 9x  Fix hugging bug for negative columns
  * 10. Animations while timeline view changes, don't let zooming/panning
  *     be jumpy. Branches can slide and fade...
  * 11. use CIEXYZ colourspace for branch colouring
@@ -46,6 +46,13 @@ namespace Wiz {
     HEIGHT = 13,
     INDENT = 14
   }
+  public enum TimelineUnit {
+    MINUTES,
+    HOURS,
+    DAYS,
+    MONTHS,
+    YEARS
+  }
 
   // TODO 4
   public enum TimelineNodeType {
@@ -57,7 +64,7 @@ namespace Wiz {
 
   // A class for animated branchess
   // TODO 10, 11
-  public class TimelineBranch : GLib.Object {
+  private class TimelineBranch : GLib.Object {
     public int position;             // The position of this branch
     public double opacity;           // The current opacity
     public int offset;               // The current offset position
@@ -118,7 +125,7 @@ namespace Wiz {
   /* Each edge is a connetion in a certain direction, from the parent to the
    * child
    */
-  public class TimelineEdge : GLib.Object {
+  private class TimelineEdge : GLib.Object {
     public TimelineNode parent;
     public TimelineNode child;
 
@@ -181,7 +188,7 @@ namespace Wiz {
    * the edges contain the direction of this connection. The node also stores
    * its position and size within the widget.
    */
-  public class TimelineNode : GLib.Object {
+  private class TimelineNode : GLib.Object {
     private TimelineBranch t_branch = null;
     public bool visible { get; set; }
     public int node_type { get; set; } // TODO 4
@@ -413,11 +420,29 @@ namespace Wiz {
       }
       set {
         if (value != null) {
-            this.bit = this.store.open_bit(value);
-            assert(this.bit.commits != null);
-            this.commit_store = this.bit.commits;
-            assert(this.commit_store != null);
+          this.bit = this.store.open_bit(value);
+          assert(this.bit.commits != null);
+          this.commit_store = this.bit.commits;
+          assert(this.commit_store != null);
+          this.update_from_store();
         }
+      }
+    }
+
+    public string selected_uuid {
+      get {
+        return this.selected.uuid;
+      }
+      set {
+        this.selected = null;
+        foreach (var node in this.nodes) {
+          if (node.uuid == value) {
+            this.selected = node;
+            break;
+          }
+        }
+        // TODO 6
+        if (this.selected != null) { /*this.scroll_to_node(this.selected);*/ }
       }
     }
 
@@ -425,14 +450,14 @@ namespace Wiz {
 
     // We can construct with no bit specified, and use bit_uuid to open the bit
     public Timeline(Store store, string? bit_uuid) {
-      stdout.printf("Bit UUID: %s\n", bit_uuid);
-      this.store = store;
-      this.bit_uuid = bit_uuid;
+      this.set_double_buffered(true);
+      this.nodes = new List<TimelineNode>();
       this.tips = new List<TimelineNode>();
       this.branches = new List<TimelineBranch>();
       this.mouse_down = false;
       this.lowest_branch_position = 0;
-      this.update_from_store();
+      this.store = store;
+      this.bit_uuid = bit_uuid;
     }
 
     public override void size_request (out Gtk.Requisition requisition) {
@@ -441,24 +466,20 @@ namespace Wiz {
     }
 
     public override void size_allocate (Gdk.Rectangle allocation) {
-      // Save the allocated space
       this.allocation = (Gtk.Allocation)allocation;
  
-      // If we're realized, move and resize the window to the
-      // requested coordinates/positions
       if ((this.get_flags () & Gtk.WidgetFlags.REALIZED) == 0)
         return;
       this.window.move_resize (this.allocation.x, this.allocation.y,
                                this.allocation.width, this.allocation.height);
+
+      // size has changed so we update the position calculations
+      this.update_branch_positions();
+      this.update_node_positions();
     }
 
     public override void realize () {
-      // First set an internal flag telling that we're realized
       this.set_flags (Gtk.WidgetFlags.REALIZED);
- 
-      // Create a new gdk.Window which we can draw on.
-      // Also say that we want to receive exposure events by setting
-      // the event_mask
       var attrs = Gdk.WindowAttr ();
       attrs.window_type = Gdk.WindowType.CHILD;
       attrs.width = this.allocation.width;
@@ -468,20 +489,14 @@ namespace Wiz {
                                              Gdk.EventMask.BUTTON_PRESS_MASK |
                                              Gdk.EventMask.BUTTON_RELEASE_MASK;
       this.window = new Gdk.Window (this.get_parent_window (), attrs, 0);
- 
-      // Associate the gdk.Window with ourselves, Gtk+ needs a reference
-      // between the widget and the gdk window
       this.window.set_user_data (this);
- 
-      // Attach the style to the gdk.Window, a style contains colors and
-      // GC contextes used for drawing
       this.style = this.style.attach (this.window);
- 
-      // The default color of the background should be what
-      // the style (theme engine) tells us.
       this.style.set_background (this.window, Gtk.StateType.NORMAL);
       this.window.move_resize (this.allocation.x, this.allocation.y,
                                this.allocation.width, this.allocation.height);
+      // Initial positioning calculations, now that we know how bit the widget is
+      this.update_branch_positions();
+      this.update_node_positions();
     }
 
     public override void unrealize () {
@@ -503,7 +518,7 @@ namespace Wiz {
       return node;
     }
 
-    public void update_from_store () {
+    private void update_from_store () {
       assert(this.commit_store != null);
       string child_uuid = "";
       string root = this.commit_store.get_root();
@@ -512,7 +527,6 @@ namespace Wiz {
       this.tips.append(this.primary_tip);
       this.primary_tip.node_type = TimelineNodeType.PRIMARY_TIP;
       TimelineNode node = this.primary_tip;
-
       TimelineBranch branch = new TimelineBranch(null);
       this.branches.append(branch);
       branch.position = 0;
@@ -546,6 +560,7 @@ namespace Wiz {
 
     private void update_branches () {
       int i, j, d;
+      /* HUGGING */ 
       // Now that all the branches exist, and the reflogs of each tip assigned
       // to a branch. We can arrange the branches into the densest space.
       for (i = 1; i < this.branches.length(); i++ ) {
@@ -553,14 +568,13 @@ namespace Wiz {
         var branch = this.branches.nth_data(i);
         for (j = 1; j < i; j++ ) {
           var branch_match = this.branches.nth_data(j);
-          /* HUGGING */ 
           if ((branch.oldest > branch_match.newest) ||
               (branch.newest < branch_match.oldest)) {
             branch.position = branch_match.position;
           } else if (branch.oldest < branch_match.oldest) {
             branch.position = branch_match.position + 1;
           } else if (branch.oldest > branch_match.oldest) {
-            // TODO 9 I think this now works... not sure with a much more complex graph...
+            // TODO 9 I think this now works... not sure without a much more complex graph...
             if (branch.position > 0) {
               if ((branch_match.position + branch.position) > branch_match.position) {
                 branch.position = branch.position * -1; 
@@ -572,6 +586,7 @@ namespace Wiz {
             }
           } else {
             // This should never ever happen
+            stdout.printf("Branch position wasn't hugged\n");
             branch.position = branch_match.position * -1;
           }
         }
@@ -582,13 +597,10 @@ namespace Wiz {
         } else if (branch.position > this.highest_branch_position) {
           this.highest_branch_position = branch.position;
         }
-
       }
     }
 
     private void recurse_children (TimelineNode node, TimelineBranch branch) {
-      TimelineEdge edge;
-      int i, j;
       node.branch = branch;
       if (this.branches.index(branch) < 0) {
         this.branches.append(branch);
@@ -616,12 +628,14 @@ namespace Wiz {
 
     // TODO 10
     private void update_visibility() {
-        /*
-        if ((node.timestamp <= this.end_timestamp) && (node.timestamp >= this.start_timestamp)) {
+      foreach (var node in this.nodes) {
+        if ((node.timestamp <= this.end_timestamp) && 
+            (node.timestamp >= this.start_timestamp)) {
           node.visible = true;
         } else {
           node.visible = false;
-        }*/
+        }
+      }
     }
 
     private void update_branch_positions() {
@@ -638,14 +652,13 @@ namespace Wiz {
       double r = this.end_timestamp - this.start_timestamp;
       double offset = this.start_timestamp - this.oldest_timestamp;
       int position;
-      double zoomed_height, zoomed_width;
+      double zoomed_height = 0, zoomed_width = 0;
       if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
         double graph_height = this.graph_height - this.branch_width;
         zoomed_height = graph_height / (r / t);
         offset = zoomed_height * (offset / t);
         this.offset = graph_height - zoomed_height + offset;
       } else {
-        // Gotta invert offset again :/
         double graph_width = this.graph_width - this.branch_width;
         zoomed_width = graph_width / (r / t);
         offset = zoomed_width * (offset / t);
@@ -688,7 +701,9 @@ namespace Wiz {
      *
      */
     // TODO 8
-    public void update_controls(int x) {
+    private void update_controls(int x) {
+      int last_start = this.start_timestamp;
+      int last_end = this.end_timestamp;
       if (this.grab_handle > (int)TimelineHandle.NONE) {
         var xpos = x - this.grab_offset;
         if (this.grab_handle == TimelineHandle.LIMIT_OLD) {
@@ -700,7 +715,8 @@ namespace Wiz {
           var half_time = (this.end_timestamp - this.start_timestamp)/2;
           var tmp_s = click_timestamp - half_time;
           var tmp_e = click_timestamp + half_time;
-          if ((tmp_s >= this.oldest_timestamp) && (tmp_e <= this.newest_timestamp)) {
+          if ((tmp_s >= this.oldest_timestamp) && 
+              (tmp_e <= this.newest_timestamp)) {
             this.start_timestamp = tmp_s;
             this.end_timestamp = tmp_e;
           }
@@ -716,6 +732,10 @@ namespace Wiz {
         }
         if (this.end_timestamp > this.newest_timestamp) {
           this.end_timestamp = this.newest_timestamp;
+        }
+        if ((last_start != this.start_timestamp) ||
+            (last_end != this.end_timestamp)) {
+          this.update_node_positions();
         }
       }
     }
@@ -737,17 +757,37 @@ namespace Wiz {
                             );
     }
 
-    // TODO 1 & 8
     /* Get the integer of the month for a timestamp */
     private int TimestampToMonth(int timestamp) {
-      // Vala time... PLEASE GIMME DOCS!!!!!!!!
-      return 0;
+      var t = Time.gm((time_t) timestamp);
+      return t.month;
     }
 
-    // TODO 1 & 8
     /* Get the timestamp of a specific d/m/y */
     private int DateToTimestamp(int d, int m, int y) {
-      return 0;
+      Time t = Time();
+      t.day = d;
+      t.month = m;
+      t.year = y;
+      return (int) t.mktime();
+    }
+
+    // Returns the best scale unit for the range of time between newest and 
+    // oldest timestamps.  
+    private int GetScaleUnit() {
+      int t = this.newest_timestamp - this.oldest_timestamp;
+      // This isn't the best way to do this but nevermind :/
+      if (t < 60 * 60 ) {
+        return TimelineUnit.MINUTES;
+      } else if (t < 60 * 60 * 24) { 
+        return TimelineUnit.HOURS;
+      } else if (t < 60 * 60 * 24 * 30) { 
+        return TimelineUnit.DAYS;
+      } else if (t < 60 * 60 * 24 * 30 * 12) { 
+        return TimelineUnit.MONTHS;
+      } else {
+        return TimelineUnit.YEARS;
+      }
     }
 
     // TODO 8
@@ -778,7 +818,6 @@ namespace Wiz {
           this.grab_handle = TimelineHandle.SLIDER;
           this.grab_offset = this.mouse_press_x - (st + ((et - st)/2));
         }
-
       } else {
         this.grab_handle = TimelineHandle.NONE;
       }
@@ -835,11 +874,15 @@ namespace Wiz {
     }
 
     // TODO 1 & 8
-    public void RenderScale(Cairo.Context cr) {
+    private void RenderScale(Cairo.Context cr) {
+      this.GetScaleUnit();
+    }
+
+    private void RenderControlsScale(Cairo.Context cr) {
     }
 
     // TODO 8
-    public void RenderHandle(Cairo.Context cr, int timestamp) {
+    private void RenderHandle(Cairo.Context cr, int timestamp) {
       var hpos = this.TimestampToHScalePos(timestamp);
       // Handle outline
       cr.move_to(hpos - 4.5, this.widget_height - 24.5);
@@ -871,7 +914,7 @@ namespace Wiz {
     }
 
     // TODO 8
-    public void RenderControlsBackground(Cairo.Context cr) {
+    private void RenderControlsBackground(Cairo.Context cr) {
       cr.rectangle((double)TimelineProperties.PADDING + 0.5, 
                    this.widget_height - 22.5,
                    this.widget_width, 6.0);
@@ -887,10 +930,11 @@ namespace Wiz {
     }
 
     // TODO 8
-    public void RenderSlider(Cairo.Context cr) {
+    private void RenderSlider(Cairo.Context cr) {
       int start_pos = this.TimestampToHScalePos(this.start_timestamp);
       int end_pos = this.TimestampToHScalePos(this.end_timestamp);
-      double center = this.start_timestamp + ((this.end_timestamp - this.start_timestamp)/2);
+      double center = (this.end_timestamp - this.start_timestamp)/2;
+      center = center + this.start_timestamp;
       center = (double)this.TimestampToHScalePos((int)center) - 3.5; 
 
       cr.rectangle (start_pos + 4.5, this.widget_height - 24.5,
@@ -915,33 +959,16 @@ namespace Wiz {
       cr.stroke();
     }
 
-    // TODO 8
-    public void RenderControls(Cairo.Context cr) {
+    private void RenderControls(Cairo.Context cr) {
       this.RenderControlsBackground(cr);
       this.RenderSlider(cr);
       this.RenderHandle(cr, this.start_timestamp);
       this.RenderHandle(cr, this.end_timestamp);
-    }
-
-    // FIXME configure doesn't currently work
-    // TODO 3
-    public override bool configure_event (Gdk.EventConfigure event) {
-      stdout.printf("Configure event????\n");
-      this.update_branch_positions();
-      return true;
+      this.RenderControlsScale(cr);
     }
 
     public override bool expose_event (Gdk.EventExpose event) {
-      // TODO 3
-      // FIXME we only need to do this on configure, or when orientation changes
-      // or the bit has changed.
-      this.update_branch_positions();
-      // FIXME we only need to do this when the zoom changes
-      this.update_node_positions();
-
       var cr = Gdk.cairo_create (this.window);
-      this.set_double_buffered(true);
-
       var surface = cr.get_group_target();
       var cr_background = new Cairo.Context(
                             new Cairo.Surface.similar(surface, 
@@ -949,35 +976,31 @@ namespace Wiz {
                                                       this.graph_width, 
                                                       this.graph_height)
                           );
-      cr_background.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
-      cr_background.paint();
-
-      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
-        cr_background.translate(0, (double)this.branch_width/2.0 + this.offset);
-      } else {
-        cr_background.translate((double)this.branch_width/2.0 + this.offset, 0);
-      }
       var cr_foreground = new Cairo.Context(
                             new Cairo.Surface.similar(surface, 
                                                       Cairo.Content.COLOR_ALPHA, 
                                                       this.graph_width, 
                                                       this.graph_height)
                           );
+
       if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
         cr_foreground.translate(0, (double)this.branch_width/2.0 + this.offset);
+        cr_background.translate(0, (double)this.branch_width/2.0 + this.offset);
       } else {
         cr_foreground.translate((double)this.branch_width/2.0 + this.offset, 0);
+        cr_background.translate((double)this.branch_width/2.0 + this.offset, 0);
       }
-      cr.rectangle((double)TimelineProperties.PADDING, (double)TimelineProperties.PADDING,
-                   this.graph_width, this.graph_height);
-      cr.set_source_rgb(0.0,0.0,0.0);
-      cr.stroke();
-      //this.RenderScale(cr);
+      cr_background.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
+      cr_background.paint();
+
+      this.RenderScale(cr_background);
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) { 
           if (edge.child == node) {
             // Render the edges onto the underneath surface
-            edge.Render(cr_background, this.edge_angle_max, (int)this.orientation_timeline);
+            edge.Render(cr_background, 
+                        this.edge_angle_max, 
+                        (int)this.orientation_timeline);
           }
           // TODO 12
           // Don't render all of strokes one after the other, wait until all of
@@ -987,6 +1010,11 @@ namespace Wiz {
         // Render the node onto the ontop surface
         node.Render(cr_foreground, (int)this.orientation_timeline);
       }
+      cr.rectangle((double)TimelineProperties.PADDING, 
+                   (double)TimelineProperties.PADDING,
+                   this.graph_width, this.graph_height);
+      cr.set_source_rgb(0.0,0.0,0.0);
+      cr.stroke();
       // composite surfaces together
       cr.set_source_surface(cr_background.get_group_target(), 
                             (double)TimelineProperties.PADDING, 
