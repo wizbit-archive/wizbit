@@ -93,7 +93,7 @@ namespace Wiz {
 
 			// my brain can imagine edge cases where this is wrong, but its only a heuristic
 			// and is probably good enough
-			TimeVal t;
+			TimeVal t = TimeVal();
 			t.get_current_time();
 			commit.timestamp2 = (int) t.tv_usec;
 
