@@ -786,7 +786,7 @@ namespace Wiz {
     }
     // Get the tick timestamp equal to or less than the end timestamp
     private int GetHighestScaleTickTimestamp(int end_timestamp, TimelineUnit unit) {
-      Time t = Time.gm((time_t) start_timestamp);
+      Time t = Time.gm((time_t) end_timestamp);
       t.second = 0;
       if (unit == TimelineUnit.MINUTES) {
         t.minute = t.minute - 1;
@@ -800,13 +800,13 @@ namespace Wiz {
       } else if (unit == TimelineUnit.MONTHS) {
         t.minute = 0;
         t.hour = 0;
-        t.day = 0;
+        t.day = 1;
         t.month = t.month - 1;
       } else if (unit == TimelineUnit.YEARS) {
         t.minute = 0;
         t.hour = 0;
-        t.day = 0;
-        t.month = 0;
+        t.day = 1;
+        t.month = 1;
         t.year = t.year - 1;
       }
       return (int)t.mktime();
@@ -828,17 +828,19 @@ namespace Wiz {
       return TimelineUnit.YEARS;
     }
 
-    private int GetScaleIncrement(TimelineUnit unit) {
+    private int GetNextScaleTick(int timestamp, TimelineUnit unit) {
       if (unit == TimelineUnit.MINUTES) {
-        return 60;
+        return timestamp + 60;
       } else if (unit == TimelineUnit.HOURS) {
-        return 60 * 60;
+        return timestamp + (60 * 60);
       } else if (unit == TimelineUnit.DAYS) {
-        return 60 * 60 * 24;
-      } else if (unit == TimelineUnit.MONTHS) { // This should be cleverer :/
-        return 60 * 60 * 24 * 30;
+        return timestamp + (60 * 60 * 24);
+      } else if (unit == TimelineUnit.MONTHS) {
+        Time t = Time.gm((time_t) timestamp);
+        t.month = t.month + 1;
+        return (int)t.mktime();
       } else if (unit == TimelineUnit.YEARS) {
-        return 60 * 60 * 24 * 365;
+        return timestamp + (60 * 60 * 24 * 365);
       }
       return 0;
     }
