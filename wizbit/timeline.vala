@@ -757,25 +757,64 @@ namespace Wiz {
                             );
     }
 
-    /* Get the integer of the month for a timestamp */
-    private int TimestampToMonth(int timestamp) {
-      var t = Time.gm((time_t) timestamp);
-      return t.month;
+    // Get the tick timestamp equal to are larger than start timestamp
+    private int GetLowestScaleTickTimestamp(int start_timestamp, TimelineUnit unit) {
+      Time t = Time.gm((time_t) start_timestamp);
+      t.second = 0;
+      if (unit == TimelineUnit.MINUTES) {
+        t.minute = t.minute + 1;
+      } else if (unit == TimelineUnit.HOURS) {
+        t.minute = 0;
+        t.hour = t.hour + 1;
+      } else if (unit == TimelineUnit.DAYS) {
+        t.minute = 0;
+        t.hour = 0;
+        t.day = t.day + 1;
+      } else if (unit == TimelineUnit.MONTHS) {
+        t.minute = 0;
+        t.hour = 0;
+        t.day = 0;
+        t.month = t.month + 1;
+      } else if (unit == TimelineUnit.YEARS) {
+        t.minute = 0;
+        t.hour = 0;
+        t.day = 0;
+        t.month = 0;
+        t.year = t.year + 1;
+      }
+      return (int)t.mktime();
     }
-
-    /* Get the timestamp of a specific d/m/y */
-    private int DateToTimestamp(int d, int m, int y) {
-      Time t = Time();
-      t.day = d;
-      t.month = m;
-      t.year = y;
-      return (int) t.mktime();
+    // Get the tick timestamp equal to or less than the end timestamp
+    private int GetHighestScaleTickTimestamp(int end_timestamp, TimelineUnit unit) {
+      Time t = Time.gm((time_t) start_timestamp);
+      t.second = 0;
+      if (unit == TimelineUnit.MINUTES) {
+        t.minute = t.minute - 1;
+      } else if (unit == TimelineUnit.HOURS) {
+        t.minute = 0;
+        t.hour = t.hour - 1;
+      } else if (unit == TimelineUnit.DAYS) {
+        t.minute = 0;
+        t.hour = 0;
+        t.day = t.day - 1;
+      } else if (unit == TimelineUnit.MONTHS) {
+        t.minute = 0;
+        t.hour = 0;
+        t.day = 0;
+        t.month = t.month - 1;
+      } else if (unit == TimelineUnit.YEARS) {
+        t.minute = 0;
+        t.hour = 0;
+        t.day = 0;
+        t.month = 0;
+        t.year = t.year - 1;
+      }
+      return (int)t.mktime();
     }
-
-    // Returns the best scale unit for the range of time between newest and 
-    // oldest timestamps.  
-    private int GetScaleUnit() {
-      int t = this.newest_timestamp - this.oldest_timestamp;
+    // Returns the best scale unit for the range of time between start and 
+    // end timestamps.  
+    private TimelineUnit GetScaleUnit(int start_timestamp, int end_timestamp) {
+      int t = end_timestamp - start_timestamp;
       // This isn't the best way to do this but nevermind :/
       if (t < 60 * 60 ) {
         return TimelineUnit.MINUTES;
@@ -783,11 +822,25 @@ namespace Wiz {
         return TimelineUnit.HOURS;
       } else if (t < 60 * 60 * 24 * 30) { 
         return TimelineUnit.DAYS;
-      } else if (t < 60 * 60 * 24 * 30 * 12) { 
+      } else if (t < 60 * 60 * 24 * 365) { 
         return TimelineUnit.MONTHS;
-      } else {
-        return TimelineUnit.YEARS;
       }
+      return TimelineUnit.YEARS;
+    }
+
+    private int GetScaleIncrement(TimelineUnit unit) {
+      if (unit == TimelineUnit.MINUTES) {
+        return 60;
+      } else if (unit == TimelineUnit.HOURS) {
+        return 60 * 60;
+      } else if (unit == TimelineUnit.DAYS) {
+        return 60 * 60 * 24;
+      } else if (unit == TimelineUnit.MONTHS) { // This should be cleverer :/
+        return 60 * 60 * 24 * 30;
+      } else if (unit == TimelineUnit.YEARS) {
+        return 60 * 60 * 24 * 365;
+      }
+      return 0;
     }
 
     // TODO 8
@@ -875,10 +928,13 @@ namespace Wiz {
 
     // TODO 1 & 8
     private void RenderScale(Cairo.Context cr) {
-      this.GetScaleUnit();
+      TimelineUnit scaleunit = this.GetScaleUnit(this.oldest_timestamp, 
+                                                 this.newest_timestamp);
     }
 
     private void RenderControlsScale(Cairo.Context cr) {
+      TimelineUnit scaleunit = this.GetScaleUnit(this.start_timestamp,
+                                                 this.end_timestamp);
     }
 
     // TODO 8
