@@ -651,7 +651,7 @@ namespace Wiz {
       int position;
       double odist, adist, angle;
       double t = this.newest_timestamp - this.oldest_timestamp;
-      double r = this.end_timestamp - this.start_timestamp;
+      double r;
       this.calculate_zoom();
       foreach (var node in this.nodes) {
         r = node.timestamp - this.oldest_timestamp;
@@ -788,6 +788,34 @@ namespace Wiz {
       return (int)t.mktime();
     }
 
+    // Get the tick timestamp equal to are larger than start timestamp
+    private int get_highest_scale_timestamp(int end_timestamp, TimelineUnit unit) {
+      Time t = Time.gm((time_t) end_timestamp);
+      t.second = 0;
+      if (unit == TimelineUnit.MINUTES) {
+        t.minute = t.minute - 1;
+      } else if (unit == TimelineUnit.HOURS) {
+        t.minute = 0;
+        t.hour = t.hour - 1;
+      } else if (unit == TimelineUnit.DAYS) {
+        t.minute = 0;
+        t.hour = 0;
+        t.day = t.day - 1;
+      } else if (unit == TimelineUnit.MONTHS) {
+        t.minute = 0;
+        t.hour = 0;
+        t.day = 0;
+        t.month = t.month - 1;
+      } else if (unit == TimelineUnit.YEARS) {
+        t.minute = 0;
+        t.hour = 0;
+        t.day = 0;
+        t.month = 0;
+        t.year = t.year - 1;
+      }
+      return (int)t.mktime();
+    }
+
     private int get_next_scale_timestamp(int timestamp, TimelineUnit unit) {
       if (unit == TimelineUnit.MINUTES) {
         return timestamp + 60;
@@ -908,21 +936,59 @@ namespace Wiz {
     // TODO 1 & 8
     private void render_scale(Cairo.Context cr) {
       TimelineUnit scaleunit = this.get_scale_unit(this.start_timestamp,
-                                                 this.end_timestamp);
+                                                   this.end_timestamp);
+      double t = this.newest_timestamp - this.oldest_timestamp;
+      double r = this.end_timestamp - this.start_timestamp;
+      int timestamp = get_highest_scale_timestamp(this.start_timestamp, scaleunit);
+      int end_timestamp = get_lowest_scale_timestamp(this.newest_timestamp, scaleunit);
+      int px_pos;
+      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+        cr.move_to((this.graph_width/2) + 0.5, 
+                   (-1*this.offset) - (this.branch_width/2));
+        cr.line_to((this.graph_width/2) + 0.5, 
+                   (this.branch_width/2) + this.graph_width + (-1*this.offset));
+      } else {
+        cr.move_to((-1*this.offset) - (this.branch_width/2), 
+                   (this.graph_height/2) + 0.5);
+        cr.line_to((this.branch_width/2) + this.graph_width + (-1*this.offset), 
+                   (this.graph_height/2) + 0.5);
+      }
+      while (timestamp < end_timestamp) {
+        r = timestamp - this.oldest_timestamp;
+        px_pos= (int)(((t - r) / t) * this.zoomed_extent);
+        if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+        } else {
+          px_pos = (int)this.graph_width - px_pos;
+          cr.move_to(px_pos + 0.5, (this.graph_height/2) + 0.5);
+          cr.line_to(px_pos + 0.5, (this.graph_height/2) + 8.5);
+        }
+        timestamp = get_next_scale_timestamp(timestamp, scaleunit);      
+      }
+      cr.set_line_width(1);
+      cr.set_source_rgb(0.0,0.0,0.0);
+      cr.stroke();
     }
 
     private void render_controls_scale(Cairo.Context cr) {
       TimelineUnit scaleunit = this.get_scale_unit(this.oldest_timestamp, 
                                                  this.newest_timestamp);
-      cr.rectangle((double)TimelineProperties.PADDING + 0.5, 
-                   this.widget_height + 0.5,
-                   this.widget_width, (double)TimelineProperties.PADDING);
+      if (this.orientation_controls == (int)TimelineProperties.VERTICAL) {
+        // TODO 8
+      } else { 
+        cr.rectangle((double)TimelineProperties.PADDING + 0.5, 
+                     this.widget_height + 0.5,
+                     this.widget_width, (double)TimelineProperties.PADDING);
+      }
       int timestamp = get_lowest_scale_timestamp(this.oldest_timestamp, scaleunit);
       int px_pos;
       while (timestamp < this.newest_timestamp) {
         px_pos = timestamp_to_scale_pos(timestamp);
-        cr.move_to(px_pos + 0.5, this.widget_height - 8.5);
-        cr.line_to(px_pos + 0.5, this.widget_height + (double)TimelineProperties.PADDING + 0.5);
+        if (this.orientation_controls == (int)TimelineProperties.VERTICAL) {
+          // TODO 8
+        } else {
+          cr.move_to(px_pos + 0.5, this.widget_height - 8.5);
+          cr.line_to(px_pos + 0.5, this.widget_height + (double)TimelineProperties.PADDING + 0.5);
+        }
         timestamp = get_next_scale_timestamp(timestamp, scaleunit);
       }
       cr.set_source_rgb(0.0,0.0,0.0);
