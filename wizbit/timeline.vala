@@ -134,7 +134,7 @@ namespace Wiz {
       this.child = child;
     }
 
-    public void Render(Cairo.Context cr, double max_angle, int orientation) {
+    public void render(Cairo.Context cr, double max_angle, int orientation) {
       // Draw a line from each parent.x/y to child.x/y
       int kx, ky; // Kink position
       int px, py, cx, cy;
@@ -233,20 +233,20 @@ namespace Wiz {
                       // and globbing of nodes
     }
 
-    public void AddEdge(TimelineNode node) {
-      this.AddChild(node);
-      node.AddParent(this);
+    public void add_edge(TimelineNode node) {
+      this.add_child(node);
+      node.add_parent(this);
     }
 
-    public void AddChild(TimelineNode node) {
+    public void add_child(TimelineNode node) {
       this.edges.append(new TimelineEdge(this, node));
     }
 
-    public void AddParent(TimelineNode node) {
+    public void add_parent(TimelineNode node) {
       this.edges.append(new TimelineEdge(node, this));
     }
 
-    public void Render(Cairo.Context cr, int orientation) {
+    public void render(Cairo.Context cr, int orientation) {
       int x, y;
       if (orientation == (int)TimelineProperties.VERTICAL) {
         x = this.branch.px_position;
@@ -354,6 +354,7 @@ namespace Wiz {
     private int mouse_release_y;
     // FFR kinetic scrolling
     private double velocity;
+    private double zoomed_extent = 0;
 
     // Grabbed information for the controls
     private int grab_handle;
@@ -537,7 +538,7 @@ namespace Wiz {
         foreach (var child in children) {
           if (child == child_uuid) { continue; }
           var child_node = this.get_node(child, false);
-          node.AddEdge(child_node);
+          node.add_edge(child_node);
           this.recurse_children(child_node, new TimelineBranch(branch));
         }
         child_uuid = node.uuid;
@@ -549,7 +550,7 @@ namespace Wiz {
         }
         var last_node = node;
         node = this.get_node(this.commit_store.get_backward(node.uuid), true);
-        node.AddEdge(last_node);
+        node.add_edge(last_node);
       }
       this.newest_timestamp = this.primary_tip.timestamp;
       this.oldest_timestamp = this.root.timestamp;
@@ -613,7 +614,7 @@ namespace Wiz {
         return;
       }
       var child_node = this.get_node(first_child, false);
-      node.AddEdge(child_node);
+      node.add_edge(child_node);
       this.recurse_children(child_node, branch);
 
       var children = this.commit_store.get_forwards(node.uuid);
@@ -621,7 +622,7 @@ namespace Wiz {
         // All other children are on new branches
         if (child == first_child) { continue; }
         var child_node = this.get_node(child, false);
-        node.AddEdge(child_node);
+        node.add_edge(child_node);
         this.recurse_children(child_node, new TimelineBranch(branch));
       }
     }
@@ -647,30 +648,16 @@ namespace Wiz {
     }
 
     private void update_node_positions() {
+      int position;
       double odist, adist, angle;
       double t = this.newest_timestamp - this.oldest_timestamp;
       double r = this.end_timestamp - this.start_timestamp;
-      double offset = this.start_timestamp - this.oldest_timestamp;
-      int position;
-      double zoomed_height = 0, zoomed_width = 0;
-      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
-        double graph_height = this.graph_height - this.branch_width;
-        zoomed_height = graph_height / (r / t);
-        offset = zoomed_height * (offset / t);
-        this.offset = graph_height - zoomed_height + offset;
-      } else {
-        double graph_width = this.graph_width - this.branch_width;
-        zoomed_width = graph_width / (r / t);
-        offset = zoomed_width * (offset / t);
-        this.offset = 0 - graph_width + zoomed_width - offset - this.branch_width;
-      }
+      this.calculate_zoom();
       foreach (var node in this.nodes) {
         r = node.timestamp - this.oldest_timestamp;
-        if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
-          position = (int)(((t - r) / t) * zoomed_height);
-        } else {
-          position = (int)(((t - r) / t) * zoomed_width);
-          position = graph_width - position;
+        position = (int)(((t - r) / t) * this.zoomed_extent);
+        if (this.orientation_timeline == (int)TimelineProperties.HORIZONTAL) {
+          position = (int)this.graph_width - position;
         }
         node.px_position = position;
       }
@@ -707,11 +694,11 @@ namespace Wiz {
       if (this.grab_handle > (int)TimelineHandle.NONE) {
         var xpos = x - this.grab_offset;
         if (this.grab_handle == TimelineHandle.LIMIT_OLD) {
-          this.start_timestamp = this.HScalePosToTimestamp(xpos);
+          this.start_timestamp = this.scale_pos_to_timestamp(xpos);
         } else if (this.grab_handle == TimelineHandle.LIMIT_NEW) {
-          this.end_timestamp = this.HScalePosToTimestamp(xpos);
+          this.end_timestamp = this.scale_pos_to_timestamp(xpos);
         } else if (this.grab_handle == TimelineHandle.SLIDER) {
-          var click_timestamp = this.HScalePosToTimestamp(xpos);
+          var click_timestamp = this.scale_pos_to_timestamp(xpos);
           var half_time = (this.end_timestamp - this.start_timestamp)/2;
           var tmp_s = click_timestamp - half_time;
           var tmp_e = click_timestamp + half_time;
@@ -740,16 +727,32 @@ namespace Wiz {
       }
     }
 
+    private void calculate_zoom() {
+      double t = this.newest_timestamp - this.oldest_timestamp;
+      double r = this.end_timestamp - this.start_timestamp;
+      double offset = this.start_timestamp - this.oldest_timestamp;
+      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+        double graph_height = this.graph_height - this.branch_width;
+        this.zoomed_extent = graph_height / (r / t);
+        offset = this.zoomed_extent * (offset / t);
+        this.offset = graph_height - this.zoomed_extent + offset;
+      } else {
+        double graph_width = this.graph_width - this.branch_width;
+        this.zoomed_extent = graph_width / (r / t);
+        offset = this.zoomed_extent * (offset / t);
+        this.offset = 0 - graph_width + this.zoomed_extent - offset - this.branch_width;
+      }
+    }
     /* Converts a timestamp into a scale horizontal position. */
     // TODO 8
-    private int TimestampToHScalePos(int timestamp) {
+    private int timestamp_to_scale_pos(int timestamp) {
       var range = this.newest_timestamp - this.oldest_timestamp;
       double pos = (double)(timestamp - this.oldest_timestamp) / (double)range;
       return (int)Math.ceil((pos * (double)this.widget_width) + (double)TimelineProperties.PADDING + 0.5); 
     }
 
     // TODO 8
-    private int HScalePosToTimestamp(int xpos) {
+    private int scale_pos_to_timestamp(int xpos) {
       double ratio = (xpos - (double)TimelineProperties.PADDING + 0.5) / (this.widget_width);
       return (int) Math.ceil(((this.newest_timestamp - this.oldest_timestamp) * 
                                ratio
@@ -758,7 +761,7 @@ namespace Wiz {
     }
 
     // Get the tick timestamp equal to are larger than start timestamp
-    private int GetLowestScaleTickTimestamp(int start_timestamp, TimelineUnit unit) {
+    private int get_lowest_scale_timestamp(int start_timestamp, TimelineUnit unit) {
       Time t = Time.gm((time_t) start_timestamp);
       t.second = 0;
       if (unit == TimelineUnit.MINUTES) {
@@ -784,51 +787,8 @@ namespace Wiz {
       }
       return (int)t.mktime();
     }
-    // Get the tick timestamp equal to or less than the end timestamp
-    private int GetHighestScaleTickTimestamp(int end_timestamp, TimelineUnit unit) {
-      Time t = Time.gm((time_t) end_timestamp);
-      t.second = 0;
-      if (unit == TimelineUnit.MINUTES) {
-        t.minute = t.minute - 1;
-      } else if (unit == TimelineUnit.HOURS) {
-        t.minute = 0;
-        t.hour = t.hour - 1;
-      } else if (unit == TimelineUnit.DAYS) {
-        t.minute = 0;
-        t.hour = 0;
-        t.day = t.day - 1;
-      } else if (unit == TimelineUnit.MONTHS) {
-        t.minute = 0;
-        t.hour = 0;
-        t.day = 1;
-        t.month = t.month - 1;
-      } else if (unit == TimelineUnit.YEARS) {
-        t.minute = 0;
-        t.hour = 0;
-        t.day = 1;
-        t.month = 1;
-        t.year = t.year - 1;
-      }
-      return (int)t.mktime();
-    }
-    // Returns the best scale unit for the range of time between start and 
-    // end timestamps.  
-    private TimelineUnit GetScaleUnit(int start_timestamp, int end_timestamp) {
-      int t = end_timestamp - start_timestamp;
-      // This isn't the best way to do this but nevermind :/
-      if (t < 60 * 60 ) {
-        return TimelineUnit.MINUTES;
-      } else if (t < 60 * 60 * 24) { 
-        return TimelineUnit.HOURS;
-      } else if (t < 60 * 60 * 24 * 30) { 
-        return TimelineUnit.DAYS;
-      } else if (t < 60 * 60 * 24 * 365) { 
-        return TimelineUnit.MONTHS;
-      }
-      return TimelineUnit.YEARS;
-    }
 
-    private int GetNextScaleTick(int timestamp, TimelineUnit unit) {
+    private int get_next_scale_timestamp(int timestamp, TimelineUnit unit) {
       if (unit == TimelineUnit.MINUTES) {
         return timestamp + 60;
       } else if (unit == TimelineUnit.HOURS) {
@@ -845,13 +805,30 @@ namespace Wiz {
       return 0;
     }
 
+    // Returns the best scale unit for the range of time between start and 
+    // end timestamps.  
+    private TimelineUnit get_scale_unit(int start_timestamp, int end_timestamp) {
+      int t = end_timestamp - start_timestamp;
+      // This isn't the best way to do this but nevermind :/
+      if (t < 60 * 60 ) {
+        return TimelineUnit.MINUTES;
+      } else if (t < 60 * 60 * 24) { 
+        return TimelineUnit.HOURS;
+      } else if (t < 60 * 60 * 24 * 30) { 
+        return TimelineUnit.DAYS;
+      } else if (t < 60 * 60 * 24 * 365) { 
+        return TimelineUnit.MONTHS;
+      }
+      return TimelineUnit.YEARS;
+    }
+
     // TODO 8
     public override bool button_press_event (Gdk.EventButton event) {
       this.mouse_down = true;
       this.mouse_press_x = (int)event.x;
       this.mouse_press_y = (int)event.y;
-      var st = this.TimestampToHScalePos(this.start_timestamp) - 5;
-      var et = this.TimestampToHScalePos(this.end_timestamp) + 5;
+      var st = this.timestamp_to_scale_pos(this.start_timestamp) - 5;
+      var et = this.timestamp_to_scale_pos(this.end_timestamp) + 5;
       var sv = this.widget_height - 25;
       var ev = this.widget_height - 11;
 
@@ -929,19 +906,32 @@ namespace Wiz {
     }
 
     // TODO 1 & 8
-    private void RenderScale(Cairo.Context cr) {
-      TimelineUnit scaleunit = this.GetScaleUnit(this.oldest_timestamp, 
-                                                 this.newest_timestamp);
-    }
-
-    private void RenderControlsScale(Cairo.Context cr) {
-      TimelineUnit scaleunit = this.GetScaleUnit(this.start_timestamp,
+    private void render_scale(Cairo.Context cr) {
+      TimelineUnit scaleunit = this.get_scale_unit(this.start_timestamp,
                                                  this.end_timestamp);
     }
 
+    private void render_controls_scale(Cairo.Context cr) {
+      TimelineUnit scaleunit = this.get_scale_unit(this.oldest_timestamp, 
+                                                 this.newest_timestamp);
+      cr.rectangle((double)TimelineProperties.PADDING + 0.5, 
+                   this.widget_height + 0.5,
+                   this.widget_width, (double)TimelineProperties.PADDING);
+      int timestamp = get_lowest_scale_timestamp(this.oldest_timestamp, scaleunit);
+      int px_pos;
+      while (timestamp < this.newest_timestamp) {
+        px_pos = timestamp_to_scale_pos(timestamp);
+        cr.move_to(px_pos + 0.5, this.widget_height - 8.5);
+        cr.line_to(px_pos + 0.5, this.widget_height + (double)TimelineProperties.PADDING + 0.5);
+        timestamp = get_next_scale_timestamp(timestamp, scaleunit);
+      }
+      cr.set_source_rgb(0.0,0.0,0.0);
+      cr.stroke();
+    }
+
     // TODO 8
-    private void RenderHandle(Cairo.Context cr, int timestamp) {
-      var hpos = this.TimestampToHScalePos(timestamp);
+    private void render_controls_handle(Cairo.Context cr, int timestamp) {
+      var hpos = this.timestamp_to_scale_pos(timestamp);
       // Handle outline
       cr.move_to(hpos - 4.5, this.widget_height - 24.5);
       cr.line_to(hpos - 4.5, this.widget_height - 15.5);
@@ -972,7 +962,7 @@ namespace Wiz {
     }
 
     // TODO 8
-    private void RenderControlsBackground(Cairo.Context cr) {
+    private void render_controls_background(Cairo.Context cr) {
       cr.rectangle((double)TimelineProperties.PADDING + 0.5, 
                    this.widget_height - 22.5,
                    this.widget_width, 6.0);
@@ -988,12 +978,12 @@ namespace Wiz {
     }
 
     // TODO 8
-    private void RenderSlider(Cairo.Context cr) {
-      int start_pos = this.TimestampToHScalePos(this.start_timestamp);
-      int end_pos = this.TimestampToHScalePos(this.end_timestamp);
+    private void render_controls_slider(Cairo.Context cr) {
+      int start_pos = this.timestamp_to_scale_pos(this.start_timestamp);
+      int end_pos = this.timestamp_to_scale_pos(this.end_timestamp);
       double center = (this.end_timestamp - this.start_timestamp)/2;
       center = center + this.start_timestamp;
-      center = (double)this.TimestampToHScalePos((int)center) - 3.5; 
+      center = (double)this.timestamp_to_scale_pos((int)center) - 3.5; 
 
       cr.rectangle (start_pos + 4.5, this.widget_height - 24.5,
                     end_pos - start_pos - 9, 9);
@@ -1017,12 +1007,12 @@ namespace Wiz {
       cr.stroke();
     }
 
-    private void RenderControls(Cairo.Context cr) {
-      this.RenderControlsBackground(cr);
-      this.RenderSlider(cr);
-      this.RenderHandle(cr, this.start_timestamp);
-      this.RenderHandle(cr, this.end_timestamp);
-      this.RenderControlsScale(cr);
+    private void render_controls(Cairo.Context cr) {
+      this.render_controls_background(cr);
+      this.render_controls_slider(cr);
+      this.render_controls_handle(cr, this.start_timestamp);
+      this.render_controls_handle(cr, this.end_timestamp);
+      this.render_controls_scale(cr);
     }
 
     public override bool expose_event (Gdk.EventExpose event) {
@@ -1051,12 +1041,12 @@ namespace Wiz {
       cr_background.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
       cr_background.paint();
 
-      this.RenderScale(cr_background);
+      this.render_scale(cr_background);
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) { 
           if (edge.child == node) {
             // Render the edges onto the underneath surface
-            edge.Render(cr_background, 
+            edge.render(cr_background, 
                         this.edge_angle_max, 
                         (int)this.orientation_timeline);
           }
@@ -1066,7 +1056,7 @@ namespace Wiz {
           // a pattern generated from the branch positions
         }
         // Render the node onto the ontop surface
-        node.Render(cr_foreground, (int)this.orientation_timeline);
+        node.render(cr_foreground, (int)this.orientation_timeline);
       }
       cr.rectangle((double)TimelineProperties.PADDING, 
                    (double)TimelineProperties.PADDING,
@@ -1082,7 +1072,7 @@ namespace Wiz {
                             (double)TimelineProperties.PADDING, 
                             (double)TimelineProperties.PADDING);
       cr.paint();
-      this.RenderControls(cr);
+      this.render_controls(cr);
       return true;
     }
   }
