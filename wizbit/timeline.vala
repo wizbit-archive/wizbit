@@ -258,14 +258,19 @@ namespace Wiz {
         ny = this.branch.px_position;
         nx = this.px_position;
       }
-      o = (nx - x);
-      a = (ny - y);
+      // TODO 8
+      o = (nx - x) - (int)TimelineProperties.PADDING - 4;
+      a = (ny - y) + (int)TimelineProperties.PADDING;
+      if (o < 0) { o = o * -1; }
+      if (a < 0) { a = a * -1; }
 
       double h = Math.sqrt((o*o)+(a*a));
-
+      if (h < 0) { h = h * -1; }
       if (h < this.size) {
+        stdout.printf("hit! %f %s\n", h, this.uuid);
         return true;
       }
+      stdout.printf("hyp: %f %s\n", h, this.uuid);
       return false;
     }
 
@@ -480,6 +485,7 @@ namespace Wiz {
       this.tips = new List<TimelineNode>();
       this.branches = new List<TimelineBranch>();
       this.mouse_down = false;
+      this.selected = null;
       this.lowest_branch_position = 0;
       this.store = store;
       this.bit_uuid = bit_uuid;
@@ -932,23 +938,26 @@ namespace Wiz {
         // start a timer which controls the speed/positioning (kinetic scroll)
         // horizontal scrolling will change the zoom level
       } else {
-        // TODO 5, 6
+        // TODO 6
         // A click event occurred
+        TimelineNode last = this.selected;
+        this.selected = null;
         foreach (var node in this.nodes) {
           if (node.at_coords(this.mouse_release_x, this.mouse_release_y,
                              this.orientation_timeline)) {
-            if (this.selected == node) {
-              continue;
-            } else {
-              this.selected.selected = false;
+            if (node != last) {
+              last.selected = false;
               this.selected = node;
               this.selected.selected = true;
-              stdout.printf("Selected UUID: %s\n", this.selected_uuid);
-              this.selection_changed();
-              this.queue_draw();
-              break; 
-            }
+            } else {
+              this.selected = node;
+            } 
+            break; 
           }
+        }
+        if (this.selected != last) {
+          this.selection_changed();
+          this.queue_draw();
         }
       }
       this.grab_handle = TimelineHandle.NONE;
@@ -1032,7 +1041,14 @@ namespace Wiz {
       return true;
     }
 
-    // TODO 1 & 8
+    private void scroll_to_timestamp(int timestamp) {
+      // TODO 6
+      // Start a timer which ramps from the current place to the timestamp
+      // We work out the new timestamp by taking the distance between
+      // the range, halving it and setting the start and end timestamps
+      // accordingly. Same as we do with motion on the slider.
+    }
+
     private void render_scale(Cairo.Context cr) {
       TimelineUnit scaleunit = this.get_scale_unit(this.start_timestamp,
                                                    this.end_timestamp);
@@ -1056,6 +1072,9 @@ namespace Wiz {
         r = timestamp - this.oldest_timestamp;
         px_pos= (int)(((t - r) / t) * this.zoomed_extent);
         if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+          px_pos = (int)this.graph_width - px_pos;
+          cr.move_to((this.graph_width/2) + 0.5, px_pos + 0.5);
+          cr.line_to((this.graph_width/2) + 8.5, px_pos + 0.5);
         } else {
           px_pos = (int)this.graph_width - px_pos;
           cr.move_to(px_pos + 0.5, (this.graph_height/2) + 0.5);
