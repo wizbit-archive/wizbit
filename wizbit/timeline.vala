@@ -263,14 +263,11 @@ namespace Wiz {
       a = (ny - y) + (int)TimelineProperties.PADDING;
       if (o < 0) { o = o * -1; }
       if (a < 0) { a = a * -1; }
-
       double h = Math.sqrt((o*o)+(a*a));
       if (h < 0) { h = h * -1; }
       if (h < this.size) {
-        stdout.printf("hit! %f %s\n", h, this.uuid);
         return true;
       }
-      stdout.printf("hyp: %f %s\n", h, this.uuid);
       return false;
     }
 
