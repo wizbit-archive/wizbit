@@ -12,7 +12,7 @@
        - Push out update_branch_positions to on configure not on expose
        - Push oout update_node_positions to when zoom has changed not on expose
  * 4_  Rename a bunch of things which are horribly named!
- * 5.  Node click zones calculations
+ * 5x  Node click zones calculations
  * 6.  Setting the selected node will scroll it to center
  * 7.  Work out the node globbing (nodes close to each other combind and size increases)
  * 8x  work out the horizontal/vertical positioning stuff
@@ -196,6 +196,7 @@ namespace Wiz {
     public int size;
     public string uuid;
     public int timestamp;
+    public bool selected { get; set; }
 
     // Might not be best to make this weak
     public weak List<TimelineEdge> edges { get; construct; }
@@ -229,6 +230,7 @@ namespace Wiz {
       this.timestamp = timestamp;
       this.edges = new List<TimelineEdge>();
       this.node_type = TimelineNodeType.NORMAL;
+      this.selected = false;
       this.size = 15; // Edge size should be set based on branch_width
                       // and globbing of nodes
     }
@@ -456,6 +458,7 @@ namespace Wiz {
         return this.selected.uuid;
       }
       set {
+        this.selected.selected = false;
         this.selected = null;
         foreach (var node in this.nodes) {
           if (node.uuid == value) {
@@ -917,23 +920,37 @@ namespace Wiz {
         // TODO 8 - update controls should pick point by orientation
         this.update_controls(this.mouse_release_x);
         this.queue_draw();
-      } // else if Gtk.drag_check_threshold.... {
-        // TODO 5, 6
-        // we have to iterate over the nodes and check the polar distance not
-        // hard, but yet another iteration, thankfully we only need to do it on
-        // click and not on motion :) We can speed this up by ignoring invisible 
-        // nodes.
-        // did we click on a version
-        //   set selected - emit selection changed signal
-        //   this.selection_changed();
-        //   this.queue_draw(); 
-        // } else {
+      } else if (Gtk.drag_check_threshold(this, this.mouse_press_x,
+                                               this.mouse_press_y,
+                                               this.mouse_release_x,
+                                               this.mouse_release_y)) {
         // TODO FFR - This is for kinetic scrolling
+        // Drag threshold was exceeded
         // create release timestamp (milliseconds)
         // this.button_release_timestamp = ?
         // calculate the distance travelled in that time and therefore the speed
         // start a timer which controls the speed/positioning (kinetic scroll)
         // horizontal scrolling will change the zoom level
+      } else {
+        // TODO 5, 6
+        // A click event occurred
+        foreach (var node in this.nodes) {
+          if (node.at_coords(this.mouse_release_x, this.mouse_release_y,
+                             this.orientation_timeline)) {
+            if (this.selected == node) {
+              continue;
+            } else {
+              this.selected.selected = false;
+              this.selected = node;
+              this.selected.selected = true;
+              stdout.printf("Selected UUID: %s\n", this.selected_uuid);
+              this.selection_changed();
+              this.queue_draw();
+              break; 
+            }
+          }
+        }
+      }
       this.grab_handle = TimelineHandle.NONE;
       return true;
     }
