@@ -246,6 +246,27 @@ namespace Wiz {
       this.edges.append(new TimelineEdge(node, this));
     }
 
+    public bool at_coords(int x, int y, int orientation) {
+      double o = 0, a = 0;
+      int nx, ny;
+      if (orientation == (int)TimelineProperties.VERTICAL) {
+        nx = this.branch.px_position;
+        ny = this.px_position;
+      } else {
+        ny = this.branch.px_position;
+        nx = this.px_position;
+      }
+      o = (nx - x);
+      a = (ny - y);
+
+      double h = Math.sqrt((o*o)+(a*a));
+
+      if (h < this.size) {
+        return true;
+      }
+      return false;
+    }
+
     public void render(Cairo.Context cr, int orientation) {
       int x, y;
       if (orientation == (int)TimelineProperties.VERTICAL) {
@@ -933,6 +954,67 @@ namespace Wiz {
       return false;
     }
 
+    public override bool expose_event (Gdk.EventExpose event) {
+      var cr = Gdk.cairo_create (this.window);
+      var surface = cr.get_group_target();
+      var cr_background = new Cairo.Context(
+                            new Cairo.Surface.similar(surface, 
+                                                      Cairo.Content.COLOR, 
+                                                      this.graph_width, 
+                                                      this.graph_height)
+                          );
+      var cr_foreground = new Cairo.Context(
+                            new Cairo.Surface.similar(surface, 
+                                                      Cairo.Content.COLOR_ALPHA, 
+                                                      this.graph_width, 
+                                                      this.graph_height)
+                          );
+
+      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+        cr_foreground.translate(0, (double)this.branch_width/2.0 + this.offset);
+        cr_background.translate(0, (double)this.branch_width/2.0 + this.offset);
+      } else {
+        cr_foreground.translate((double)this.branch_width/2.0 + this.offset, 0);
+        cr_background.translate((double)this.branch_width/2.0 + this.offset, 0);
+      }
+      cr_background.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
+      cr_background.paint();
+
+      this.render_scale(cr_background);
+      foreach (var node in this.nodes) {
+        foreach (var edge in node.edges) { 
+          if (edge.child == node) {
+            // Render the edges onto the underneath surface
+            edge.render(cr_background, 
+                        this.edge_angle_max, 
+                        (int)this.orientation_timeline);
+          }
+          // TODO 12
+          // Don't render all of strokes one after the other, wait until all of
+          // the nodes have drawn their lines and stroke it all at once with
+          // a pattern generated from the branch positions
+        }
+        // Render the node onto the ontop surface
+        node.render(cr_foreground, (int)this.orientation_timeline);
+      }
+      cr.rectangle((double)TimelineProperties.PADDING, 
+                   (double)TimelineProperties.PADDING,
+                   this.graph_width, this.graph_height);
+      cr.set_source_rgb(0.0,0.0,0.0);
+      cr.stroke();
+      // composite surfaces together
+      cr.set_source_surface(cr_background.get_group_target(), 
+                            (double)TimelineProperties.PADDING, 
+                            (double)TimelineProperties.PADDING);
+      cr.paint();
+      cr.set_source_surface(cr_foreground.get_group_target(), 
+                            (double)TimelineProperties.PADDING, 
+                            (double)TimelineProperties.PADDING);
+      cr.paint();
+      this.render_controls(cr);
+      return true;
+    }
+
     // TODO 1 & 8
     private void render_scale(Cairo.Context cr) {
       TimelineUnit scaleunit = this.get_scale_unit(this.start_timestamp,
@@ -1079,67 +1161,6 @@ namespace Wiz {
       this.render_controls_handle(cr, this.start_timestamp);
       this.render_controls_handle(cr, this.end_timestamp);
       this.render_controls_scale(cr);
-    }
-
-    public override bool expose_event (Gdk.EventExpose event) {
-      var cr = Gdk.cairo_create (this.window);
-      var surface = cr.get_group_target();
-      var cr_background = new Cairo.Context(
-                            new Cairo.Surface.similar(surface, 
-                                                      Cairo.Content.COLOR, 
-                                                      this.graph_width, 
-                                                      this.graph_height)
-                          );
-      var cr_foreground = new Cairo.Context(
-                            new Cairo.Surface.similar(surface, 
-                                                      Cairo.Content.COLOR_ALPHA, 
-                                                      this.graph_width, 
-                                                      this.graph_height)
-                          );
-
-      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
-        cr_foreground.translate(0, (double)this.branch_width/2.0 + this.offset);
-        cr_background.translate(0, (double)this.branch_width/2.0 + this.offset);
-      } else {
-        cr_foreground.translate((double)this.branch_width/2.0 + this.offset, 0);
-        cr_background.translate((double)this.branch_width/2.0 + this.offset, 0);
-      }
-      cr_background.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
-      cr_background.paint();
-
-      this.render_scale(cr_background);
-      foreach (var node in this.nodes) {
-        foreach (var edge in node.edges) { 
-          if (edge.child == node) {
-            // Render the edges onto the underneath surface
-            edge.render(cr_background, 
-                        this.edge_angle_max, 
-                        (int)this.orientation_timeline);
-          }
-          // TODO 12
-          // Don't render all of strokes one after the other, wait until all of
-          // the nodes have drawn their lines and stroke it all at once with
-          // a pattern generated from the branch positions
-        }
-        // Render the node onto the ontop surface
-        node.render(cr_foreground, (int)this.orientation_timeline);
-      }
-      cr.rectangle((double)TimelineProperties.PADDING, 
-                   (double)TimelineProperties.PADDING,
-                   this.graph_width, this.graph_height);
-      cr.set_source_rgb(0.0,0.0,0.0);
-      cr.stroke();
-      // composite surfaces together
-      cr.set_source_surface(cr_background.get_group_target(), 
-                            (double)TimelineProperties.PADDING, 
-                            (double)TimelineProperties.PADDING);
-      cr.paint();
-      cr.set_source_surface(cr_foreground.get_group_target(), 
-                            (double)TimelineProperties.PADDING, 
-                            (double)TimelineProperties.PADDING);
-      cr.paint();
-      this.render_controls(cr);
-      return true;
     }
   }
 }
