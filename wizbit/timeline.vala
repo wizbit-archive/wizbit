@@ -248,19 +248,20 @@ namespace Wiz {
       this.edges.append(new TimelineEdge(node, this));
     }
 
-    public bool at_coords(int x, int y, int orientation) {
+    public bool at_coords(int x, int y, int orientation, int offset) {
       double o = 0, a = 0;
       int nx, ny;
       if (orientation == (int)TimelineProperties.VERTICAL) {
         nx = this.branch.px_position;
         ny = this.px_position;
+        o = (nx - x) + (int)TimelineProperties.PADDING; 
+        a = (ny - y) - offset;
       } else {
         ny = this.branch.px_position;
         nx = this.px_position;
+        o = (nx - x) + offset;
+        a = (ny - y) + (int)TimelineProperties.PADDING;
       }
-      // TODO 8
-      o = (nx - x) - (int)TimelineProperties.PADDING - 4;
-      a = (ny - y) + (int)TimelineProperties.PADDING;
       if (o < 0) { o = o * -1; }
       if (a < 0) { a = a * -1; }
       double h = Math.sqrt((o*o)+(a*a));
@@ -457,7 +458,10 @@ namespace Wiz {
 
     public string selected_uuid {
       get {
-        return this.selected.uuid;
+        if (this.selected != null) {
+          return this.selected.uuid;
+        }
+        return null;
       }
       set {
         this.selected.selected = false;
@@ -819,26 +823,20 @@ namespace Wiz {
     private int get_highest_scale_timestamp(int end_timestamp, TimelineUnit unit) {
       Time t = Time.gm((time_t) end_timestamp);
       t.second = 0;
-      if (unit == TimelineUnit.MINUTES) {
-        t.minute = t.minute - 1;
-      } else if (unit == TimelineUnit.HOURS) {
+      if (unit == TimelineUnit.HOURS) {
         t.minute = 0;
-        t.hour = t.hour - 1;
       } else if (unit == TimelineUnit.DAYS) {
         t.minute = 0;
         t.hour = 0;
-        t.day = t.day - 1;
       } else if (unit == TimelineUnit.MONTHS) {
         t.minute = 0;
         t.hour = 0;
         t.day = 0;
-        t.month = t.month - 1;
       } else if (unit == TimelineUnit.YEARS) {
         t.minute = 0;
         t.hour = 0;
         t.day = 0;
         t.month = 0;
-        t.year = t.year - 1;
       }
       return (int)t.mktime();
     }
@@ -924,9 +922,9 @@ namespace Wiz {
         this.update_controls(this.mouse_release_x);
         this.queue_draw();
       } else if (Gtk.drag_check_threshold(this, this.mouse_press_x,
-                                               this.mouse_press_y,
-                                               this.mouse_release_x,
-                                               this.mouse_release_y)) {
+                                                this.mouse_press_y,
+                                                this.mouse_release_x,
+                                                this.mouse_release_y)) {
         // TODO FFR - This is for kinetic scrolling
         // Drag threshold was exceeded
         // create release timestamp (milliseconds)
@@ -941,7 +939,7 @@ namespace Wiz {
         this.selected = null;
         foreach (var node in this.nodes) {
           if (node.at_coords(this.mouse_release_x, this.mouse_release_y,
-                             this.orientation_timeline)) {
+                             this.orientation_timeline, (int)(this.offset+(this.branch_width/2)))) {
             if (node != last) {
               last.selected = false;
               this.selected = node;
@@ -1052,7 +1050,9 @@ namespace Wiz {
       double t = this.newest_timestamp - this.oldest_timestamp;
       double r = this.end_timestamp - this.start_timestamp;
       int timestamp = get_highest_scale_timestamp(this.start_timestamp, scaleunit);
-      int end_timestamp = get_lowest_scale_timestamp(this.newest_timestamp, scaleunit);
+      int end_timestamp = get_highest_scale_timestamp(this.end_timestamp, scaleunit);
+      end_timestamp = get_next_scale_timestamp(end_timestamp, scaleunit);
+      end_timestamp = get_next_scale_timestamp(end_timestamp, scaleunit);
       int px_pos;
       if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
         cr.move_to((this.graph_width/2) + 0.5, 
@@ -1065,7 +1065,7 @@ namespace Wiz {
         cr.line_to((this.branch_width/2) + this.graph_width + (-1*this.offset), 
                    (this.graph_height/2) + 0.5);
       }
-      while (timestamp < end_timestamp) {
+      while (timestamp <= end_timestamp) {
         r = timestamp - this.oldest_timestamp;
         px_pos= (int)(((t - r) / t) * this.zoomed_extent);
         if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
