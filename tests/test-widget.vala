@@ -10,8 +10,11 @@ public class Test.Widget : GLib.Object {
 
   public static void selection_changed() {
     //stdout.printf("SELECTION CHANGED\n");
-    Wiz.Version ver = bit.open_version(timeline.selected_uuid);
-    label.set_text(ver.read_as_string());
+    string selected_uuid = timeline.selected_uuid;
+    stdout.printf("%s\n", selected_uuid);
+    Wiz.Version ver = bit.open_version(selected_uuid);
+    string text = ver.read_as_string();
+    label.set_text(text);
   }
 
   public static void main(string[] args) {
