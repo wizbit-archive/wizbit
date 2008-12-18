@@ -50,6 +50,7 @@ namespace Wiz {
     MINUTES,
     HOURS,
     DAYS,
+    WEEKS,
     MONTHS,
     YEARS
   }
@@ -259,7 +260,7 @@ namespace Wiz {
       } else {
         ny = this.branch.px_position;
         nx = this.px_position;
-        o = (nx - x) + offset;
+        o = (nx - x) + offset + 8;
         a = (ny - y) + (int)TimelineProperties.PADDING;
       }
       if (o < 0) { o = o * -1; }
@@ -345,6 +346,15 @@ namespace Wiz {
                           this.branch.stroke_g,
                           this.branch.stroke_b);
         cr.stroke();
+      }
+
+      if (this.selected) {
+        cr.arc(x, y, this.size, 0, 2.0 * Math.PI);
+        cr.set_source_rgba(1,1,1,0.2);
+        cr.fill_preserve();
+        cr.set_source_rgba(1,1,1,0.4);
+        cr.stroke();
+
       }
     }
   }
@@ -456,7 +466,7 @@ namespace Wiz {
       }
     }
 
-    public string selected_uuid {
+    public string? selected_uuid {
       get {
         if (this.selected != null) {
           return this.selected.uuid;
@@ -804,6 +814,10 @@ namespace Wiz {
         t.minute = 0;
         t.hour = 0;
         t.day = t.day + 1;
+      } else if (unit == TimelineUnit.WEEKS) {
+        t.minute = 0;
+        t.hour = 0;
+        return ((int)t.mktime() + ((5 - t.weekday) * 60 * 60 * 24));
       } else if (unit == TimelineUnit.MONTHS) {
         t.minute = 0;
         t.hour = 0;
@@ -832,6 +846,10 @@ namespace Wiz {
         t.minute = 0;
         t.hour = 0;
         t.day = 0;
+      } else if (unit == TimelineUnit.WEEKS) {
+        t.minute = 0;
+        t.hour = 0;
+        return ((int)t.mktime() - (t.weekday * 60 * 60 * 24));
       } else if (unit == TimelineUnit.YEARS) {
         t.minute = 0;
         t.hour = 0;
@@ -848,6 +866,18 @@ namespace Wiz {
         return timestamp + (60 * 60);
       } else if (unit == TimelineUnit.DAYS) {
         return timestamp + (60 * 60 * 24);
+      } else if (unit == TimelineUnit.WEEKS) {
+        Time t = Time.gm((time_t) timestamp);
+        if (t.weekday == 0) {
+          return timestamp + (60 * 60 * 24 * 5);
+          //t.weekday = 7;
+        } else {
+          return timestamp + (60 * 60 * 24 * 2);
+//          t.weekday = 5;
+        }
+        //return (int)t.mktime();
+        //stdout.printf("weekday %d\n", t.weekday);
+        //return timestamp + (60 * 60 * 24 * 7);
       } else if (unit == TimelineUnit.MONTHS) {
         Time t = Time.gm((time_t) timestamp);
         t.month = t.month + 1;
@@ -867,8 +897,10 @@ namespace Wiz {
         return TimelineUnit.MINUTES;
       } else if (t < 60 * 60 * 24) { 
         return TimelineUnit.HOURS;
-      } else if (t < 60 * 60 * 24 * 30) { 
+      } else if (t < 60 * 60 * 24 * 7) { 
         return TimelineUnit.DAYS;
+      } else if (t < 60 * 60 * 24 * 30) { 
+        return TimelineUnit.WEEKS;
       } else if (t < 60 * 60 * 24 * 365) { 
         return TimelineUnit.MONTHS;
       }
@@ -941,16 +973,16 @@ namespace Wiz {
           if (node.at_coords(this.mouse_release_x, this.mouse_release_y,
                              this.orientation_timeline, (int)(this.offset+(this.branch_width/2)))) {
             if (node != last) {
-              last.selected = false;
               this.selected = node;
               this.selected.selected = true;
             } else {
               this.selected = node;
-            } 
+            }
             break; 
           }
         }
         if (this.selected != last) {
+          last.selected = false;
           this.selection_changed();
           this.queue_draw();
         }
@@ -995,8 +1027,8 @@ namespace Wiz {
         cr_foreground.translate(0, (double)this.branch_width/2.0 + this.offset);
         cr_background.translate(0, (double)this.branch_width/2.0 + this.offset);
       } else {
-        cr_foreground.translate((double)this.branch_width/2.0 + this.offset, 0);
-        cr_background.translate((double)this.branch_width/2.0 + this.offset, 0);
+        cr_foreground.translate((int)((double)this.branch_width/2.0 + this.offset), 0);
+        cr_background.translate((int)((double)this.branch_width/2.0 + this.offset), 0);
       }
       cr_background.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
       cr_background.paint();
@@ -1052,8 +1084,8 @@ namespace Wiz {
       int timestamp = get_highest_scale_timestamp(this.start_timestamp, scaleunit);
       int end_timestamp = get_highest_scale_timestamp(this.end_timestamp, scaleunit);
       end_timestamp = get_next_scale_timestamp(end_timestamp, scaleunit);
-      end_timestamp = get_next_scale_timestamp(end_timestamp, scaleunit);
-      int px_pos;
+      //end_timestamp = get_next_scale_timestamp(end_timestamp, scaleunit);
+      int px_pos, px_width;/*
       if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
         cr.move_to((this.graph_width/2) + 0.5, 
                    (-1*this.offset) - (this.branch_width/2));
@@ -1064,24 +1096,61 @@ namespace Wiz {
                    (this.graph_height/2) + 0.5);
         cr.line_to((this.branch_width/2) + this.graph_width + (-1*this.offset), 
                    (this.graph_height/2) + 0.5);
-      }
+      }*/
+      cr.save();
+      double [] dash = new double[2];
+      dash[0] = 1.5;
+      dash[1] = 2.0;
+      cr.set_dash(dash, 2);
+      cr.set_line_width(1);
+      cr.set_source_rgba(0.0,0.0,0.0, 0.4);
       while (timestamp <= end_timestamp) {
         r = timestamp - this.oldest_timestamp;
-        px_pos= (int)(((t - r) / t) * this.zoomed_extent);
+        px_pos = (int)(((t - r) / t) * this.zoomed_extent);
         if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
-          px_pos = (int)this.graph_width - px_pos;
+          //px_pos = (int)this.graph_width - px_pos;
           cr.move_to((this.graph_width/2) + 0.5, px_pos + 0.5);
           cr.line_to((this.graph_width/2) + 8.5, px_pos + 0.5);
+          cr.stroke();
         } else {
           px_pos = (int)this.graph_width - px_pos;
-          cr.move_to(px_pos + 0.5, (this.graph_height/2) + 0.5);
-          cr.line_to(px_pos + 0.5, (this.graph_height/2) + 8.5);
+          if (scaleunit == TimelineUnit.WEEKS) {
+            Time tm = Time.gm((time_t) timestamp);
+            if (tm.weekday == 5) {
+              r = 60 * 60 * 24 * 2;
+              px_width = (int)(((r / t) * this.zoomed_extent) + 1);
+              if (px_width > 0) {
+                cr.save();
+                cr.set_source_rgba(0,0,0,0.06);
+                cr.rectangle(px_pos, 0,
+                             px_width, this.graph_height);
+                cr.fill();
+                cr.restore();
+                stdout.printf("px width %d\n", px_width);
+              }
+            }
+          }
+          cr.move_to(px_pos+0.5, 0);
+          cr.line_to(px_pos+0.5, this.graph_height);
+          cr.stroke();
         }
         timestamp = get_next_scale_timestamp(timestamp, scaleunit);      
       }
-      cr.set_line_width(1);
-      cr.set_source_rgb(0.0,0.0,0.0);
+      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+        //TODO 8
+      } else {
+        int steps = (this.highest_branch_position - this.lowest_branch_position);
+        
+        for (var i = 1; i <= steps; i++) {
+          //stdout.printf("itar!\n");
+          cr.move_to((-1*this.offset) - (this.branch_width/2), 
+                     (i*this.branch_width)+0.5);
+          cr.line_to((this.branch_width/2) + this.graph_width + (-1*this.offset),
+                     (i*this.branch_width)+0.5);
+        }
+      }
       cr.stroke();
+      cr.restore();
     }
 
     private void render_controls_scale(Cairo.Context cr) {
