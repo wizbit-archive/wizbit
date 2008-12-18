@@ -560,6 +560,33 @@ namespace Wiz {
       return node;
     }
 
+
+    private void recurse_children (TimelineNode node, TimelineBranch branch) {
+      node.branch = branch;
+      if (this.branches.index(branch) < 0) {
+        this.branches.append(branch);
+      }
+
+      var first_child = this.commit_store.get_forward(node.uuid);
+      if (first_child == null) {
+        node.node_type = TimelineNodeType.TIP;
+        this.tips.append(node);
+        return;
+      }
+      var child_node = this.get_node(first_child, false);
+      node.add_edge(child_node);
+      this.recurse_children(child_node, branch);
+
+      var children = this.commit_store.get_forwards(node.uuid);
+      foreach (var child in children) {
+        // All other children are on new branches
+        if (child == first_child) { continue; }
+        var child_node = this.get_node(child, false);
+        node.add_edge(child_node);
+        this.recurse_children(child_node, new TimelineBranch(branch));
+      }
+    }
+
     private void update_from_store () {
       assert(this.commit_store != null);
       string child_uuid = "";
@@ -639,32 +666,6 @@ namespace Wiz {
         } else if (branch.position > this.highest_branch_position) {
           this.highest_branch_position = branch.position;
         }
-      }
-    }
-
-    private void recurse_children (TimelineNode node, TimelineBranch branch) {
-      node.branch = branch;
-      if (this.branches.index(branch) < 0) {
-        this.branches.append(branch);
-      }
-
-      var first_child = this.commit_store.get_forward(node.uuid);
-      if (first_child == null) {
-        node.node_type = TimelineNodeType.TIP;
-        this.tips.append(node);
-        return;
-      }
-      var child_node = this.get_node(first_child, false);
-      node.add_edge(child_node);
-      this.recurse_children(child_node, branch);
-
-      var children = this.commit_store.get_forwards(node.uuid);
-      foreach (var child in children) {
-        // All other children are on new branches
-        if (child == first_child) { continue; }
-        var child_node = this.get_node(child, false);
-        node.add_edge(child_node);
-        this.recurse_children(child_node, new TimelineBranch(branch));
       }
     }
 
