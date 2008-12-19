@@ -1070,6 +1070,8 @@ namespace Wiz {
       // We work out the new timestamp by taking the distance between
       // the range, halving it and setting the start and end timestamps
       // accordingly. Same as we do with motion on the slider.
+      int start = ((this.end_timestamp - this.start_timestamp) / 2) + this.start_timestamp;
+      
     }
 
     private void render_scale(Cairo.Context cr) {
@@ -1081,10 +1083,13 @@ namespace Wiz {
       int end_timestamp = get_highest_scale_timestamp(this.end_timestamp, scaleunit);
       end_timestamp = get_next_scale_timestamp(end_timestamp, scaleunit);
       int px_pos, px_width;
-      cr.save();
       double [] dash = new double[2];
+      Pango.Layout layout;
+      int fontw, fonth;
+
       dash[0] = 1.5;
       dash[1] = 2.0;
+      cr.save();
       cr.set_dash(dash, 2);
       cr.set_line_width(1);
       cr.set_source_rgba(0.0,0.0,0.0, 0.4);
@@ -1097,27 +1102,74 @@ namespace Wiz {
           cr.stroke();
         } else {
           px_pos = (int)this.graph_width - px_pos;
-          if (scaleunit == TimelineUnit.WEEKS) {
-            Time tm = Time.gm((time_t) timestamp);
+          Time tm = Time.gm((time_t) timestamp);
+
+          if (scaleunit == TimelineUnit.MINUTES) {
+            string minutes = "%d:%d".printf(tm.hour, tm.minute);
+            layout = this.create_pango_layout (minutes);
+            layout.get_pixel_size (out fontw, out fonth);
+            cr.move_to (px_pos - (fontw/2), 0);
+            cr.save();
+            cr.set_source_rgba(0,0,0,0.4);
+            Pango.cairo_update_layout (cr, layout);
+            Pango.cairo_show_layout (cr, layout);
+            cr.restore();
+          } else if (scaleunit == TimelineUnit.HOURS) {
+            string hours = "%d:00".printf(tm.hour);
+            layout = this.create_pango_layout (hours);
+            layout.get_pixel_size (out fontw, out fonth);
+            cr.move_to (px_pos - (fontw/2), 0);
+            cr.save();
+            cr.set_source_rgba(0,0,0,0.4);
+            Pango.cairo_update_layout (cr, layout);
+            Pango.cairo_show_layout (cr, layout);
+            cr.restore();
+          } else if (scaleunit == TimelineUnit.DAYS) {
+
+          } else if (scaleunit == TimelineUnit.WEEKS) {
+            cr.save();  
             if (tm.weekday == 5) {
+              cr.set_source_rgba(0,0,0,0.06);
               r = 60 * 60 * 24 * 2;
               px_width = (int)(((r / t) * this.zoomed_extent) + 1);
-              if (px_width > 0) {
-                cr.save();
-                cr.set_source_rgba(0,0,0,0.06);
-                cr.rectangle(px_pos, 0,
-                             px_width, this.graph_height);
-                cr.fill();
-                cr.restore();
-              }
+              cr.rectangle(px_pos, 0,
+                           px_width, this.graph_height);
+              cr.fill();
+            } else if (tm.weekday == 0) {
+              cr.set_source_rgba(0,0,0,0.4);
+              int weekno  = ((tm.day_of_year - (tm.day_of_year % 7)) / 7) + 1;
+              string week = "Week %d".printf(weekno);
+              layout = this.create_pango_layout (week);
+              layout.get_pixel_size (out fontw, out fonth);
+              r = 60 * 60 * 24 * 2.5;
+              px_width = (int)(((r / t) * this.zoomed_extent) + 1);
+              cr.move_to (px_pos + px_width - (fontw/2), 0);
+              Pango.cairo_update_layout (cr, layout);
+              Pango.cairo_show_layout (cr, layout);              
             }
+            cr.restore();
+          } else if (scaleunit == TimelineUnit.MONTHS) {
+
+          } else if (scaleunit == TimelineUnit.YEARS) {
+            string years = "%d".printf(tm.year);
+            layout = this.create_pango_layout (years);
+            layout.get_pixel_size (out fontw, out fonth);
+            cr.move_to (px_pos - (fontw/2), 0);
+            cr.save();
+            cr.set_source_rgba(0,0,0,0.4);
+            Pango.cairo_update_layout (cr, layout);
+            Pango.cairo_show_layout (cr, layout);
+            cr.restore();
           }
+          cr.set_source_rgba(0,0,0,1);
           cr.move_to(px_pos+0.5, 0);
           cr.line_to(px_pos+0.5, this.graph_height);
           cr.stroke();
         }
         timestamp = get_next_scale_timestamp(timestamp, scaleunit);      
       }
+
+      cr.set_source_rgba(0,0,0,1);
       if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
         //TODO 8
       } else {
