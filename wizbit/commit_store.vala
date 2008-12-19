@@ -285,7 +285,7 @@ namespace Wiz {
 		}
 	}
 
-	public class RarCommit {
+	public class RarCommit : GLib.Object {
 		public string uuid { get; set; }
 		public string blob { get; set; }
 		public string committer { get; set; }

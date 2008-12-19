@@ -573,7 +573,7 @@ namespace Wiz {
         this.tips.append(node);
         return;
       }
-      var child_node = this.get_node(first_child, false);
+      TimelineNode child_node = this.get_node(first_child, false);
       node.add_edge(child_node);
       this.recurse_children(child_node, branch);
 
@@ -581,7 +581,7 @@ namespace Wiz {
       foreach (var child in children) {
         // All other children are on new branches
         if (child == first_child) { continue; }
-        var child_node = this.get_node(child, false);
+        child_node = this.get_node(child, false);
         node.add_edge(child_node);
         this.recurse_children(child_node, new TimelineBranch(branch));
       }
@@ -818,7 +818,7 @@ namespace Wiz {
       } else if (unit == TimelineUnit.WEEKS) {
         t.minute = 0;
         t.hour = 0;
-        return ((int)t.mktime() + ((5 - t.weekday) * 60 * 60 * 24));
+        return ((int)t.mktime() + ((6 - t.weekday) * 60 * 60 * 24));
       } else if (unit == TimelineUnit.MONTHS) {
         t.minute = 0;
         t.hour = 0;
@@ -850,7 +850,7 @@ namespace Wiz {
       } else if (unit == TimelineUnit.WEEKS) {
         t.minute = 0;
         t.hour = 0;
-        return ((int)t.mktime() - (t.weekday * 60 * 60 * 24));
+        return ((int)t.mktime() - ((t.weekday-6) * 60 * 60 * 24));
       } else if (unit == TimelineUnit.YEARS) {
         t.minute = 0;
         t.hour = 0;
@@ -869,7 +869,7 @@ namespace Wiz {
         return timestamp + (60 * 60 * 24);
       } else if (unit == TimelineUnit.WEEKS) {
         Time t = Time.gm((time_t) timestamp);
-        if (t.weekday == 0) {
+        if (t.weekday == 1) {
           return timestamp + (60 * 60 * 24 * 5);
         } else {
           return timestamp + (60 * 60 * 24 * 2);
@@ -1082,10 +1082,11 @@ namespace Wiz {
       int timestamp = get_highest_scale_timestamp(this.start_timestamp, scaleunit);
       int end_timestamp = get_highest_scale_timestamp(this.end_timestamp, scaleunit);
       end_timestamp = get_next_scale_timestamp(end_timestamp, scaleunit);
-      int px_pos, px_width;
+      int px_pos, px_width = 0;
       double [] dash = new double[2];
       Pango.Layout layout;
       int fontw, fonth;
+      string unit = null;
 
       dash[0] = 1.5;
       dash[1] = 2.0;
@@ -1094,6 +1095,7 @@ namespace Wiz {
       cr.set_line_width(1);
       cr.set_source_rgba(0.0,0.0,0.0, 0.4);
       while (timestamp <= end_timestamp) {
+        unit = null;
         r = timestamp - this.oldest_timestamp;
         px_pos = (int)(((t - r) / t) * this.zoomed_extent);
         if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
@@ -1105,66 +1107,50 @@ namespace Wiz {
           Time tm = Time.gm((time_t) timestamp);
 
           if (scaleunit == TimelineUnit.MINUTES) {
-            string minutes = "%d:%d".printf(tm.hour, tm.minute);
-            layout = this.create_pango_layout (minutes);
-            layout.get_pixel_size (out fontw, out fonth);
-            cr.move_to (px_pos - (fontw/2), 0);
-            cr.save();
-            cr.set_source_rgba(0,0,0,0.4);
-            Pango.cairo_update_layout (cr, layout);
-            Pango.cairo_show_layout (cr, layout);
-            cr.restore();
+            unit = tm.format("%H:%M");
           } else if (scaleunit == TimelineUnit.HOURS) {
-            string hours = "%d:00".printf(tm.hour);
-            layout = this.create_pango_layout (hours);
-            layout.get_pixel_size (out fontw, out fonth);
-            cr.move_to (px_pos - (fontw/2), 0);
-            cr.save();
-            cr.set_source_rgba(0,0,0,0.4);
-            Pango.cairo_update_layout (cr, layout);
-            Pango.cairo_show_layout (cr, layout);
-            cr.restore();
+            unit = tm.format("%H:00");
           } else if (scaleunit == TimelineUnit.DAYS) {
-
+            unit = tm.format("%A");
           } else if (scaleunit == TimelineUnit.WEEKS) {
-            cr.save();  
-            if (tm.weekday == 5) {
-              cr.set_source_rgba(0,0,0,0.06);
+            if (tm.weekday == 6) {
               r = 60 * 60 * 24 * 2;
               px_width = (int)(((r / t) * this.zoomed_extent) + 1);
-              cr.rectangle(px_pos, 0,
-                           px_width, this.graph_height);
+              cr.save();
+              cr.rectangle(px_pos, 0, px_width, this.graph_height);
+              cr.set_source_rgba(0,0,0,0.06);            
               cr.fill();
-            } else if (tm.weekday == 0) {
-              cr.set_source_rgba(0,0,0,0.4);
-              int weekno  = ((tm.day_of_year - (tm.day_of_year % 7)) / 7) + 1;
-              string week = "Week %d".printf(weekno);
-              layout = this.create_pango_layout (week);
-              layout.get_pixel_size (out fontw, out fonth);
+              cr.restore();
+            } else if (tm.weekday == 1) {
+              unit = tm.format("Week %V %G");
               r = 60 * 60 * 24 * 2.5;
               px_width = (int)(((r / t) * this.zoomed_extent) + 1);
-              cr.move_to (px_pos + px_width - (fontw/2), 0);
-              Pango.cairo_update_layout (cr, layout);
-              Pango.cairo_show_layout (cr, layout);              
             }
-            cr.restore();
           } else if (scaleunit == TimelineUnit.MONTHS) {
-
+            unit = tm.format("%B");
           } else if (scaleunit == TimelineUnit.YEARS) {
-            string years = "%d".printf(tm.year);
-            layout = this.create_pango_layout (years);
+            unit = tm.format("%G");
+          } else {
+            unit = null;
+          }
+
+          cr.save();
+          cr.set_source_rgba(0,0,0,1);
+          cr.move_to(px_pos+0.5, 0);
+          cr.line_to(px_pos+0.5, this.graph_height);
+          cr.stroke();
+          cr.restore();
+
+          if (unit != null) {
+            layout = this.create_pango_layout (unit);
             layout.get_pixel_size (out fontw, out fonth);
-            cr.move_to (px_pos - (fontw/2), 0);
             cr.save();
+            cr.move_to (px_pos + px_width - (fontw/2), 0);
             cr.set_source_rgba(0,0,0,0.4);
             Pango.cairo_update_layout (cr, layout);
             Pango.cairo_show_layout (cr, layout);
             cr.restore();
           }
-          cr.set_source_rgba(0,0,0,1);
-          cr.move_to(px_pos+0.5, 0);
-          cr.line_to(px_pos+0.5, this.graph_height);
-          cr.stroke();
         }
         timestamp = get_next_scale_timestamp(timestamp, scaleunit);      
       }
