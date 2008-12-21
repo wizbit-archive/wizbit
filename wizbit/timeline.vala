@@ -13,7 +13,7 @@
        - Push oout update_node_positions to when zoom has changed not on expose
  * 4_  Rename a bunch of things which are horribly named!
  * 5x  Node click zones calculations
- * 6.  Setting the selected node will scroll it to center
+ * 6x  Setting the selected node will scroll it to center
  * 7.  Work out the node globbing (nodes close to each other combind and size increases)
  * 8x  work out the horizontal/vertical positioning stuff
  * 9x  Fix hugging bug for negative columns
@@ -976,8 +976,6 @@ namespace Wiz {
         // start a timer which controls the speed/positioning (kinetic scroll)
         // horizontal scrolling will change the zoom level
       } else {
-        // TODO 6
-        // A click event occurred
         TimelineNode last = this.selected;
         this.selected = null;
         foreach (var node in this.nodes) {
@@ -1087,7 +1085,6 @@ namespace Wiz {
       if (this.start_timestamp + diff == timestamp) {
         return false;
       }
-      //stdout.printf("distance %d\n", this.anim_end_timestamp - timestamp);
       this.start_timestamp = timestamp - diff;
       this.end_timestamp = timestamp + diff;
 
@@ -1105,22 +1102,12 @@ namespace Wiz {
     }
 
     private bool scroll_tick() {
-      stdout.printf("TimerPoke!\n");
-      // t = time since last tick happened, more accurate than counting
-      // t is then made into a fraction of total time.
       double t;
-      
 			TimeVal tv = TimeVal();
 			tv.get_current_time();
 			t = ((double)tv.tv_usec/1000000)+tv.tv_sec;
-      //stdout.printf("time then %f, time now %f\n", this.anim_start_time, t);
       t = t - this.anim_start_time;
-      double total_time = 0.5; // half a second
       t = (t/this.anim_duration);
-      
-      // rx and R are carried over from scroll to timestamp although they're both
-      // constants, maybe I should calculate them on construction and store them
-      // in the object.
 
       double b = 1 - t + this.easing_diff;
       double angle_b = Math.acos(b/this.easing_radius);
@@ -1137,11 +1124,6 @@ namespace Wiz {
     }
 
     private void scroll_to_timestamp(int timestamp) {
-      // TODO 6
-      // Start a timer which ramps from the current place to the timestamp
-      // We work out the new timestamp by taking the distance between
-      // the range, halving it and setting the start and end timestamps
-      // accordingly. Same as we do with motion on the slider.
       int diff = (this.end_timestamp - this.start_timestamp) / 2;
 
       this.anim_start_timestamp = this.start_timestamp + diff;
@@ -1160,8 +1142,6 @@ namespace Wiz {
       this.anim_duration = (this.anim_duration/diff)*2;
       if (this.anim_duration < 0) { this.anim_duration = this.anim_duration * -1; }
       Timeout.add (50, scroll_tick);
-			
-      //stdout.printf("Scrolling to timestamp %d at time %f in %f msec\n", timestamp, this.anim_start_time, this.anim_duration);
     }
 
     private void render_scale(Cairo.Context cr, Cairo.Context fg) {
