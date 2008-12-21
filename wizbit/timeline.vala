@@ -395,6 +395,7 @@ namespace Wiz {
     private double anim_start_time;
     private int anim_start_timestamp;
     private int anim_end_timestamp;
+    private double anim_duration;
     
     // FFR kinetic scrolling
     private double velocity;
@@ -508,7 +509,7 @@ namespace Wiz {
       this.lowest_branch_position = 0;
       this.store = store;
       this.bit_uuid = bit_uuid;
-      this.easing_radius = 1.2;
+      this.easing_radius = 1.1;
       double h = Math.sqrt(2);
       double angle_n = Math.acos((h/2.0)/this.easing_radius);
       double angle = Math.PI - (2 * angle_n);
@@ -994,7 +995,9 @@ namespace Wiz {
         if (this.selected != last) {
           last.selected = false;
           this.selection_changed();
-          this.scroll_to_timestamp(this.selected.timestamp);
+          if (this.selected != null) {
+            this.scroll_to_timestamp(this.selected.timestamp);
+          }
           this.queue_draw();
         }
       }
@@ -1113,7 +1116,7 @@ namespace Wiz {
       //stdout.printf("time then %f, time now %f\n", this.anim_start_time, t);
       t = t - this.anim_start_time;
       double total_time = 0.5; // half a second
-      t = (t/total_time);
+      t = (t/this.anim_duration);
       
       // rx and R are carried over from scroll to timestamp although they're both
       // constants, maybe I should calculate them on construction and store them
@@ -1153,11 +1156,12 @@ namespace Wiz {
       TimeVal t = TimeVal();
 			t.get_current_time();
 			this.anim_start_time = ((double)t.tv_usec/1000000)+t.tv_sec;
-      
+      this.anim_duration = (double)(this.anim_end_timestamp - this.anim_start_timestamp);
+      this.anim_duration = (this.anim_duration/diff)*2;
+      if (this.anim_duration < 0) { this.anim_duration = this.anim_duration * -1; }
       Timeout.add (50, scroll_tick);
-      //this.move_to_timestamp( timestamp );
 			
-      stdout.printf("Scrolling to timestamp %d at time %f\n", timestamp, this.anim_start_time);
+      //stdout.printf("Scrolling to timestamp %d at time %f in %f msec\n", timestamp, this.anim_start_time, this.anim_duration);
     }
 
     private void render_scale(Cairo.Context cr, Cairo.Context fg) {
