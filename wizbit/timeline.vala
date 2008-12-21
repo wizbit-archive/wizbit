@@ -511,7 +511,7 @@ namespace Wiz {
       this.easing_radius = 1.2;
       double h = Math.sqrt(2);
       double angle_n = Math.acos((h/2.0)/this.easing_radius);
-      double angle = (2*Math.PI) - (2 * angle_n);
+      double angle = Math.PI - (2 * angle_n);
       double angle_r = (((Math.PI/2) - angle)/2);
       this.easing_diff = (Math.cos(angle_r)*this.easing_radius) - 1;
     }
@@ -1084,6 +1084,7 @@ namespace Wiz {
       if (this.start_timestamp + diff == timestamp) {
         return false;
       }
+      //stdout.printf("distance %d\n", this.anim_end_timestamp - timestamp);
       this.start_timestamp = timestamp - diff;
       this.end_timestamp = timestamp + diff;
 
@@ -1095,6 +1096,7 @@ namespace Wiz {
         this.end_timestamp = this.newest_timestamp;
         this.start_timestamp = this.end_timestamp - (diff * 2);
       }
+      this.update_node_positions();
       this.queue_draw();
       return true;
     }
@@ -1103,17 +1105,32 @@ namespace Wiz {
       stdout.printf("TimerPoke!\n");
       // t = time since last tick happened, more accurate than counting
       // t is then made into a fraction of total time.
+      double t;
+      
+			TimeVal tv = TimeVal();
+			tv.get_current_time();
+			t = ((double)tv.tv_usec/1000000)+tv.tv_sec;
+      //stdout.printf("time then %f, time now %f\n", this.anim_start_time, t);
+      t = t - this.anim_start_time;
+      double total_time = 0.5; // half a second
+      t = (t/total_time);
+      
       // rx and R are carried over from scroll to timestamp although they're both
       // constants, maybe I should calculate them on construction and store them
       // in the object.
 
-      double b = 1 - t - this.easing_diff;
+      double b = 1 - t + this.easing_diff;
       double angle_b = Math.acos(b/this.easing_radius);
       double a = Math.sin(angle_b) * this.easing_radius;
       double d = a - this.easing_diff;
-
       int diff = this.anim_end_timestamp - this.anim_start_timestamp;
-      return this.move_to_timestamp( this.anim_start_timestamp + (int)(diff * d) );
+
+      this.move_to_timestamp( this.anim_start_timestamp + (int)(diff * d) );
+      if (t > 1) {
+        return false;
+      } else { 
+        return true;
+      }
     }
 
     private void scroll_to_timestamp(int timestamp) {
@@ -1133,10 +1150,14 @@ namespace Wiz {
         timestamp = this.oldest_timestamp + diff;
       }
       this.anim_end_timestamp = timestamp;
-
-      Timeout.add (50, scroll_tick);
+      TimeVal t = TimeVal();
+			t.get_current_time();
+			this.anim_start_time = ((double)t.tv_usec/1000000)+t.tv_sec;
       
-      stdout.printf("Scrolling to timestamp %d\n", timestamp);
+      Timeout.add (50, scroll_tick);
+      //this.move_to_timestamp( timestamp );
+			
+      stdout.printf("Scrolling to timestamp %d at time %f\n", timestamp, this.anim_start_time);
     }
 
     private void render_scale(Cairo.Context cr, Cairo.Context fg) {
