@@ -38,7 +38,11 @@ namespace Wiz {
 		}
 
 		public Bit create_bit() {
-			return new Bit(generate_uuid(), this.directory);
+      string uuid = generate_uuid();
+      if (this.has_bit(uuid)) {
+        uuid = generate_uuid();
+      }
+			return new Bit(uuid, this.directory);
 		}
 
 		public Bit open_bit(string uuid) {

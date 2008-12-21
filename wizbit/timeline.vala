@@ -317,15 +317,16 @@ namespace Wiz {
         cr.stroke();
       } else if (this.node_type == TimelineNodeType.ROOT) {
         if (orientation == (int)TimelineProperties.VERTICAL) {
+          cr.move_to(x+this.size,y);
           cr.arc(x, y, this.size, 0, Math.PI);
           cr.move_to(x+this.size,y);
           cr.line_to(x,y-this.size);
           cr.line_to(x-this.size,y);
         } else {
-          cr.arc(x, y, this.size, Math.PI/2, Math.PI+(Math.PI/2));
           cr.move_to(x,y+this.size);
           cr.line_to(x+this.size,y);
           cr.line_to(x,y-this.size);
+          cr.arc_negative(x, y, this.size, Math.PI+(Math.PI/2), Math.PI/2);
         }
 
         cr.set_source_rgb(this.branch.fill_r, 
@@ -388,6 +389,13 @@ namespace Wiz {
     private int mouse_press_y;
     private int mouse_release_x;
     private int mouse_release_y;
+    // Scrolling
+    private double easing_radius;
+    private double easing_diff;
+    private double anim_start_time;
+    private int anim_start_timestamp;
+    private int anim_end_timestamp;
+    
     // FFR kinetic scrolling
     private double velocity;
     private double zoomed_extent = 0;
@@ -500,6 +508,12 @@ namespace Wiz {
       this.lowest_branch_position = 0;
       this.store = store;
       this.bit_uuid = bit_uuid;
+      this.easing_radius = 1.2;
+      double h = Math.sqrt(2);
+      double angle_n = Math.acos((h/2.0)/this.easing_radius);
+      double angle = (2*Math.PI) - (2 * angle_n);
+      double angle_r = (((Math.PI/2) - angle)/2);
+      this.easing_diff = (Math.cos(angle_r)*this.easing_radius) - 1;
     }
 
     public override void size_request (out Gtk.Requisition requisition) {
@@ -980,6 +994,7 @@ namespace Wiz {
         if (this.selected != last) {
           last.selected = false;
           this.selection_changed();
+          this.scroll_to_timestamp(this.selected.timestamp);
           this.queue_draw();
         }
       }
@@ -1029,7 +1044,7 @@ namespace Wiz {
       cr_background.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
       cr_background.paint();
 
-      this.render_scale(cr_background);
+      this.render_scale(cr_background, cr_foreground);
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) { 
           if (edge.child == node) {
@@ -1064,17 +1079,67 @@ namespace Wiz {
       return true;
     }
 
+    private bool move_to_timestamp(int timestamp) {
+      int diff = (this.end_timestamp - this.start_timestamp) / 2;
+      if (this.start_timestamp + diff == timestamp) {
+        return false;
+      }
+      this.start_timestamp = timestamp - diff;
+      this.end_timestamp = timestamp + diff;
+
+      if (this.start_timestamp < this.oldest_timestamp) {
+        this.start_timestamp = this.oldest_timestamp;
+        this.end_timestamp = this.start_timestamp + (diff * 2);
+      }
+      if (this.end_timestamp > this.newest_timestamp) {
+        this.end_timestamp = this.newest_timestamp;
+        this.start_timestamp = this.end_timestamp - (diff * 2);
+      }
+      this.queue_draw();
+      return true;
+    }
+
+    private bool scroll_tick() {
+      stdout.printf("TimerPoke!\n");
+      // t = time since last tick happened, more accurate than counting
+      // t is then made into a fraction of total time.
+      // rx and R are carried over from scroll to timestamp although they're both
+      // constants, maybe I should calculate them on construction and store them
+      // in the object.
+
+      double b = 1 - t - this.easing_diff;
+      double angle_b = Math.acos(b/this.easing_radius);
+      double a = Math.sin(angle_b) * this.easing_radius;
+      double d = a - this.easing_diff;
+
+      int diff = this.anim_end_timestamp - this.anim_start_timestamp;
+      return this.move_to_timestamp( this.anim_start_timestamp + (int)(diff * d) );
+    }
+
     private void scroll_to_timestamp(int timestamp) {
       // TODO 6
       // Start a timer which ramps from the current place to the timestamp
       // We work out the new timestamp by taking the distance between
       // the range, halving it and setting the start and end timestamps
       // accordingly. Same as we do with motion on the slider.
-      int start = ((this.end_timestamp - this.start_timestamp) / 2) + this.start_timestamp;
+      int diff = (this.end_timestamp - this.start_timestamp) / 2;
+
+      this.anim_start_timestamp = this.start_timestamp + diff;
+
+      if (timestamp > this.newest_timestamp - diff) {
+        timestamp = this.newest_timestamp - diff;
+      }
+      if (timestamp < this.oldest_timestamp + diff) {
+        timestamp = this.oldest_timestamp + diff;
+      }
+      this.anim_end_timestamp = timestamp;
+
+      Timeout.add (50, scroll_tick);
       
+      stdout.printf("Scrolling to timestamp %d\n", timestamp);
     }
 
-    private void render_scale(Cairo.Context cr) {
+    private void render_scale(Cairo.Context cr, Cairo.Context fg) {
       TimelineUnit scaleunit = this.get_scale_unit(this.start_timestamp,
                                                    this.end_timestamp);
       double t = this.newest_timestamp - this.oldest_timestamp;
@@ -1144,12 +1209,12 @@ namespace Wiz {
           if (unit != null) {
             layout = this.create_pango_layout (unit);
             layout.get_pixel_size (out fontw, out fonth);
-            cr.save();
-            cr.move_to (px_pos + px_width - (fontw/2), 0);
-            cr.set_source_rgba(0,0,0,0.4);
-            Pango.cairo_update_layout (cr, layout);
-            Pango.cairo_show_layout (cr, layout);
-            cr.restore();
+            fg.save();
+            fg.move_to (px_pos + px_width - (fontw/2), 0);
+            fg.set_source_rgba(0,0,0,0.4);
+            Pango.cairo_update_layout (fg, layout);
+            Pango.cairo_show_layout (fg, layout);
+            fg.restore();
           }
         }
         timestamp = get_next_scale_timestamp(timestamp, scaleunit);      
@@ -1170,6 +1235,17 @@ namespace Wiz {
       }
       cr.stroke();
       cr.restore();
+
+      if (scaleunit != TimelineUnit.WEEKS) {
+        cr.save();
+        var pattern = new Cairo.Pattern.linear(0, 12, 0, 35);
+        pattern.add_color_stop_rgba(0, 0xee/255.0, 0xee/255.0, 0xec/255.0, 1);
+        pattern.add_color_stop_rgba(1, 0xee/255.0, 0xee/255.0, 0xec/255.0, 0);      
+        cr.set_source (pattern);
+        cr.rectangle(0+(-1*this.offset)-(this.branch_width/2),0,this.graph_width, this.graph_height);
+        cr.fill();
+        cr.restore();
+      }
     }
 
     private void render_controls_scale(Cairo.Context cr) {
