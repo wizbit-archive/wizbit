@@ -368,7 +368,7 @@ namespace Wiz {
     // The dag itself
     private TimelineNode primary_tip = null;
     private TimelineNode root = null;
-    private TimelineNode selected = null; // TODO 6
+    private TimelineNode selected = null;
     private List<TimelineNode> nodes;
     private List<TimelineNode> tips;
     private List<TimelineBranch> branches;
@@ -483,6 +483,9 @@ namespace Wiz {
         return null;
       }
       set {
+        if (this.selected.uuid == value) {
+          return;
+        }
         this.selected.selected = false;
         this.selected = null;
         foreach (var node in this.nodes) {
@@ -491,8 +494,9 @@ namespace Wiz {
             break;
           }
         }
-        // TODO 6
-        if (this.selected != null) { /*this.scroll_to_node(this.selected);*/ }
+        if (this.selected != null) { 
+          this.scroll_to_timestamp(this.selected.timestamp);
+        }
       }
     }
 
