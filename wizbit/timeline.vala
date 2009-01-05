@@ -34,18 +34,20 @@ namespace Wiz {
     HORIZONTAL = 0,
     VERTICAL = 1,
     PADDING = 8,
-    SCALE_INDENT = 50 // TODO 4
+    SCALE_INDENT = 50 // TODO 4 TimelineHandle.TOTAL_HEIGHT
   }
-  // TODO 4 (width = length?)
+
   public enum TimelineHandle {
     NONE = 0,
     LIMIT_OLD = 1,
     SLIDER = 2,
     LIMIT_NEW = 3,
-    WIDTH = 9,
-    HEIGHT = 13,
-    INDENT = 14
+    HANDLE_WIDTH = 12,
+    HANDLE_HEIGHT = 18,
+    SCALE_HEIGHT = 40,
+    SCALE_PADDING = 2
   }
+
   public enum TimelineUnit {
     MINUTES,
     HOURS,
@@ -383,8 +385,6 @@ namespace Wiz {
 
     // Mouse handling
     private bool mouse_down;
-    private int button_press_timestamp;
-    private int button_release_timestamp;
     private int mouse_press_x;
     private int mouse_press_y;
     private int mouse_release_x;
@@ -396,8 +396,11 @@ namespace Wiz {
     private int anim_start_timestamp;
     private int anim_end_timestamp;
     private double anim_duration;
+
     
     // FFR kinetic scrolling
+    private double kinetic_start_timestamp;
+    private double kinetic_end_timestamp;
     private double velocity;
     private double zoomed_extent = 0;
 
@@ -954,6 +957,9 @@ namespace Wiz {
         this.grab_handle = TimelineHandle.NONE;
       }
 
+      TimeVal t = TimeVal();
+      t.get_current_time();
+      this.kinetic_end_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
       // TODO FFR - This is for kinetic scrolling
       // create a press timestamp (milliseconds) argh, vala time!!!!!
       // this.button_press_timestamp = ?
@@ -972,13 +978,16 @@ namespace Wiz {
                                                 this.mouse_press_y,
                                                 this.mouse_release_x,
                                                 this.mouse_release_y)) {
-        // TODO FFR - This is for kinetic scrolling
-        // Drag threshold was exceeded
-        // create release timestamp (milliseconds)
-        // this.button_release_timestamp = ?
-        // calculate the distance travelled in that time and therefore the speed
-        // start a timer which controls the speed/positioning (kinetic scroll)
-        // horizontal scrolling will change the zoom level
+        TimeVal t = TimeVal();
+        t.get_current_time();
+        this.kinetic_end_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
+        if (this.orientation_timeline == TimelineProperties.HORIZONTAL) {
+          var dist = this.mouse_press_x - this.mouse_release_x;
+        } else {
+          var dist = this.mouse_press_y - this.mouse_release_y;
+        }
+        this.velocity = dist/(this.kinetic_end_timestamp - this.kinetic_start_timestamp);
+        this.kinetic_scroll();
       } else {
         TimelineNode last = this.selected;
         this.selected = null;
@@ -1107,9 +1116,9 @@ namespace Wiz {
 
     private bool scroll_tick() {
       double t;
-			TimeVal tv = TimeVal();
-			tv.get_current_time();
-			t = ((double)tv.tv_usec/1000000)+tv.tv_sec;
+      TimeVal tv = TimeVal();
+      tv.get_current_time();
+      t = ((double)tv.tv_usec/1000000)+tv.tv_sec;
       t = t - this.anim_start_time;
       t = (t/this.anim_duration);
 
@@ -1140,12 +1149,15 @@ namespace Wiz {
       }
       this.anim_end_timestamp = timestamp;
       TimeVal t = TimeVal();
-			t.get_current_time();
-			this.anim_start_time = ((double)t.tv_usec/1000000)+t.tv_sec;
+      t.get_current_time();
+      this.anim_start_time = ((double)t.tv_usec/1000000)+t.tv_sec;
       this.anim_duration = (double)(this.anim_end_timestamp - this.anim_start_timestamp);
       this.anim_duration = (this.anim_duration/diff)*2;
       if (this.anim_duration < 0) { this.anim_duration = this.anim_duration * -1; }
       Timeout.add (50, scroll_tick);
+    }
+
+    private void kinetic_scroll() {
     }
 
     private void render_scale(Cairo.Context cr, Cairo.Context fg) {
