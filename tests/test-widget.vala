@@ -38,6 +38,7 @@ public class Test.Widget : GLib.Object {
 	    Wiz.Version a, b, c, d; // Branches
 	    stdout.printf("Creating a faux history\n");
 	    bit.test_create_next_version_from_string("FOO", null, 1225274400);            // ROOT
+	    bit.test_create_next_version_from_string("BAR", bit.primary_tip, 1225280400); // NODE x
 	    bit.test_create_next_version_from_string("BAR", bit.primary_tip, 1225360800); // NODE 1
 	    bit.test_create_next_version_from_string("QUX", bit.primary_tip, 1225447200); // NODE 2
       b = bit.primary_tip;

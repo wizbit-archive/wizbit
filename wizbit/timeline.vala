@@ -196,7 +196,7 @@ namespace Wiz {
     public bool visible { get; set; }
     public int node_type { get; set; } // TODO 4
     public int px_position;
-    public int size;
+    public double size;
     public string uuid;
     public int timestamp;
     public bool selected { get; set; }
@@ -733,27 +733,31 @@ namespace Wiz {
         node.px_position = position;
       }
       this.edge_angle_max = 45.0;
-      this.node_min_size = this.branch_width / 3;
+      this.node_min_size = this.branch_width / 4;
       this.node_max_size = this.branch_width - 4;
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) { 
           if (edge.child != node) {
             continue;
           }
-          // TODO 7
+          // TODO 7 
           if (edge.parent.branch.px_position == node.branch.px_position) {
-            if (edge.parent.px_position - node.px_position < 8) {
+            // distance between nodes..
+            double node_dist = node.px_position - edge.parent.px_position;
+            if (node_dist < 8) {
               // This should only be set if the node only has one child
-              //edge.parent.globbed = true;
+              edge.parent.globbed = true;
               node.globbed_nodes.append(edge.parent);
-              foreach (var globbed_node in edge.parent.globbed_nodes) {
+              /*foreach (var globbed_node in edge.parent.globbed_nodes) {
                 node.globbed_nodes.append(globbed_node);
-              }
-              edge.parent.globbed_nodes = null;
+              }*/
+              //edge.parent.globbed_nodes = null;
               if (node.globbed_nodes.length() > max_globbed) {
                 max_globbed = (int)node.globbed_nodes.length();
               }
-            } 
+            } else {
+              edge.parent.globbed = false;
+            }
             continue;
           }
           // Opposite and adjacent distances
@@ -766,7 +770,9 @@ namespace Wiz {
           if (angle < this.edge_angle_max) { this.edge_angle_max = angle; }
         }
       }
-      this.node_glob_size = (this.node_max_size - this.node_min_size) / max_globbed;
+      if (max_globbed > 0) {
+        this.node_glob_size = (this.node_max_size - this.node_min_size) / max_globbed;
+      }
     }
 
     /*
@@ -1093,11 +1099,10 @@ namespace Wiz {
           // Don't render all of strokes one after the other, wait until all of
           // the nodes have drawn their lines and stroke it all at once with
           // a pattern generated from the branch positions
-
-
         }
         if (!node.globbed) {
-          node.size = (int)((node.globbed_nodes.length() * this.node_glob_size) + this.node_min_size);
+          node.size = (node.globbed_nodes.length() * this.node_glob_size) + this.node_min_size;
+          stdout.printf("%f %f %f %f %d\n", node.size, this.node_min_size, this.node_max_size, this.node_glob_size, (int)node.globbed_nodes.length()); 
           // Render the node onto the ontop surface
           node.render(cr_foreground, (int)this.orientation_timeline);
         }
