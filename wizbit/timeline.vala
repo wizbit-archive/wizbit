@@ -14,7 +14,7 @@
  * 4_  Rename a bunch of things which are horribly named!
  * 5x  Node click zones calculations
  * 6x  Setting the selected node will scroll it to center
- * 7.  Work out the node globbing (nodes close to each other combind and size increases)
+ * 7_  Work out the node globbing (nodes close to each other combind and size increases)
  * 8x  work out the horizontal/vertical positioning stuff
  * 9x  Fix hugging bug for negative columns
  * 10. Animations while timeline view changes, don't let zooming/panning
@@ -200,6 +200,8 @@ namespace Wiz {
     public string uuid;
     public int timestamp;
     public bool selected { get; set; }
+    public bool globbed { get; set; }
+    public List<TimelineNode> globbed_nodes;
 
     // Might not be best to make this weak
     public weak List<TimelineEdge> edges { get; construct; }
@@ -234,7 +236,9 @@ namespace Wiz {
       this.edges = new List<TimelineEdge>();
       this.node_type = TimelineNodeType.NORMAL;
       this.selected = false;
-      this.size = 15; // Edge size should be set based on branch_width
+      this.globbed_nodes = new List<TimelineNode>();
+      this.globbed = false;
+      this.size;// = 15; // Edge size should be set based on branch_width
                       // and globbing of nodes
     }
 
@@ -376,6 +380,9 @@ namespace Wiz {
     private List<TimelineBranch> branches;
     private int lowest_branch_position;
     private int highest_branch_position;
+    private double node_min_size;
+    private double node_max_size;
+    private double node_glob_size;
 
     // Scale ranges 
     private int oldest_timestamp;
@@ -396,7 +403,6 @@ namespace Wiz {
     private int anim_start_timestamp;
     private int anim_end_timestamp;
     private double anim_duration;
-
     
     // FFR kinetic scrolling
     private double kinetic_start_timestamp;
@@ -716,6 +722,7 @@ namespace Wiz {
       double odist, adist, angle;
       double t = this.newest_timestamp - this.oldest_timestamp;
       double r;
+      int max_globbed = 0;
       this.calculate_zoom();
       foreach (var node in this.nodes) {
         r = node.timestamp - this.oldest_timestamp;
@@ -726,6 +733,8 @@ namespace Wiz {
         node.px_position = position;
       }
       this.edge_angle_max = 45.0;
+      this.node_min_size = this.branch_width / 3;
+      this.node_max_size = this.branch_width - 4;
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) { 
           if (edge.child != node) {
@@ -733,6 +742,18 @@ namespace Wiz {
           }
           // TODO 7
           if (edge.parent.branch.px_position == node.branch.px_position) {
+            if (edge.parent.px_position - node.px_position < 8) {
+              // This should only be set if the node only has one child
+              //edge.parent.globbed = true;
+              node.globbed_nodes.append(edge.parent);
+              foreach (var globbed_node in edge.parent.globbed_nodes) {
+                node.globbed_nodes.append(globbed_node);
+              }
+              edge.parent.globbed_nodes = null;
+              if (node.globbed_nodes.length() > max_globbed) {
+                max_globbed = (int)node.globbed_nodes.length();
+              }
+            } 
             continue;
           }
           // Opposite and adjacent distances
@@ -745,6 +766,7 @@ namespace Wiz {
           if (angle < this.edge_angle_max) { this.edge_angle_max = angle; }
         }
       }
+      this.node_glob_size = (this.node_max_size - this.node_min_size) / max_globbed;
     }
 
     /*
@@ -978,7 +1000,7 @@ namespace Wiz {
                                                 this.mouse_press_y,
                                                 this.mouse_release_x,
                                                 this.mouse_release_y)) {
-        TimeVal t = TimeVal();
+        /*TimeVal t = TimeVal();
         t.get_current_time();
         this.kinetic_end_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
         if (this.orientation_timeline == TimelineProperties.HORIZONTAL) {
@@ -987,7 +1009,7 @@ namespace Wiz {
           var dist = this.mouse_press_y - this.mouse_release_y;
         }
         this.velocity = dist/(this.kinetic_end_timestamp - this.kinetic_start_timestamp);
-        this.kinetic_scroll();
+        this.kinetic_scroll();*/
       } else {
         TimelineNode last = this.selected;
         this.selected = null;
@@ -1071,9 +1093,14 @@ namespace Wiz {
           // Don't render all of strokes one after the other, wait until all of
           // the nodes have drawn their lines and stroke it all at once with
           // a pattern generated from the branch positions
+
+
         }
-        // Render the node onto the ontop surface
-        node.render(cr_foreground, (int)this.orientation_timeline);
+        if (!node.globbed) {
+          node.size = (int)((node.globbed_nodes.length() * this.node_glob_size) + this.node_min_size);
+          // Render the node onto the ontop surface
+          node.render(cr_foreground, (int)this.orientation_timeline);
+        }
       }
       cr.rectangle((double)TimelineProperties.PADDING, 
                    (double)TimelineProperties.PADDING,
@@ -1158,6 +1185,8 @@ namespace Wiz {
     }
 
     private void kinetic_scroll() {
+
+
     }
 
     private void render_scale(Cairo.Context cr, Cairo.Context fg) {
