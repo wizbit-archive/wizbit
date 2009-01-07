@@ -39,8 +39,22 @@ namespace Wiz {
 
 		public Bit create_bit() {
       string uuid = generate_uuid();
+      string indexbuffer;
       if (this.has_bit(uuid)) {
         uuid = generate_uuid();
+      }
+      Bit index = this.open_bit("INDEX");
+      Version last_index = index.primary_tip;
+      try {
+        indexbuffer = index.primary_tip.read_as_string();
+      } catch (GLib.FileError e) {
+        indexbuffer = "";
+      }
+      indexbuffer = indexbuffer+uuid+"\n";
+      try {
+        index.create_next_version_from_string(indexbuffer, index.primary_tip);
+      } catch (GLib.FileError e) {
+        stdout.printf("File error\n");
       }
 			return new Bit(uuid, this.directory);
 		}
