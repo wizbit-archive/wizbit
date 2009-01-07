@@ -82,7 +82,7 @@ test-widget.vala.stamp:	$(test_widget_VALASOURCES)
 	touch $@
 
 test_widget_CFLAGS=@WIZBIT_CFLAGS@
-test_widget_LDADD=../wizbit-widgets/libwizbit-widgets.la
+test_widget_LDADD=../wizbit-widgets/libwizbit-widgets.la ../wizbit/libwizbit.la
 
 EXTRA_DIST += \
 	$(BUILT_SOURCES)				\

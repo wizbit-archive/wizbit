@@ -1,12 +1,13 @@
 using GLib;
 using Gtk;
 using Wiz;
+using WizWidgets;
 
 public class Test.Widget : GLib.Object {
   public static Gtk.Label label;
   public static Wiz.Store store;
   public static Wiz.Bit bit;
-  public static Wiz.Timeline timeline;
+  public static WizWidgets.Timeline timeline;
 
   public static void selection_changed() {
     stdout.printf("SELECTION CHANGED\n");
@@ -104,7 +105,7 @@ public class Test.Widget : GLib.Object {
     }
 
 	  stdout.printf("Creating a timeline widget\n");
-	  timeline = new Wiz.Timeline (store, bit.uuid);
+	  timeline = new WizWidgets.Timeline (store, bit.uuid);
     timeline.selection_changed += selection_changed;
 
     var vbox = new Gtk.VBox(false, 8);

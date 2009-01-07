@@ -10,8 +10,8 @@ INCLUDES= \
 BUILT_SOURCES = libwizbit-widgets.vala.stamp
 
 libwizbit_widgets_la_VALASOURCES = \
-	$(top_builddir)/wizbit/wizbit.vapi
-	timeline.vala
+	$(top_builddir)/wizbit/wizbit.vapi \
+	timeline.vala \
 	$(NULL)
 
 libwizbit_widgets_la_SOURCES = \

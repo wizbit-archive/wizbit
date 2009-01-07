@@ -28,8 +28,9 @@
 using GLib;
 using Gtk;
 using Cairo;
+using Wiz;
 
-namespace Wiz {
+namespace WizWidgets {
   public enum TimelineProperties {
     HORIZONTAL = 0,
     VERTICAL = 1,
@@ -366,9 +367,9 @@ namespace Wiz {
   }
 
   public class Timeline : Gtk.Widget {
-    private Bit bit = null;
-    private Store store = null;
-    private CommitStore commit_store = null;
+    private Wiz.Bit bit = null;
+    private Wiz.Store store = null;
+    private Wiz.CommitStore commit_store = null;
 
     // The dag itself
     private TimelineNode primary_tip = null;
@@ -526,7 +527,7 @@ namespace Wiz {
      * @param: store, a wizbit store
      * @param: bit_uuid, a wiz-bit to open
      */
-    public Timeline(Store store, string? bit_uuid) {
+    public Timeline(Wiz.Store store, string? bit_uuid) {
       this.set_double_buffered(true);
       this.nodes = new List<TimelineNode>();
       this.tips = new List<TimelineNode>();
