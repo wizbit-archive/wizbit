@@ -742,9 +742,9 @@ namespace Wiz {
           // TODO 7 
           if (edge.parent.branch.px_position == node.branch.px_position) {
             // distance between nodes..
-            double node_dist = node.px_position - edge.parent.px_position;
+            int node_dist = node.px_position - edge.parent.px_position;
             node.globbed_nodes = new List<TimelineNode>();
-            if ((node_dist < this.node_min_size) && (edge.parent.node_type != TimelineNodeType.ROOT)) { // made up value
+            if ((node_dist < ((int)this.node_min_size - 1)) && (edge.parent.node_type != TimelineNodeType.ROOT)) { // made up value
               // This should only be set if the node only has one child
               edge.parent.globbed = true;
               node.globbed_nodes.append(edge.parent);

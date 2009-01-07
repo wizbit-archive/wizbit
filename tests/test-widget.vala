@@ -38,7 +38,7 @@ public class Test.Widget : GLib.Object {
 	    Wiz.Version a, b, c, d; // Branches
 	    stdout.printf("Creating a faux history\n");
 	    bit.test_create_next_version_from_string("FOO", null, 1225274400);            // ROOT
-	    bit.test_create_next_version_from_string("BAR", bit.primary_tip, 1225280400); // NODE x
+	    bit.test_create_next_version_from_string("BAR", bit.primary_tip, 1225359400); // NODE x
 	    bit.test_create_next_version_from_string("BAR", bit.primary_tip, 1225360800); // NODE 1
 	    bit.test_create_next_version_from_string("QUX", bit.primary_tip, 1225447200); // NODE 2
       b = bit.primary_tip;
@@ -71,15 +71,36 @@ public class Test.Widget : GLib.Object {
 
 	    bit.test_create_next_version_from_string("CORGE", d, 1225904400);             // NODE 10
       d = bit.primary_tip;
+	    bit.test_create_next_version_from_string("CORGE", d, 1225924600);             // TIP 3
+      d = bit.primary_tip;
+	    bit.test_create_next_version_from_string("CORGE", d, 1225938600);             // TIP 3
+      d = bit.primary_tip;
 	    bit.test_create_next_version_from_string("CORGE", d, 1225965600);             // TIP 3
+      d = bit.primary_tip;
+	    bit.test_create_next_version_from_string("CORGE", d, 1225969600);             // NODE 10
+      d = bit.primary_tip;
+	    bit.test_create_next_version_from_string("CORGE", d, 1225978600);             // NODE 10
+
 
 	    bit.test_create_next_version_from_string("GRAULT", b, 1225966200);            // TIP 4
 
 	    bit.test_create_next_version_from_string("CORGE", a, 1225990800);             // NODE 11
       a = bit.primary_tip;
+	    bit.test_create_next_version_from_string("CORGE", a, 1225992800);             // NODE 11
+      a = bit.primary_tip;
+	    bit.test_create_next_version_from_string("CORGE", a, 1225997800);             // NODE 11
+      a = bit.primary_tip;
 	    bit.test_create_next_version_from_string("CORGE", a, 1226052000);             // NODE 12
       a = bit.primary_tip;
 	    bit.test_create_next_version_from_string("CORGE", a, 1226077200);             // PRIMARY TIP
+      a = bit.primary_tip;
+	    bit.test_create_next_version_from_string("CORGE", a, 1226079800);             // PRIMARY TIP
+      a = bit.primary_tip;
+	    bit.test_create_next_version_from_string("CORGE", a, 1226083200);             // PRIMARY TIP
+      a = bit.primary_tip;
+	    bit.test_create_next_version_from_string("CORGE", a, 1226089200);             // PRIMARY TIP
+      a = bit.primary_tip;
+	    bit.test_create_next_version_from_string("CORGE", a, 1226094200);             // PRIMARY TIP
     }
 
 	  stdout.printf("Creating a timeline widget\n");
