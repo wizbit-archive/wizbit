@@ -185,7 +185,7 @@ namespace Wiz {
 			this.count_between_timestamps_sql.bind_int(1, timestamp1);
 			this.count_between_timestamps_sql.bind_int(2, timestamp2);
 			var res = this.count_between_timestamps_sql.step();
-			int retval = this.select_version_timestamp_sql.column_int(0);
+			int retval = this.count_between_timestamps_sql.column_int(0);
 			this.count_between_timestamps_sql.reset();
 			return retval;
 		}

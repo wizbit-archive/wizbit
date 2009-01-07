@@ -4,7 +4,7 @@
 
 /**
  * TODO
- * 1_  Create renderer for the scale.
+ * 1x  Create renderer for the scale.
  * 2x  Clean up some of the calculations
  * 3x  Optimize the shizzle out of it! 
        - Merge update_from_store and update_branches
@@ -14,7 +14,7 @@
  * 4_  Rename a bunch of things which are horribly named!
  * 5x  Node click zones calculations
  * 6x  Setting the selected node will scroll it to center
- * 7_  Work out the node globbing (nodes close to each other combind and size increases)
+ * 7x  Work out the node globbing (nodes close to each other combind and size increases)
  * 8x  work out the horizontal/vertical positioning stuff
  * 9x  Fix hugging bug for negative columns
  * 10. Animations while timeline view changes, don't let zooming/panning
@@ -1102,7 +1102,6 @@ namespace Wiz {
         }
         if (!node.globbed) {
           node.size = (node.globbed_nodes.length() * this.node_glob_size) + this.node_min_size;
-          //stdout.printf("%f %f %f %f %d\n", node.size, this.node_min_size, this.node_max_size, this.node_glob_size, (int)node.globbed_nodes.length()); 
           // Render the node onto the ontop surface
           node.render(cr_foreground, (int)this.orientation_timeline);
         }
@@ -1306,26 +1305,71 @@ namespace Wiz {
     private void render_controls_scale(Cairo.Context cr) {
       TimelineUnit scaleunit = this.get_scale_unit(this.oldest_timestamp, 
                                                  this.newest_timestamp);
+      TimelineUnit graphunit = (TimelineUnit)((int)scaleunit - 1);
+      int timestamp = get_highest_scale_timestamp(this.oldest_timestamp, graphunit);
+      int next_timestamp;
+      int graphheight;
+      int topheight = 0;
+      int px_pos;
+      int px_end;
+      double gap;
+
+      cr.save();
       if (this.orientation_controls == (int)TimelineProperties.VERTICAL) {
         // TODO 8
       } else { 
         cr.rectangle((double)TimelineProperties.PADDING + 0.5, 
                      this.widget_height + 0.5,
-                     this.widget_width, (double)TimelineProperties.PADDING);
+                     this.widget_width, 15);
+        cr.set_source_rgba(0.0,0.12,0.4,0.6);
+        cr.stroke();
+        cr.rectangle((double)TimelineProperties.PADDING + 0.5, 
+                     this.widget_height + 0.5,
+                     this.widget_width, 15);
+        cr.clip();
       }
-      int timestamp = get_lowest_scale_timestamp(this.oldest_timestamp, scaleunit);
-      int px_pos;
+
+      while (timestamp < this.newest_timestamp) {
+        next_timestamp = get_next_scale_timestamp(timestamp, graphunit);
+        graphheight = this.commit_store.get_commits_between_timestamps(timestamp, next_timestamp);
+        if (graphheight > topheight) {
+          topheight = graphheight;
+        }
+        timestamp = next_timestamp;
+      }
+      gap = 15.0 / topheight;
+
+      timestamp = get_highest_scale_timestamp(this.oldest_timestamp, graphunit);
+      while (timestamp < this.newest_timestamp) {
+        px_pos = timestamp_to_scale_pos(timestamp);
+        next_timestamp = get_next_scale_timestamp(timestamp, graphunit);
+        px_end = timestamp_to_scale_pos(next_timestamp);
+        graphheight = this.commit_store.get_commits_between_timestamps(timestamp, next_timestamp);
+        if (this.orientation_controls == (int)TimelineProperties.VERTICAL) {
+          // TODO 8
+        } else {
+          cr.rectangle(px_pos + 2.5, this.widget_height + 15 - (int)(graphheight * gap) + 0.5,
+                       px_end - px_pos - 2, (int)(graphheight * gap));
+        }
+        timestamp = next_timestamp;
+      }
+      cr.set_source_rgba(0.0,0.12,0.4,0.2);
+      cr.fill_preserve();
+      cr.set_source_rgba(0.0,0.12,0.4,0.4);
+      cr.stroke();
+      cr.restore();
+      timestamp = get_lowest_scale_timestamp(this.oldest_timestamp, scaleunit);
       while (timestamp < this.newest_timestamp) {
         px_pos = timestamp_to_scale_pos(timestamp);
         if (this.orientation_controls == (int)TimelineProperties.VERTICAL) {
           // TODO 8
         } else {
           cr.move_to(px_pos + 0.5, this.widget_height - 8.5);
-          cr.line_to(px_pos + 0.5, this.widget_height + (double)TimelineProperties.PADDING + 0.5);
+          cr.line_to(px_pos + 0.5, this.widget_height + 15 + 0.5);
         }
         timestamp = get_next_scale_timestamp(timestamp, scaleunit);
       }
-      cr.set_source_rgb(0.0,0.0,0.0);
+      cr.set_source_rgba(0.0,0.12,0.4,0.6);
       cr.stroke();
     }
 
