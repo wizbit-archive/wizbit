@@ -33,11 +33,11 @@ namespace Wiz {
 		private static const string SELECT_COMMIT_BY_ID_SQL = 
 			"SELECT c.uuid FROM commits AS c WHERE c.id=? LIMIT 1";
 
-    private static const string SELECT_VERSION_TIMESTAMP_SQL = 
-      "SELECT c.timestamp FROM commits AS c WHERE c.uuid = ? LIMIT 1";
+		private static const string SELECT_VERSION_TIMESTAMP_SQL = 
+			"SELECT c.timestamp FROM commits AS c WHERE c.uuid = ? LIMIT 1";
 
 		private static const string COUNT_BETWEEN_TIMESTAMPS = 
-      "SELECT count(*) FROM commits WHERE timestamp > ? and timestamp < ?";
+			"SELECT count(*) FROM commits WHERE timestamp > ? and timestamp < ?";
 
 		private static const string SELECT_RELATION_SQL =
 			"SELECT r.parent_id FROM relations AS r WHERE r.node_id=?";
@@ -53,7 +53,7 @@ namespace Wiz {
 		private Statement insert_relation_sql;
 		private Statement select_commit_sql;
 		private Statement select_commit_by_id_sql;
-    private Statement select_version_timestamp_sql;
+		private Statement select_version_timestamp_sql;
 		private Statement count_between_timestamps_sql;
 		private Statement select_relation_sql;
 
@@ -76,7 +76,7 @@ namespace Wiz {
 			this.prepare_statement(INSERT_RELATION_SQL, out insert_relation_sql);
 			this.prepare_statement(SELECT_COMMIT_SQL, out select_commit_sql);
 			this.prepare_statement(SELECT_COMMIT_BY_ID_SQL, out select_commit_by_id_sql);
-      this.prepare_statement(SELECT_VERSION_TIMESTAMP_SQL, out select_version_timestamp_sql);
+			this.prepare_statement(SELECT_VERSION_TIMESTAMP_SQL, out select_version_timestamp_sql);
 			this.prepare_statement(COUNT_BETWEEN_TIMESTAMPS, out count_between_timestamps_sql);
 			this.prepare_statement(SELECT_RELATION_SQL, out select_relation_sql);
 		}
@@ -171,13 +171,13 @@ namespace Wiz {
 			return null;
 		}
 
-    public int get_timestamp(string version_uuid) {
+		public int get_timestamp(string version_uuid) {
 			this.select_version_timestamp_sql.bind_text(1, version_uuid);
 			var res = this.select_version_timestamp_sql.step();
-      int retval = this.select_version_timestamp_sql.column_int(0);
+			int retval = this.select_version_timestamp_sql.column_int(0);
 			this.select_version_timestamp_sql.reset();
-      return retval;
-    }
+			return retval;
+		}
 
 		public int get_commits_between_timestamps(int timestamp1, int timestamp2) {
 			// Get the number of commits between these times from the database
@@ -185,9 +185,9 @@ namespace Wiz {
 			this.count_between_timestamps_sql.bind_int(1, timestamp1);
 			this.count_between_timestamps_sql.bind_int(2, timestamp2);
 			var res = this.count_between_timestamps_sql.step();
-      int retval = this.select_version_timestamp_sql.column_int(0);
+			int retval = this.select_version_timestamp_sql.column_int(0);
 			this.count_between_timestamps_sql.reset();
-      return retval;
+			return retval;
 		}
 
 		public bool has_commit(string uuid) {
