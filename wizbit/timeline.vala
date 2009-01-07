@@ -236,7 +236,6 @@ namespace Wiz {
       this.edges = new List<TimelineEdge>();
       this.node_type = TimelineNodeType.NORMAL;
       this.selected = false;
-      this.globbed_nodes = new List<TimelineNode>();
       this.globbed = false;
       this.size;// = 15; // Edge size should be set based on branch_width
                       // and globbing of nodes
@@ -733,8 +732,8 @@ namespace Wiz {
         node.px_position = position;
       }
       this.edge_angle_max = 45.0;
-      this.node_min_size = this.branch_width / 4;
-      this.node_max_size = this.branch_width - 4;
+      this.node_min_size = this.branch_width / 4; // FIXME This is double the size it should be??!
+      this.node_max_size = (this.branch_width / 2) - 4;
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) { 
           if (edge.child != node) {
@@ -744,14 +743,15 @@ namespace Wiz {
           if (edge.parent.branch.px_position == node.branch.px_position) {
             // distance between nodes..
             double node_dist = node.px_position - edge.parent.px_position;
-            if (node_dist < 8) {
+            node.globbed_nodes = new List<TimelineNode>();
+            if ((node_dist < this.node_min_size) && (edge.parent.node_type != TimelineNodeType.ROOT)) { // made up value
               // This should only be set if the node only has one child
               edge.parent.globbed = true;
               node.globbed_nodes.append(edge.parent);
-              /*foreach (var globbed_node in edge.parent.globbed_nodes) {
+              foreach (var globbed_node in edge.parent.globbed_nodes) {
                 node.globbed_nodes.append(globbed_node);
-              }*/
-              //edge.parent.globbed_nodes = null;
+              }
+              edge.parent.globbed_nodes = new List<TimelineNode>();
               if (node.globbed_nodes.length() > max_globbed) {
                 max_globbed = (int)node.globbed_nodes.length();
               }
@@ -1102,7 +1102,7 @@ namespace Wiz {
         }
         if (!node.globbed) {
           node.size = (node.globbed_nodes.length() * this.node_glob_size) + this.node_min_size;
-          stdout.printf("%f %f %f %f %d\n", node.size, this.node_min_size, this.node_max_size, this.node_glob_size, (int)node.globbed_nodes.length()); 
+          //stdout.printf("%f %f %f %f %d\n", node.size, this.node_min_size, this.node_max_size, this.node_glob_size, (int)node.globbed_nodes.length()); 
           // Render the node onto the ontop surface
           node.render(cr_foreground, (int)this.orientation_timeline);
         }
