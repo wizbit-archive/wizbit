@@ -26,8 +26,8 @@ libwizbit-widgets.vala.stamp: $(libwizbit_widgets_la_VALASOURCES)
 libwizbit_widgets_la_CFLAGS=@WIZBIT_CFLAGS@
 libwizbit_widgets_la_LIBADD=@WIZBIT_LIBS@
 
-wizbitincludedir = $(includedir)/wizbit-1.0/wizbit
-wizbitinclude_HEADERS = \
+wizbitwidgetsincludedir = $(includedir)/wizbit-1.0/wizbit-widgets
+wizbitwidgetsinclude_HEADERS = \
 	$(libwizbit_widgets_la_VALASOURCES:.vala=.h) \
 	$(NULL)
 

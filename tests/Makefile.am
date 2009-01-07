@@ -26,7 +26,7 @@ test_everything_SOURCES = \
 	$(NULL)
 
 test_everything.vala.stamp: $(test_everything_VALASOURCES)
-	$(VALAC) -C --basedir $(top_srcdir) --pkg gio-2.0 --pkg gtk+-2.0 $^
+	$(VALAC) -C --basedir $(top_srcdir) --pkg gio-2.0 $^
 	touch $@
 
 test_everything_CFLAGS=@WIZBIT_CFLAGS@
@@ -43,7 +43,7 @@ test_sync_SOURCES = \
 	$(NULL)
 
 test-sync.vala.stamp: $(test_sync_VALASOURCES)
-	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg gio-2.0 --pkg gtk+-2.0  $^
+	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg gio-2.0  $^
 	touch $@
 
 test_sync_CFLAGS=@WIZBIT_CFLAGS@
@@ -60,7 +60,7 @@ test_commit_store_SOURCES = \
 	$(NULL)
 
 test-commit-store.vala.stamp:	$(test_commit_store_VALASOURCES)
-	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg gio-2.0 --pkg gtk+-2.0  $^
+	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg gio-2.0  $^
 	touch $@
 
 test_commit_store_CFLAGS=@WIZBIT_CFLAGS@
@@ -68,6 +68,7 @@ test_commit_store_LDADD=../wizbit/libwizbit.la
 
 test_widget_VALASOURCES = \
 	$(top_builddir)/wizbit/wizbit.vapi		\
+	$(top_builddir)/wizbit-widgets/wizbit-widgets.vapi \
 	test-widget.vala				\
 	$(NULL)
 
@@ -81,7 +82,7 @@ test-widget.vala.stamp:	$(test_widget_VALASOURCES)
 	touch $@
 
 test_widget_CFLAGS=@WIZBIT_CFLAGS@
-test_widget_LDADD=../wizbit/libwizbit.la
+test_widget_LDADD=../wizbit-widgets/libwizbit-widgets.la
 
 EXTRA_DIST += \
 	$(BUILT_SOURCES)				\
