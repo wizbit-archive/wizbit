@@ -20,8 +20,7 @@ libwizbit_la_VALASOURCES = \
 	uuid.vapi \
 	utils.vala \
 	breadthfirst.vala \
-	sync.vala \
-	timeline.vala
+	sync.vala
 	$(NULL)
 
 libwizbit_la_SOURCES = \
@@ -30,7 +29,7 @@ libwizbit_la_SOURCES = \
 	$(NULL)
 
 libwizbit.vala.stamp: $(libwizbit_la_VALASOURCES)
-	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg gtk+-2.0 --pkg cairo --pkg glib-2.0 --pkg gio-2.0 --pkg gio-unix-2.0 --pkg sqlite3 --library wizbit $^
+	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg --pkg glib-2.0 --pkg gio-2.0 --pkg gio-unix-2.0 --pkg sqlite3 --library wizbit $^
 	touch $@
 
 libwizbit_la_CFLAGS=@WIZBIT_CFLAGS@

@@ -28,6 +28,7 @@ AC_CONFIG_FILES([
 	wizbit.pc
 	Makefile
 	wizbit/Makefile
+	wizbit-widgets/Makefile
 	tests/Makefile
 ])
 
