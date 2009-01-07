@@ -418,13 +418,16 @@ namespace Wiz {
     private double offset { get; set; }
     private double edge_angle_max { get; set; }
 
-    // Orientation of the timeline and controls
+    /*
+     * The orientation of the timeline
+     */
     public int orientation_timeline = TimelineProperties.HORIZONTAL;
+    /*
+     * The orientation of the controls
+     */
     public int orientation_controls = TimelineProperties.HORIZONTAL;
 
-    // The size of the graph, we exclude the padding and position occupied by  
-    // the controls.
-    public int graph_height {
+    private int graph_height {
       get {
         if (this.orientation_controls == (int)TimelineProperties.HORIZONTAL) { 
           return this.widget_height - (int)TimelineProperties.SCALE_INDENT;
@@ -433,7 +436,7 @@ namespace Wiz {
         }
       }
     }
-    public int graph_width {
+    private int graph_width {
       get {
         if (this.orientation_controls == (int)TimelineProperties.HORIZONTAL) { 
           return this.widget_width;
@@ -444,7 +447,7 @@ namespace Wiz {
     }
 
     // Pixel width of an individual branch
-    public int branch_width {
+    private int branch_width {
       get {
         if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) { 
           int rows = this.highest_branch_position - this.lowest_branch_position + 1;
@@ -457,17 +460,20 @@ namespace Wiz {
     }
 
     // Size of the allocation 
-    public int widget_width {
+    private int widget_width {
       get {
         return this.allocation.width - ((2 * (int)TimelineProperties.PADDING) + 1);
       }
     }
-    public int widget_height {
+    private int widget_height {
       get {
         return this.allocation.height - ((2 * (int)TimelineProperties.PADDING) + 1);
       }
     }
 
+    /*
+     * The UUID of the current bit
+     */
     public string bit_uuid {
       get {
         return this.bit.uuid;
@@ -483,6 +489,9 @@ namespace Wiz {
       }
     }
 
+    /*
+     * The UUID of the selected version
+     */
     public string? selected_uuid {
       get {
         if (this.selected != null) {
@@ -508,9 +517,15 @@ namespace Wiz {
       }
     }
 
+    /*
+     * A signal emitted when the selection is changed
+     */
     public signal void selection_changed ();
 
-    // We can construct with no bit specified, and use bit_uuid to open the bit
+    /* Construct a timeline widget
+     * @param: store, a wizbit store
+     * @param: bit_uuid, a wiz-bit to open
+     */
     public Timeline(Store store, string? bit_uuid) {
       this.set_double_buffered(true);
       this.nodes = new List<TimelineNode>();
