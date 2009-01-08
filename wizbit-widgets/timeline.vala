@@ -6,7 +6,7 @@
  * TODO
  * 1x  Create renderer for the scale.
  * 2x  Clean up some of the calculations
- * 3x  Optimize the shizzle out of it! 
+ * 3x  Optimize the shizzle out of it!
        - Merge update_from_store and update_branches
          - Separate nicely from DB
        - Push out update_branch_positions to on configure not on expose
@@ -21,8 +21,7 @@
  *     be jumpy. Branches can slide and fade...
  * 11. use CIEXYZ colourspace for branch colouring
  * 12. Create the gradient blend for the column edges.
- * For Future Release (FFR);
- * x. Kinetic scrolling - add timing/timer stuff into signal handlers
+ * 13. Kinetic scrolling - add timing/timer stuff into signal handlers
  */
 
 using GLib;
@@ -40,9 +39,10 @@ namespace WizWidgets {
 
   public enum TimelineHandle {
     NONE = 0,
-    LIMIT_OLD = 1,
-    SLIDER = 2,
-    LIMIT_NEW = 3,
+    KINETIC = 1,
+    LIMIT_OLD = 2,
+    SLIDER = 3,
+    LIMIT_NEW = 4,
     HANDLE_WIDTH = 12,
     HANDLE_HEIGHT = 18,
     SCALE_HEIGHT = 40,
@@ -110,7 +110,7 @@ namespace WizWidgets {
     }
 
     /* Figure out if we're hiding or showing dependent on the state of the nodes
-     * This is called on all branchs on a button release event, causing the 
+     * This is called on all branchs on a button release event, causing the
      * branchs to re-organise on screen.
      */
     public void Animate() {
@@ -179,9 +179,9 @@ namespace WizWidgets {
           cr.line_to(px+kx, ky);
         }
       }
-      
+
       cr.line_to(cx, cy);
-      cr.set_source_rgb(child.branch.stroke_r, 
+      cr.set_source_rgb(child.branch.stroke_r,
                         child.branch.stroke_g,
                         child.branch.stroke_b);
       cr.stroke();
@@ -219,11 +219,11 @@ namespace WizWidgets {
         this.t_branch = value;
         if (this.t_branch != null) {
           this.t_branch.nodes.append(this);
-          if ((this.timestamp < this.t_branch.oldest) || 
+          if ((this.timestamp < this.t_branch.oldest) ||
               (this.t_branch.oldest == 0)) {
             this.t_branch.oldest = this.timestamp;
           }
-          if ((this.timestamp > this.t_branch.newest) || 
+          if ((this.timestamp > this.t_branch.newest) ||
               (this.t_branch.newest == 0)) {
             this.t_branch.newest = this.timestamp;
           }
@@ -261,7 +261,7 @@ namespace WizWidgets {
       if (orientation == (int)TimelineProperties.VERTICAL) {
         nx = this.branch.px_position;
         ny = this.px_position;
-        o = (nx - x) + (int)TimelineProperties.PADDING; 
+        o = (nx - x) + (int)TimelineProperties.PADDING;
         a = (ny - y) - offset;
       } else {
         ny = this.branch.px_position;
@@ -335,21 +335,21 @@ namespace WizWidgets {
           cr.arc_negative(x, y, this.size, Math.PI+(Math.PI/2), Math.PI/2);
         }
 
-        cr.set_source_rgb(this.branch.fill_r, 
+        cr.set_source_rgb(this.branch.fill_r,
                           this.branch.fill_g,
                           this.branch.fill_b);
         cr.fill_preserve();
-        cr.set_source_rgb(this.branch.stroke_r, 
+        cr.set_source_rgb(this.branch.stroke_r,
                           this.branch.stroke_g,
                           this.branch.stroke_b);
-        cr.stroke();        
+        cr.stroke();
       } else {
         cr.arc(x, y, this.size, 0, 2.0 * Math.PI);
-        cr.set_source_rgb(this.branch.fill_r, 
+        cr.set_source_rgb(this.branch.fill_r,
                           this.branch.fill_g,
                           this.branch.fill_b);
         cr.fill_preserve();
-        cr.set_source_rgb(this.branch.stroke_r, 
+        cr.set_source_rgb(this.branch.stroke_r,
                           this.branch.stroke_g,
                           this.branch.stroke_b);
         cr.stroke();
@@ -384,7 +384,7 @@ namespace WizWidgets {
     private double node_max_size;
     private double node_glob_size;
 
-    // Scale ranges 
+    // Scale ranges
     private int oldest_timestamp;
     private int newest_timestamp;
     private int start_timestamp;
@@ -403,7 +403,7 @@ namespace WizWidgets {
     private int anim_start_timestamp;
     private int anim_end_timestamp;
     private double anim_duration;
-    
+
     // FFR kinetic scrolling
     private double kinetic_start_timestamp;
     private double kinetic_end_timestamp;
@@ -430,7 +430,7 @@ namespace WizWidgets {
 
     private int graph_height {
       get {
-        if (this.orientation_controls == (int)TimelineProperties.HORIZONTAL) { 
+        if (this.orientation_controls == (int)TimelineProperties.HORIZONTAL) {
           return this.widget_height - (int)TimelineProperties.SCALE_INDENT;
         } else {
           return this.widget_height;
@@ -439,7 +439,7 @@ namespace WizWidgets {
     }
     private int graph_width {
       get {
-        if (this.orientation_controls == (int)TimelineProperties.HORIZONTAL) { 
+        if (this.orientation_controls == (int)TimelineProperties.HORIZONTAL) {
           return this.widget_width;
         } else {
           return this.widget_width - (int)TimelineProperties.SCALE_INDENT;
@@ -450,17 +450,17 @@ namespace WizWidgets {
     // Pixel width of an individual branch
     private int branch_width {
       get {
-        if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) { 
+        if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
           int rows = this.highest_branch_position - this.lowest_branch_position + 1;
           return this.graph_width / rows;
         } else {
           int rows = this.highest_branch_position - this.lowest_branch_position + 1;
           return this.graph_height / rows;
-        } 
+        }
       }
     }
 
-    // Size of the allocation 
+    // Size of the allocation
     private int widget_width {
       get {
         return this.allocation.width - ((2 * (int)TimelineProperties.PADDING) + 1);
@@ -512,7 +512,7 @@ namespace WizWidgets {
             break;
           }
         }
-        if (this.selected != null) { 
+        if (this.selected != null) {
           this.scroll_to_timestamp(this.selected.timestamp);
         }
       }
@@ -552,7 +552,7 @@ namespace WizWidgets {
 
     public override void size_allocate (Gdk.Rectangle allocation) {
       this.allocation = (Gtk.Allocation)allocation;
- 
+
       if ((this.get_flags () & Gtk.WidgetFlags.REALIZED) == 0)
         return;
       this.window.move_resize (this.allocation.x, this.allocation.y,
@@ -569,7 +569,7 @@ namespace WizWidgets {
       attrs.window_type = Gdk.WindowType.CHILD;
       attrs.width = this.allocation.width;
       attrs.wclass = Gdk.WindowClass.INPUT_OUTPUT;
-      attrs.event_mask = this.get_events() | Gdk.EventMask.EXPOSURE_MASK | 
+      attrs.event_mask = this.get_events() | Gdk.EventMask.EXPOSURE_MASK |
                                              Gdk.EventMask.POINTER_MOTION_MASK |
                                              Gdk.EventMask.BUTTON_PRESS_MASK |
                                              Gdk.EventMask.BUTTON_RELEASE_MASK;
@@ -634,7 +634,7 @@ namespace WizWidgets {
       assert(this.commit_store != null);
       string child_uuid = "";
       string root = this.commit_store.get_root();
-      string primary_tip = this.commit_store.get_primary_tip();      
+      string primary_tip = this.commit_store.get_primary_tip();
       this.primary_tip = this.get_node(primary_tip, false);
       this.tips.append(this.primary_tip);
       this.primary_tip.node_type = TimelineNodeType.PRIMARY_TIP;
@@ -672,7 +672,7 @@ namespace WizWidgets {
 
     private void update_branches () {
       int i, j, d;
-      /* HUGGING */ 
+      /* HUGGING */
       // Now that all the branches exist, and the reflogs of each tip assigned
       // to a branch. We can arrange the branches into the densest space.
       for (i = 1; i < this.branches.length(); i++ ) {
@@ -689,11 +689,11 @@ namespace WizWidgets {
             // TODO 9 I think this now works... not sure without a much more complex graph...
             if (branch.position > 0) {
               if ((branch_match.position + branch.position) > branch_match.position) {
-                branch.position = branch.position * -1; 
+                branch.position = branch.position * -1;
               }
             } else if (branch_match.position < 0) {
               if ((branch_match.position + branch.position) < branch_match.position) {
-                branch.position = branch.position * -1; 
+                branch.position = branch.position * -1;
               }
             }
           } else {
@@ -715,7 +715,7 @@ namespace WizWidgets {
     // TODO 10
     private void update_visibility() {
       foreach (var node in this.nodes) {
-        if ((node.timestamp <= this.end_timestamp) && 
+        if ((node.timestamp <= this.end_timestamp) &&
             (node.timestamp >= this.start_timestamp)) {
           node.visible = true;
         } else {
@@ -751,11 +751,11 @@ namespace WizWidgets {
       this.node_min_size = this.branch_width / 4; // FIXME This is double the size it should be??!
       this.node_max_size = (this.branch_width / 2) - 4;
       foreach (var node in this.nodes) {
-        foreach (var edge in node.edges) { 
+        foreach (var edge in node.edges) {
           if (edge.child != node) {
             continue;
           }
-          // TODO 7 
+          // TODO 7
           if (edge.parent.branch.px_position == node.branch.px_position) {
             // distance between nodes..
             int node_dist = node.px_position - edge.parent.px_position;
@@ -810,7 +810,7 @@ namespace WizWidgets {
           var half_time = (this.end_timestamp - this.start_timestamp)/2;
           var tmp_s = click_timestamp - half_time;
           var tmp_e = click_timestamp + half_time;
-          if ((tmp_s >= this.oldest_timestamp) && 
+          if ((tmp_s >= this.oldest_timestamp) &&
               (tmp_e <= this.newest_timestamp)) {
             this.start_timestamp = tmp_s;
             this.end_timestamp = tmp_e;
@@ -856,13 +856,13 @@ namespace WizWidgets {
     private int timestamp_to_scale_pos(int timestamp) {
       var range = this.newest_timestamp - this.oldest_timestamp;
       double pos = (double)(timestamp - this.oldest_timestamp) / (double)range;
-      return (int)Math.ceil((pos * (double)this.widget_width) + (double)TimelineProperties.PADDING + 0.5); 
+      return (int)Math.ceil((pos * (double)this.widget_width) + (double)TimelineProperties.PADDING + 0.5);
     }
 
     // TODO 8
     private int scale_pos_to_timestamp(int xpos) {
       double ratio = (xpos - (double)TimelineProperties.PADDING + 0.5) / (this.widget_width);
-      return (int) Math.ceil(((this.newest_timestamp - this.oldest_timestamp) * 
+      return (int) Math.ceil(((this.newest_timestamp - this.oldest_timestamp) *
                                ratio
                              ) + this.oldest_timestamp
                             );
@@ -950,20 +950,20 @@ namespace WizWidgets {
       return 0;
     }
 
-    // Returns the best scale unit for the range of time between start and 
-    // end timestamps.  
+    // Returns the best scale unit for the range of time between start and
+    // end timestamps.
     private TimelineUnit get_scale_unit(int start_timestamp, int end_timestamp) {
       int t = end_timestamp - start_timestamp;
       // This isn't the best way to do this but nevermind :/
       if (t < 60 * 60 ) {
         return TimelineUnit.MINUTES;
-      } else if (t < 60 * 60 * 24) { 
+      } else if (t < 60 * 60 * 24) {
         return TimelineUnit.HOURS;
-      } else if (t < 60 * 60 * 24 * 7) { 
+      } else if (t < 60 * 60 * 24 * 7) {
         return TimelineUnit.DAYS;
-      } else if (t < 60 * 60 * 24 * 30) { 
+      } else if (t < 60 * 60 * 24 * 30) {
         return TimelineUnit.WEEKS;
-      } else if (t < 60 * 60 * 24 * 365) { 
+      } else if (t < 60 * 60 * 24 * 365) {
         return TimelineUnit.MONTHS;
       }
       return TimelineUnit.YEARS;
@@ -979,6 +979,7 @@ namespace WizWidgets {
       var sv = this.widget_height - 25;
       var ev = this.widget_height - 11;
 
+      // Cursor over the controls
       if (this.mouse_press_y > sv &&
           this.mouse_press_y < ev &&
           this.mouse_press_x >= st &&
@@ -989,7 +990,7 @@ namespace WizWidgets {
           this.grab_handle = TimelineHandle.LIMIT_OLD;
           this.grab_offset = this.mouse_press_x - st;
         } else if (this.mouse_press_x >= et - 10) {
-          // Over right handle    
+          // Over right handle
           this.grab_handle = TimelineHandle.LIMIT_NEW;
           this.grab_offset = this.mouse_press_x - et;
         } else {
@@ -997,16 +998,19 @@ namespace WizWidgets {
           this.grab_handle = TimelineHandle.SLIDER;
           this.grab_offset = this.mouse_press_x - (st + ((et - st)/2));
         }
+      // Cursor over the graph
+      } else if ((this.mouse_press_x > (int)TimelineProperties.PADDING) &&
+                 (this.mouse_press_x < this.graph_width + (int)TimelineProperties.PADDING) &&
+                 (this.mouse_press_y > (int)TimelineProperties.PADDING) &&
+                 (this.mouse_press_y < this.graph_height + (int)TimelineProperties.PADDING)) {
+        this.grab_handle = TimelineHandle.KINETIC;
+        TimeVal t = TimeVal();
+        t.get_current_time();
+        this.kinetic_start_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
       } else {
         this.grab_handle = TimelineHandle.NONE;
       }
 
-      TimeVal t = TimeVal();
-      t.get_current_time();
-      this.kinetic_end_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
-      // TODO FFR - This is for kinetic scrolling
-      // create a press timestamp (milliseconds) argh, vala time!!!!!
-      // this.button_press_timestamp = ?
       return true;
     }
 
@@ -1022,29 +1026,31 @@ namespace WizWidgets {
                                                 this.mouse_press_y,
                                                 this.mouse_release_x,
                                                 this.mouse_release_y)) {
-        /*TimeVal t = TimeVal();
+        TimeVal t = TimeVal();
         t.get_current_time();
+        int dist = 0;
         this.kinetic_end_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
         if (this.orientation_timeline == TimelineProperties.HORIZONTAL) {
-          var dist = this.mouse_press_x - this.mouse_release_x;
+          dist = this.mouse_press_x - this.mouse_release_x;
         } else {
-          var dist = this.mouse_press_y - this.mouse_release_y;
+          dist = this.mouse_press_y - this.mouse_release_y;
         }
         this.velocity = dist/(this.kinetic_end_timestamp - this.kinetic_start_timestamp);
-        this.kinetic_scroll();*/
+        this.kinetic_scroll();
       } else {
         TimelineNode last = this.selected;
         this.selected = null;
         foreach (var node in this.nodes) {
           if (node.at_coords(this.mouse_release_x, this.mouse_release_y,
-                             this.orientation_timeline, (int)(this.offset+(this.branch_width/2)))) {
+                             this.orientation_timeline,
+                             (int)(this.offset+(this.branch_width/2)))) {
             if (node != last) {
               this.selected = node;
               this.selected.selected = true;
             } else {
               this.selected = node;
             }
-            break; 
+            break;
           }
         }
         if (this.selected != last) {
@@ -1062,17 +1068,19 @@ namespace WizWidgets {
 
     // TODO 8
     public override bool motion_notify_event (Gdk.EventMotion event) {
-      if (this.mouse_down && this.grab_handle > (int)TimelineHandle.NONE) {
+      if (this.mouse_down && this.grab_handle > (int)TimelineHandle.KINETIC) {
         if (event.x != this.mouse_press_x) {
           this.update_controls((int)event.x);
           this.queue_draw();
         }
         return true;
+      } else if (this.mouse_down && this.grab_handle == (int)TimelineHandle.KINETIC) {
+        // TODO 13
+        // if the button is down over the graph
+        //    pan widget to current co-ords
+        // If the cursor has changed direction since last motion event
+        //    set the mouse_press_(x|y) to the last co-ords
       }
-
-      // TODO FFR part of kinetic scrolling
-      // if the button is down elsewhere 
-      //    pan widget to current co-ords
       return false;
     }
 
@@ -1080,15 +1088,15 @@ namespace WizWidgets {
       var cr = Gdk.cairo_create (this.window);
       var surface = cr.get_group_target();
       var cr_background = new Cairo.Context(
-                            new Cairo.Surface.similar(surface, 
-                                                      Cairo.Content.COLOR, 
-                                                      this.graph_width, 
+                            new Cairo.Surface.similar(surface,
+                                                      Cairo.Content.COLOR,
+                                                      this.graph_width,
                                                       this.graph_height)
                           );
       var cr_foreground = new Cairo.Context(
-                            new Cairo.Surface.similar(surface, 
-                                                      Cairo.Content.COLOR_ALPHA, 
-                                                      this.graph_width, 
+                            new Cairo.Surface.similar(surface,
+                                                      Cairo.Content.COLOR_ALPHA,
+                                                      this.graph_width,
                                                       this.graph_height)
                           );
 
@@ -1104,11 +1112,11 @@ namespace WizWidgets {
 
       this.render_scale(cr_background, cr_foreground);
       foreach (var node in this.nodes) {
-        foreach (var edge in node.edges) { 
+        foreach (var edge in node.edges) {
           if (edge.child == node) {
             // Render the edges onto the underneath surface
-            edge.render(cr_background, 
-                        this.edge_angle_max, 
+            edge.render(cr_background,
+                        this.edge_angle_max,
                         (int)this.orientation_timeline);
           }
           // TODO 12
@@ -1122,18 +1130,18 @@ namespace WizWidgets {
           node.render(cr_foreground, (int)this.orientation_timeline);
         }
       }
-      cr.rectangle((double)TimelineProperties.PADDING, 
+      cr.rectangle((double)TimelineProperties.PADDING,
                    (double)TimelineProperties.PADDING,
                    this.graph_width, this.graph_height);
       cr.set_source_rgb(0.0,0.0,0.0);
       cr.stroke();
       // composite surfaces together
-      cr.set_source_surface(cr_background.get_group_target(), 
-                            (double)TimelineProperties.PADDING, 
+      cr.set_source_surface(cr_background.get_group_target(),
+                            (double)TimelineProperties.PADDING,
                             (double)TimelineProperties.PADDING);
       cr.paint();
-      cr.set_source_surface(cr_foreground.get_group_target(), 
-                            (double)TimelineProperties.PADDING, 
+      cr.set_source_surface(cr_foreground.get_group_target(),
+                            (double)TimelineProperties.PADDING,
                             (double)TimelineProperties.PADDING);
       cr.paint();
       this.render_controls(cr);
@@ -1178,7 +1186,7 @@ namespace WizWidgets {
       this.move_to_timestamp( this.anim_start_timestamp + (int)(diff * d) );
       if (t > 1) {
         return false;
-      } else { 
+      } else {
         return true;
       }
     }
@@ -1253,7 +1261,7 @@ namespace WizWidgets {
               px_width = (int)(((r / t) * this.zoomed_extent) + 1);
               cr.save();
               cr.rectangle(px_pos, 0, px_width, this.graph_height);
-              cr.set_source_rgba(0,0,0,0.06);            
+              cr.set_source_rgba(0,0,0,0.06);
               cr.fill();
               cr.restore();
             } else if (tm.weekday == 1) {
@@ -1287,7 +1295,7 @@ namespace WizWidgets {
             fg.restore();
           }
         }
-        timestamp = get_next_scale_timestamp(timestamp, scaleunit);      
+        timestamp = get_next_scale_timestamp(timestamp, scaleunit);
       }
 
       cr.set_source_rgba(0,0,0,1);
@@ -1295,9 +1303,9 @@ namespace WizWidgets {
         //TODO 8
       } else {
         int steps = (this.highest_branch_position - this.lowest_branch_position);
-        
+
         for (var i = 1; i <= steps; i++) {
-          cr.move_to((-1*this.offset) - (this.branch_width/2), 
+          cr.move_to((-1*this.offset) - (this.branch_width/2),
                      (i*this.branch_width)+0.5);
           cr.line_to((this.branch_width/2) + this.graph_width + (-1*this.offset),
                      (i*this.branch_width)+0.5);
@@ -1310,7 +1318,7 @@ namespace WizWidgets {
         cr.save();
         var pattern = new Cairo.Pattern.linear(0, 12, 0, 35);
         pattern.add_color_stop_rgba(0, 0xee/255.0, 0xee/255.0, 0xec/255.0, 1);
-        pattern.add_color_stop_rgba(1, 0xee/255.0, 0xee/255.0, 0xec/255.0, 0);      
+        pattern.add_color_stop_rgba(1, 0xee/255.0, 0xee/255.0, 0xec/255.0, 0);
         cr.set_source (pattern);
         cr.rectangle(0+(-1*this.offset)-(this.branch_width/2),0,this.graph_width, this.graph_height);
         cr.fill();
@@ -1319,7 +1327,7 @@ namespace WizWidgets {
     }
 
     private void render_controls_scale(Cairo.Context cr) {
-      TimelineUnit scaleunit = this.get_scale_unit(this.oldest_timestamp, 
+      TimelineUnit scaleunit = this.get_scale_unit(this.oldest_timestamp,
                                                  this.newest_timestamp);
       TimelineUnit graphunit = (TimelineUnit)((int)scaleunit - 1);
       int timestamp = get_highest_scale_timestamp(this.oldest_timestamp, graphunit);
@@ -1333,13 +1341,13 @@ namespace WizWidgets {
       cr.save();
       if (this.orientation_controls == (int)TimelineProperties.VERTICAL) {
         // TODO 8
-      } else { 
-        cr.rectangle((double)TimelineProperties.PADDING + 0.5, 
+      } else {
+        cr.rectangle((double)TimelineProperties.PADDING + 0.5,
                      this.widget_height + 0.5,
                      this.widget_width, 15);
         cr.set_source_rgba(0.0,0.12,0.4,0.6);
         cr.stroke();
-        cr.rectangle((double)TimelineProperties.PADDING + 0.5, 
+        cr.rectangle((double)TimelineProperties.PADDING + 0.5,
                      this.widget_height + 0.5,
                      this.widget_width, 15);
         cr.clip();
@@ -1401,9 +1409,9 @@ namespace WizWidgets {
       cr.line_to(hpos - 4.5, this.widget_height - 24.5);
       // Handle fill
       var pattern = new Cairo.Pattern.linear(hpos - 4.5, 0, hpos + 4.5, 0);
-      pattern.add_color_stop_rgb(0, 0xee/255.0, 0xee/255.0, 0xec/255.0); 
+      pattern.add_color_stop_rgb(0, 0xee/255.0, 0xee/255.0, 0xec/255.0);
       pattern.add_color_stop_rgb(1, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
-      
+
       cr.set_source (pattern);
       cr.fill_preserve();
       cr.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
@@ -1417,16 +1425,16 @@ namespace WizWidgets {
       cr.line_to(hpos + 3.5, this.widget_height - 23.5);
       cr.line_to(hpos - 3.5, this.widget_height - 23.5);
 
-      cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);      
+      cr.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
       cr.stroke();
     }
 
     // TODO 8
     private void render_controls_background(Cairo.Context cr) {
-      cr.rectangle((double)TimelineProperties.PADDING + 0.5, 
+      cr.rectangle((double)TimelineProperties.PADDING + 0.5,
                    this.widget_height - 22.5,
                    this.widget_width, 6.0);
-      var pattern = new Cairo.Pattern.linear(0, this.widget_height - 22.5, 
+      var pattern = new Cairo.Pattern.linear(0, this.widget_height - 22.5,
                                              0, this.widget_height - 16.5);
       pattern.add_color_stop_rgb(0, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
       pattern.add_color_stop_rgb(1, 0xee/255.0, 0xee/255.0, 0xec/255.0);
@@ -1443,11 +1451,11 @@ namespace WizWidgets {
       int end_pos = this.timestamp_to_scale_pos(this.end_timestamp);
       double center = (this.end_timestamp - this.start_timestamp)/2;
       center = center + this.start_timestamp;
-      center = (double)this.timestamp_to_scale_pos((int)center) - 3.5; 
+      center = (double)this.timestamp_to_scale_pos((int)center) - 3.5;
 
       cr.rectangle (start_pos + 4.5, this.widget_height - 24.5,
                     end_pos - start_pos - 9, 9);
-      var pattern = new Cairo.Pattern.linear(0, this.widget_height - 24.5, 
+      var pattern = new Cairo.Pattern.linear(0, this.widget_height - 24.5,
                                          0,this.widget_height - 15.5);
       pattern.add_color_stop_rgb(0, 0x72/255.0,0x9f/255.0,0xcf/255.0);
       pattern.add_color_stop_rgb(1, 0x34/255.0,0x65/255.0,0xa4/255.0);
