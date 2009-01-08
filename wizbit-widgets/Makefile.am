@@ -20,7 +20,7 @@ libwizbit_widgets_la_SOURCES = \
 	$(NULL)
 
 libwizbit-widgets.vala.stamp: $(libwizbit_widgets_la_VALASOURCES)
-	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg gtk+-2.0 --pkg cairo --pkg glib-2.0 --pkg gio-2.0 --pkg gio-unix-2.0 --pkg sqlite3 --library wizbit-widgets $^
+	$(VALAC) -C --basedir $(top_srcdir) --pkg gtk+-2.0 --pkg cairo --pkg glib-2.0 --pkg gio-2.0 --pkg gio-unix-2.0 --pkg sqlite3 --library wizbit-widgets $^
 	touch $@
 
 libwizbit_widgets_la_CFLAGS=@WIZBIT_CFLAGS@

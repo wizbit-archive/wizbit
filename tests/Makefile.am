@@ -43,7 +43,7 @@ test_sync_SOURCES = \
 	$(NULL)
 
 test-sync.vala.stamp: $(test_sync_VALASOURCES)
-	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg gio-2.0  $^
+	$(VALAC) -C --basedir $(top_srcdir) --pkg gio-2.0  $^
 	touch $@
 
 test_sync_CFLAGS=@WIZBIT_CFLAGS@
@@ -60,7 +60,7 @@ test_commit_store_SOURCES = \
 	$(NULL)
 
 test-commit-store.vala.stamp:	$(test_commit_store_VALASOURCES)
-	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg gio-2.0  $^
+	$(VALAC) -C --basedir $(top_srcdir) --pkg gio-2.0  $^
 	touch $@
 
 test_commit_store_CFLAGS=@WIZBIT_CFLAGS@
@@ -78,7 +78,7 @@ test_widget_SOURCES = \
 	$(NULL)
 
 test-widget.vala.stamp:	$(test_widget_VALASOURCES)
-	$(VALAC) -C --vapidir=$(top_srcdir)/vapi --basedir $(top_srcdir) --pkg gio-2.0 --pkg gtk+-2.0  $^
+	$(VALAC) -C --basedir $(top_srcdir) --pkg gio-2.0 --pkg gtk+-2.0  $^
 	touch $@
 
 test_widget_CFLAGS=@WIZBIT_CFLAGS@
