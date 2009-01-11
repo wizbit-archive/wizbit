@@ -88,6 +88,6 @@ EXTRA_DIST += \
 	$(BUILT_SOURCES)				\
 	$(test_everything_VALASOURCES)			\
 	$(test_sync_VALASOURCES)			\
-	$(test_commit_store_VALASOURCE)			\
-	$(test_widget_VALASOURCE)			\
+	$(test_commit_store_VALASOURCES)		\
+	$(test_widget_VALASOURCES)			\
 	$(NULL)
