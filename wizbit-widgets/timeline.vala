@@ -514,11 +514,10 @@ namespace WizWidgets {
         }
         this.selected.selected = false;
         this.selected = null;
-        string selection = value;
         foreach (var node in this.nodes) {
-          if (node.uuid == selection) {
+          if (node.uuid == value) {
             if (node.globbed) {
-              selection = node.globbed_by.uuid;
+              this.selected = node.globbed_by;
             } else {
               this.selected = node;
               break;
@@ -761,7 +760,7 @@ namespace WizWidgets {
         node.px_position = position;
       }
       this.edge_angle_max = 45.0;
-      this.node_min_size = this.branch_width / 4; // FIXME This is double the size it should be??!
+      this.node_min_size = this.branch_width / 4;
       this.node_max_size = (this.branch_width / 2) - 4;
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) {
@@ -779,8 +778,9 @@ namespace WizWidgets {
               edge.parent.globbed_by = node;
               node.globbed_nodes.append(edge.parent);
               foreach (var globbed_node in edge.parent.globbed_nodes) {
-                node.globbed_nodes.append(globbed_node);
+                globbed_node.globbed = true;
                 globbed_node.globbed_by = node;
+                node.globbed_nodes.append(globbed_node);
               }
               edge.parent.globbed_nodes = new List<TimelineNode>();
               if (node.globbed_nodes.length() > max_globbed) {
@@ -788,6 +788,7 @@ namespace WizWidgets {
               }
             } else {
               edge.parent.globbed = false;
+              edge.parent.globbed_by = null;
             }
             continue;
           }
@@ -1032,6 +1033,7 @@ namespace WizWidgets {
         this.pan_offset = this.offset;
         this.pan_cursor_timestamp = this.graph_pos_to_timestamp(this.mouse_press_x, this.pan_offset);
         this.pan_start_timestamp = this.start_timestamp;
+        this.pan_to_timestamp(this.pan_cursor_timestamp);
       } else {
         this.grab_handle = TimelineHandle.NONE;
       }
@@ -1186,22 +1188,23 @@ namespace WizWidgets {
     private bool pan_to_timestamp(int timestamp) {
       int pan_diff = (timestamp - this.pan_cursor_timestamp);
       int diff = this.end_timestamp - this.start_timestamp;
+      bool ret = true;
       this.start_timestamp = this.pan_start_timestamp - pan_diff;
       this.end_timestamp = this.start_timestamp + diff;
 
       if (this.start_timestamp < this.oldest_timestamp) {
         this.start_timestamp = this.oldest_timestamp;
         this.end_timestamp = this.start_timestamp + diff;
-        return false;
+        ret = false;
       }
       if (this.end_timestamp > this.newest_timestamp) {
         this.end_timestamp = this.newest_timestamp;
         this.start_timestamp = this.end_timestamp - diff;
-        return false;
+        ret = false;
       }
       this.update_node_positions();
       this.queue_draw();
-      return true;
+      return ret;
     }
 
     private bool move_to_timestamp(int timestamp) {
@@ -1284,13 +1287,11 @@ namespace WizWidgets {
 
       int px_pos = (int)(this.mouse_release_x - this.total_distance_travelled);
       int timestamp = this.graph_pos_to_timestamp(px_pos, this.pan_offset);
-      this.pan_to_timestamp(timestamp);
-
-      stdout.printf("Seconds past: %f, distance covered %d, velocity %f\n", seconds, this.total_distance_travelled, this.velocity);
       if ((int)this.velocity > -20 && (int)this.velocity < 20) {
         return false;
       }
-      this.velocity = this.velocity * 0.98;
+      this.pan_to_timestamp(timestamp);
+      this.velocity = this.velocity * 0.95;
       return true;
     }
 
