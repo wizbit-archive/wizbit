@@ -202,6 +202,7 @@ namespace WizWidgets {
     public int timestamp;
     public bool selected { get; set; }
     public bool globbed { get; set; }
+    public TimelineNode globbed_by;
     public List<TimelineNode> globbed_nodes;
 
     // Might not be best to make this weak
@@ -377,9 +378,13 @@ namespace WizWidgets {
     private TimelineNode selected = null;
     private List<TimelineNode> nodes;
     private List<TimelineNode> tips;
+
+    // Branch hugging
     private List<TimelineBranch> branches;
     private int lowest_branch_position;
     private int highest_branch_position;
+
+    // Node globbing
     private double node_min_size;
     private double node_max_size;
     private double node_glob_size;
@@ -396,7 +401,10 @@ namespace WizWidgets {
     private int mouse_press_y;
     private int mouse_release_x;
     private int mouse_release_y;
+
     // Scrolling
+    private int grab_handle;
+    private int grab_offset;
     private double easing_radius;
     private double easing_diff;
     private double anim_start_time;
@@ -404,20 +412,18 @@ namespace WizWidgets {
     private int anim_end_timestamp;
     private double anim_duration;
 
-    // FFR kinetic scrolling
+    // Kinetic scrolling
     private double kinetic_start_timestamp;
     private double kinetic_end_timestamp;
     private double velocity;
-    private double zoomed_extent = 0;
+    private int pan_cursor_timestamp;
+    private int pan_start_timestamp;
+    private double pan_offset;
 
-    // Grabbed information for the controls
-    private int grab_handle;
-    private int grab_offset;
-
-    // Drawing information, what's our currentt zoom level and offset from
-    // the start of the timeline
+    // Drawing information
     private double offset { get; set; }
     private double edge_angle_max { get; set; }
+    private double zoomed_extent = 0;
 
     /*
      * The orientation of the timeline
@@ -861,11 +867,38 @@ namespace WizWidgets {
 
     // TODO 8
     private int scale_pos_to_timestamp(int xpos) {
+      double t = this.newest_timestamp - this.oldest_timestamp;
       double ratio = (xpos - (double)TimelineProperties.PADDING + 0.5) / (this.widget_width);
-      return (int) Math.ceil(((this.newest_timestamp - this.oldest_timestamp) *
-                               ratio
-                             ) + this.oldest_timestamp
-                            );
+      return (int) Math.ceil((t * ratio) + this.oldest_timestamp);
+    }
+
+    private int graph_pos_to_timestamp(int px_pos, double offset) {
+
+      double t = this.newest_timestamp - this.oldest_timestamp;
+/*
+
+        r = node.timestamp - this.oldest_timestamp;
+        if (this.orientation_timeline == (int)TimelineProperties.HORIZONTAL) {
+          position = (int)this.graph_width - position;
+        }
+        position = (int)(((t - r) / t) * this.zoomed_extent);
+*/
+      offset = this.zoomed_extent - (offset + this.graph_width);
+      px_pos = px_pos + (int)(TimelineProperties.PADDING) + (int)offset;
+      //double px_tmp = this.zoomed_extent - (double)(this.offset + px_pos); 
+      double ratio = px_pos / this.zoomed_extent;
+      //stdout.printf("zoomed extent: %f\n", this.zoomed_extent);
+      //stdout.printf("offset: %f\n", offset);
+      
+      
+
+
+      /*stdout.printf("px_tmp %f\n", px_tmp);
+      stdout.printf("px_tmp %f\n", px_tmp);
+      stdout.printf("px_pos: %d\n", px_pos);
+      stdout.printf("t: %f\n", t);
+      stdout.printf("Ratio: %f\n", ratio);*/
+      return (int) Math.ceil(this.oldest_timestamp + (t * ratio));
     }
 
     // Get the tick timestamp equal to are larger than start timestamp
@@ -1007,6 +1040,9 @@ namespace WizWidgets {
         TimeVal t = TimeVal();
         t.get_current_time();
         this.kinetic_start_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
+        this.pan_offset = this.offset;
+        this.pan_cursor_timestamp = this.graph_pos_to_timestamp(this.mouse_press_x, this.pan_offset);
+        this.pan_start_timestamp = this.start_timestamp;
       } else {
         this.grab_handle = TimelineHandle.NONE;
       }
@@ -1076,8 +1112,27 @@ namespace WizWidgets {
         return true;
       } else if (this.mouse_down && this.grab_handle == (int)TimelineHandle.KINETIC) {
         // TODO 13
-        // if the button is down over the graph
+        int timestamp = this.graph_pos_to_timestamp(((int)event.x), this.pan_offset);
+        //stdout.printf("Timestamp: %d\n", timestamp);
         //    pan widget to current co-ords
+        //this.move_to_timestamp(timestamp);
+        int pan_diff = (timestamp - this.pan_cursor_timestamp);
+        stdout.printf("Difference in seconds: %d\n", pan_diff);
+        int diff = this.end_timestamp - this.start_timestamp;
+        this.start_timestamp = this.pan_start_timestamp - pan_diff;
+        this.end_timestamp = this.start_timestamp + diff;
+
+        if (this.start_timestamp < this.oldest_timestamp) {
+          this.start_timestamp = this.oldest_timestamp;
+          this.end_timestamp = this.start_timestamp + diff;
+        }
+        if (this.end_timestamp > this.newest_timestamp) {
+          this.end_timestamp = this.newest_timestamp;
+          this.start_timestamp = this.end_timestamp - diff;
+        }
+        this.update_node_positions();
+        this.queue_draw();
+        return true;
         // If the cursor has changed direction since last motion event
         //    set the mouse_press_(x|y) to the last co-ords
       }
