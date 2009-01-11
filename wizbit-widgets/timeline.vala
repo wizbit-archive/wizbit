@@ -415,6 +415,8 @@ namespace WizWidgets {
     // Kinetic scrolling
     private double kinetic_start_timestamp;
     private double kinetic_end_timestamp;
+    private double kinetic_last_tick_timestamp;
+    private int total_distance_travelled;
     private double velocity;
     private int pan_cursor_timestamp;
     private int pan_start_timestamp;
@@ -512,10 +514,15 @@ namespace WizWidgets {
         }
         this.selected.selected = false;
         this.selected = null;
+        string selection = value;
         foreach (var node in this.nodes) {
-          if (node.uuid == value) {
-            this.selected = node;
-            break;
+          if (node.uuid == selection) {
+            if (node.globbed) {
+              selection = node.globbed_by.uuid;
+            } else {
+              this.selected = node;
+              break;
+            }
           }
         }
         if (this.selected != null) {
@@ -769,9 +776,11 @@ namespace WizWidgets {
             if ((node_dist < ((int)this.node_min_size - 1)) && (edge.parent.node_type != TimelineNodeType.ROOT)) { // made up value
               // This should only be set if the node only has one child
               edge.parent.globbed = true;
+              edge.parent.globbed_by = node;
               node.globbed_nodes.append(edge.parent);
               foreach (var globbed_node in edge.parent.globbed_nodes) {
                 node.globbed_nodes.append(globbed_node);
+                globbed_node.globbed_by = node;
               }
               edge.parent.globbed_nodes = new List<TimelineNode>();
               if (node.globbed_nodes.length() > max_globbed) {
@@ -873,31 +882,10 @@ namespace WizWidgets {
     }
 
     private int graph_pos_to_timestamp(int px_pos, double offset) {
-
       double t = this.newest_timestamp - this.oldest_timestamp;
-/*
-
-        r = node.timestamp - this.oldest_timestamp;
-        if (this.orientation_timeline == (int)TimelineProperties.HORIZONTAL) {
-          position = (int)this.graph_width - position;
-        }
-        position = (int)(((t - r) / t) * this.zoomed_extent);
-*/
       offset = this.zoomed_extent - (offset + this.graph_width);
       px_pos = px_pos + (int)(TimelineProperties.PADDING) + (int)offset;
-      //double px_tmp = this.zoomed_extent - (double)(this.offset + px_pos); 
       double ratio = px_pos / this.zoomed_extent;
-      //stdout.printf("zoomed extent: %f\n", this.zoomed_extent);
-      //stdout.printf("offset: %f\n", offset);
-      
-      
-
-
-      /*stdout.printf("px_tmp %f\n", px_tmp);
-      stdout.printf("px_tmp %f\n", px_tmp);
-      stdout.printf("px_pos: %d\n", px_pos);
-      stdout.printf("t: %f\n", t);
-      stdout.printf("Ratio: %f\n", ratio);*/
       return (int) Math.ceil(this.oldest_timestamp + (t * ratio));
     }
 
@@ -1054,14 +1042,15 @@ namespace WizWidgets {
       this.mouse_down = false;
       this.mouse_release_x = (int)event.x;
       this.mouse_release_y = (int)event.y;
-      if (this.grab_handle > (int)TimelineHandle.NONE) {
+      if (this.grab_handle > (int)TimelineHandle.KINETIC) {
         // TODO 8 - update controls should pick point by orientation
         this.update_controls(this.mouse_release_x);
         this.queue_draw();
       } else if (Gtk.drag_check_threshold(this, this.mouse_press_x,
                                                 this.mouse_press_y,
                                                 this.mouse_release_x,
-                                                this.mouse_release_y)) {
+                                                this.mouse_release_y) &&
+                 (this.grab_handle == (int)TimelineHandle.KINETIC)) {
         TimeVal t = TimeVal();
         t.get_current_time();
         int dist = 0;
@@ -1072,6 +1061,14 @@ namespace WizWidgets {
           dist = this.mouse_press_y - this.mouse_release_y;
         }
         this.velocity = dist/(this.kinetic_end_timestamp - this.kinetic_start_timestamp);
+        stdout.printf("%d Pixels in %f seconds so %f/s\n", dist, (this.kinetic_end_timestamp - this.kinetic_start_timestamp), this.velocity);
+        this.pan_offset = this.offset;
+        int timestamp = this.graph_pos_to_timestamp(this.mouse_release_x, this.pan_offset);
+        this.pan_start_timestamp = this.start_timestamp;
+        this.pan_cursor_timestamp = timestamp;
+        this.total_distance_travelled = 0;
+        this.kinetic_last_tick_timestamp = this.kinetic_end_timestamp;
+        this.pan_to_timestamp(timestamp);
         this.kinetic_scroll();
       } else {
         TimelineNode last = this.selected;
@@ -1113,28 +1110,10 @@ namespace WizWidgets {
       } else if (this.mouse_down && this.grab_handle == (int)TimelineHandle.KINETIC) {
         // TODO 13
         int timestamp = this.graph_pos_to_timestamp(((int)event.x), this.pan_offset);
-        //stdout.printf("Timestamp: %d\n", timestamp);
-        //    pan widget to current co-ords
-        //this.move_to_timestamp(timestamp);
-        int pan_diff = (timestamp - this.pan_cursor_timestamp);
-        stdout.printf("Difference in seconds: %d\n", pan_diff);
-        int diff = this.end_timestamp - this.start_timestamp;
-        this.start_timestamp = this.pan_start_timestamp - pan_diff;
-        this.end_timestamp = this.start_timestamp + diff;
-
-        if (this.start_timestamp < this.oldest_timestamp) {
-          this.start_timestamp = this.oldest_timestamp;
-          this.end_timestamp = this.start_timestamp + diff;
-        }
-        if (this.end_timestamp > this.newest_timestamp) {
-          this.end_timestamp = this.newest_timestamp;
-          this.start_timestamp = this.end_timestamp - diff;
-        }
-        this.update_node_positions();
-        this.queue_draw();
-        return true;
+        this.pan_to_timestamp(timestamp);
         // If the cursor has changed direction since last motion event
         //    set the mouse_press_(x|y) to the last co-ords
+        return true;
       }
       return false;
     }
@@ -1203,6 +1182,27 @@ namespace WizWidgets {
       return true;
     }
 
+    private bool pan_to_timestamp(int timestamp) {
+      int pan_diff = (timestamp - this.pan_cursor_timestamp);
+      int diff = this.end_timestamp - this.start_timestamp;
+      this.start_timestamp = this.pan_start_timestamp - pan_diff;
+      this.end_timestamp = this.start_timestamp + diff;
+
+      if (this.start_timestamp < this.oldest_timestamp) {
+        this.start_timestamp = this.oldest_timestamp;
+        this.end_timestamp = this.start_timestamp + diff;
+        return false;
+      }
+      if (this.end_timestamp > this.newest_timestamp) {
+        this.end_timestamp = this.newest_timestamp;
+        this.start_timestamp = this.end_timestamp - diff;
+        return false;
+      }
+      this.update_node_positions();
+      this.queue_draw();
+      return true;
+    }
+
     private bool move_to_timestamp(int timestamp) {
       int diff = (this.end_timestamp - this.start_timestamp) / 2;
       if (this.start_timestamp + diff == timestamp) {
@@ -1264,12 +1264,39 @@ namespace WizWidgets {
       this.anim_duration = (double)(this.anim_end_timestamp - this.anim_start_timestamp);
       this.anim_duration = (this.anim_duration/diff)*2;
       if (this.anim_duration < 0) { this.anim_duration = this.anim_duration * -1; }
-      Timeout.add (50, scroll_tick);
+      Timeout.add (30, scroll_tick);
+    }
+    // TODO 8
+    private bool kinetic_tick() {
+      double t;
+      TimeVal tv = TimeVal();
+      tv.get_current_time();
+      t = ((double)tv.tv_usec/1000000)+tv.tv_sec;
+
+      double tmp = t - this.kinetic_last_tick_timestamp;
+      this.kinetic_last_tick_timestamp = t;
+      t = tmp;
+
+      double seconds = t;//(t - this.kinetic_end_timestamp);
+      double dist = seconds * (this.velocity);
+      this.total_distance_travelled = this.total_distance_travelled + (int) dist;
+
+      int px_pos = (int)(this.mouse_release_x - this.total_distance_travelled);
+      int timestamp = this.graph_pos_to_timestamp(px_pos, this.pan_offset);
+      this.pan_to_timestamp(timestamp);
+
+      stdout.printf("Seconds past: %f, distance covered %d, velocity %f\n", seconds, this.total_distance_travelled, this.velocity);
+      if ((int)this.velocity == 0) {
+        return false;
+      }
+      this.velocity = this.velocity * 0.98;
+      return true;
     }
 
     private void kinetic_scroll() {
+      
 
-
+      Timeout.add(30, kinetic_tick);
     }
 
     private void render_scale(Cairo.Context cr, Cairo.Context fg) {
