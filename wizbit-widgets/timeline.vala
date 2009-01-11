@@ -999,6 +999,7 @@ namespace WizWidgets {
       var et = this.timestamp_to_scale_pos(this.end_timestamp) + 5;
       var sv = this.widget_height - 25;
       var ev = this.widget_height - 11;
+      this.velocity = 0;
 
       // Cursor over the controls
       if (this.mouse_press_y > sv &&
@@ -1061,7 +1062,7 @@ namespace WizWidgets {
           dist = this.mouse_press_y - this.mouse_release_y;
         }
         this.velocity = dist/(this.kinetic_end_timestamp - this.kinetic_start_timestamp);
-        stdout.printf("%d Pixels in %f seconds so %f/s\n", dist, (this.kinetic_end_timestamp - this.kinetic_start_timestamp), this.velocity);
+        stdout.printf("%d Pixels in %f seconds so %f pixels/s\n", dist, (this.kinetic_end_timestamp - this.kinetic_start_timestamp), this.velocity);
         this.pan_offset = this.offset;
         int timestamp = this.graph_pos_to_timestamp(this.mouse_release_x, this.pan_offset);
         this.pan_start_timestamp = this.start_timestamp;
@@ -1286,7 +1287,7 @@ namespace WizWidgets {
       this.pan_to_timestamp(timestamp);
 
       stdout.printf("Seconds past: %f, distance covered %d, velocity %f\n", seconds, this.total_distance_travelled, this.velocity);
-      if ((int)this.velocity == 0) {
+      if ((int)this.velocity > -20 && (int)this.velocity < 20) {
         return false;
       }
       this.velocity = this.velocity * 0.98;
