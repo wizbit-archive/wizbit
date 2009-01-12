@@ -1089,6 +1089,11 @@ namespace WizWidgets {
             break;
           }
         }
+        if (this.selected.globbed) {
+          this.selected.selected = false;
+          this.selected = this.selected.globbed_by;
+          this.selected.selected = true;
+        }
         if (this.selected != last) {
           last.selected = false;
           this.selection_changed();
