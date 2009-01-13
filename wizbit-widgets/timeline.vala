@@ -32,7 +32,7 @@ using Cairo;
 using Wiz;
 
 namespace WizWidgets {
-  public enum Constants {
+  public enum Constant {
     HORIZONTAL = 0,
     VERTICAL = 1
   }
@@ -106,7 +106,7 @@ namespace WizWidgets {
       int kx, ky; // Kink position
       int px, py, cx, cy;
       double odist, adist;
-      if (orientation == (int)Constants.VERTICAL) {
+      if (orientation == Constant.VERTICAL) {
         px = parent.branch.px_position;
         py = parent.px_position;
         cx = child.branch.px_position;
@@ -117,7 +117,7 @@ namespace WizWidgets {
         cy = child.branch.px_position;
         cx = child.px_position;
       }
-      if (orientation == Constants.VERTICAL) {
+      if (orientation == Constant.VERTICAL) {
         odist = py - cy;
         adist = px - cx;
       } else {
@@ -129,7 +129,7 @@ namespace WizWidgets {
       double angle = Math.atan( odist/adist ) * (180.0/Math.PI);
 
       cr.move_to(px, py);
-      if (orientation == (int)Constants.VERTICAL) {
+      if (orientation == Constant.VERTICAL) {
         if (angle < max_angle) {
           kx = cx;
           ky = (int)(Math.tan(max_angle*(Math.PI/180.0)) * adist);
@@ -166,7 +166,7 @@ namespace WizWidgets {
     public int timestamp;
     public int node_type { get; set; } // TODO 4
     public int px_position;
-    private int orientation;
+    private Constant orientation;
     private Cairo.Context cr;
     private int animating;
     private int timer_id;
@@ -225,10 +225,10 @@ namespace WizWidgets {
 
     // FIXME padding and offset should be implicit... x and y should maybe be
     // branch_px and node_px for simplicity sake
-    public bool at_coords(int x, int y, int orientation, int offset, int padding) {
+    public bool at_coords(int x, int y, Constant orientation, int offset, int padding) {
       double o = 0, a = 0;
       int nx, ny;
-      if (orientation == (int)Constants.VERTICAL) {
+      if (orientation == Constant.VERTICAL) {
         nx = this.branch.px_position;
         ny = this.px_position;
         o = (nx - x) + padding;
@@ -269,12 +269,12 @@ namespace WizWidgets {
     private void render_root() {
     }
 
-    public void render(Cairo.Context cr, int orientation) {
+    public void render(Cairo.Context cr, Constant orientation) {
       this.orientation = orientation;
       this.cr = cr;
 
       int x, y;
-      if (orientation == (int)Constants.VERTICAL) {
+      if (orientation == Constant.VERTICAL) {
         x = this.branch.px_position;
         y = this.px_position;
       } else {
@@ -283,7 +283,7 @@ namespace WizWidgets {
       }
 
       if (this.node_type == NodeType.PRIMARY_TIP) {
-        if (orientation == (int)Constants.VERTICAL) {
+        if (orientation == Constant.VERTICAL) {
           cr.arc_negative(x, y, this.size, 0, Math.PI);
           cr.move_to(x+this.size,y);
           cr.line_to(x,y+this.size);
@@ -299,7 +299,7 @@ namespace WizWidgets {
         cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
         cr.stroke();
       } else if (this.node_type == NodeType.TIP) {
-        if (orientation == (int)Constants.VERTICAL) {
+        if (orientation == Constant.VERTICAL) {
           cr.arc_negative(x, y, this.size, 0, Math.PI);
           cr.move_to(x+this.size,y);
           cr.line_to(x,y+this.size);
@@ -315,7 +315,7 @@ namespace WizWidgets {
         cr.set_source_rgb(0x4e/255.0,0x9a/255.0,0x06/255.0);
         cr.stroke();
       } else if (this.node_type == NodeType.ROOT) {
-        if (orientation == (int)Constants.VERTICAL) {
+        if (orientation == Constant.VERTICAL) {
           cr.move_to(x+this.size,y);
           cr.arc(x, y, this.size, 0, Math.PI);
           cr.move_to(x+this.size,y);
@@ -434,15 +434,15 @@ namespace WizWidgets {
     /*
      * The orientation of the timeline
      */
-    public int orientation_timeline = Constants.HORIZONTAL;
+    public Constant orientation_timeline { get; set; }
     /*
      * The orientation of the controls
      */
-    public int orientation_controls = Constants.HORIZONTAL;
+    public Constant orientation_controls { get; set; }
 
     private int graph_height {
       get {
-        if (this.orientation_controls == (int)Constants.HORIZONTAL) {
+        if (this.orientation_controls == Constant.HORIZONTAL) {
           return this.widget_height - 
                  ( this.controls_height + 
                    this.scale_padding + 
@@ -455,7 +455,7 @@ namespace WizWidgets {
     }
     private int graph_width {
       get {
-        if (this.orientation_controls == (int)Constants.HORIZONTAL) {
+        if (this.orientation_controls == Constant.HORIZONTAL) {
           return this.widget_width;
         } else {
           return this.widget_width - 
@@ -470,7 +470,7 @@ namespace WizWidgets {
     // Pixel width of an individual branch
     private int branch_width {
       get {
-        if (this.orientation_timeline == (int)Constants.VERTICAL) {
+        if (this.orientation_timeline == Constant.VERTICAL) {
           int rows = this.highest_branch_position - this.lowest_branch_position + 1;
           return this.graph_width / rows;
         } else {
@@ -565,7 +565,9 @@ namespace WizWidgets {
       this.scale_padding          = 2;
       this.scale_height           = 20;
       this.easing_radius          = 1.1;
-
+      this.orientation_timeline   = Constant.HORIZONTAL;
+      this.orientation_controls   = Constant.HORIZONTAL;
+      
       double h = Math.sqrt(2);
       double angle_n = Math.acos((h/2.0)/this.easing_radius);
       double angle = Math.PI - (2 * angle_n);
@@ -805,7 +807,7 @@ namespace WizWidgets {
       foreach (var node in this.nodes) {
         r = node.timestamp - this.oldest_timestamp;
         position = (int)(((t - r) / t) * this.zoomed_extent);
-        if (this.orientation_timeline == (int)Constants.HORIZONTAL) {
+        if (this.orientation_timeline == Constant.HORIZONTAL) {
           position = (int)this.graph_width - position;
         }
         node.px_position = position;
@@ -906,7 +908,7 @@ namespace WizWidgets {
       double t = this.newest_timestamp - this.oldest_timestamp;
       double r = this.end_timestamp - this.start_timestamp;
       double offset = this.start_timestamp - this.oldest_timestamp;
-      if (this.orientation_timeline == (int)Constants.VERTICAL) {
+      if (this.orientation_timeline == Constant.VERTICAL) {
         double graph_height = this.graph_height - this.branch_width;
         this.zoomed_extent = graph_height / (r / t);
         offset = this.zoomed_extent * (offset / t);
@@ -1175,7 +1177,7 @@ namespace WizWidgets {
                                                       this.graph_height)
                           );
 
-      if (this.orientation_timeline == (int)Constants.VERTICAL) {
+      if (this.orientation_timeline == Constant.VERTICAL) {
         cr_foreground.translate(0, (double)this.branch_width/2.0 + this.offset);
         cr_background.translate(0, (double)this.branch_width/2.0 + this.offset);
       } else {
@@ -1190,7 +1192,7 @@ namespace WizWidgets {
             // Render the edges onto the underneath surface
             edge.render(cr_background,
                         this.edge_angle_max,
-                        (int)this.orientation_timeline);
+                        this.orientation_timeline);
           }
           // TODO 12
           // Don't render all of strokes one after the other, wait until all of
@@ -1200,7 +1202,7 @@ namespace WizWidgets {
         if (!node.globbed) {
           node.size = (node.globbed_nodes.length() * this.node_glob_size) + this.node_min_size;
           // Render the node onto the ontop surface
-          node.render(cr_foreground, (int)this.orientation_timeline);
+          node.render(cr_foreground, this.orientation_timeline);
         }
       }
       cr.rectangle(this.padding,
@@ -1341,7 +1343,7 @@ namespace WizWidgets {
       t.get_current_time();
       int dist = 0;
       this.kinetic_end_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
-      if (this.orientation_timeline == Constants.HORIZONTAL) {
+      if (this.orientation_timeline == Constant.HORIZONTAL) {
         dist = this.mouse_press_x - this.mouse_release_x;
       } else {
         dist = this.mouse_press_y - this.mouse_release_y;
@@ -1383,7 +1385,7 @@ namespace WizWidgets {
         unit = null;
         r = timestamp - this.oldest_timestamp;
         px_pos = (int)(((t - r) / t) * this.zoomed_extent);
-        if (this.orientation_timeline == (int)Constants.VERTICAL) {
+        if (this.orientation_timeline == Constant.VERTICAL) {
           cr.move_to((this.graph_width/2) + 0.5, px_pos + 0.5);
           cr.line_to((this.graph_width/2) + 8.5, px_pos + 0.5);
           cr.stroke();
@@ -1441,7 +1443,7 @@ namespace WizWidgets {
       }
 
       cr.set_source_rgba(0,0,0,1);
-      if (this.orientation_timeline == (int)Constants.VERTICAL) {
+      if (this.orientation_timeline == Constant.VERTICAL) {
         //TODO 8
       } else {
         int steps = (this.highest_branch_position - this.lowest_branch_position);
@@ -1481,7 +1483,7 @@ namespace WizWidgets {
       double gap;
 
       cr.save();
-      if (this.orientation_controls == (int)Constants.VERTICAL) {
+      if (this.orientation_controls == Constant.VERTICAL) {
         // TODO 8
       } else {
         cr.rectangle(this.padding + 0.5,
@@ -1511,7 +1513,7 @@ namespace WizWidgets {
         next_timestamp = get_next_scale_timestamp(timestamp, graphunit);
         px_end = timestamp_to_scale_pos(next_timestamp);
         graphheight = this.commit_store.get_commits_between_timestamps(timestamp, next_timestamp);
-        if (this.orientation_controls == (int)Constants.VERTICAL) {
+        if (this.orientation_controls == Constant.VERTICAL) {
           // TODO 8
         } else {
           cr.rectangle(px_pos + 2.5, this.widget_height + 15 - (int)(graphheight * gap) + 0.5,
@@ -1527,7 +1529,7 @@ namespace WizWidgets {
       timestamp = get_lowest_scale_timestamp(this.oldest_timestamp, scaleunit);
       while (timestamp < this.newest_timestamp) {
         px_pos = timestamp_to_scale_pos(timestamp);
-        if (this.orientation_controls == (int)Constants.VERTICAL) {
+        if (this.orientation_controls == Constant.VERTICAL) {
           // TODO 8
         } else {
           cr.move_to(px_pos + 0.5, this.widget_height - 8.5);
