@@ -44,6 +44,12 @@ namespace WizWidgets {
     SLIDER = 3,
     LIMIT_NEW = 4
   }
+  private enum Render {
+    CONTROLS = 1,
+    GRAPH = 2,
+    SCALE = 4,
+    BACKGROUND = 8
+  }
 
   private enum TimeUnit {
     MINUTES,
@@ -424,6 +430,7 @@ namespace WizWidgets {
     private Cairo.Context cr_nodes;       // Render on zoom/resize
     private Cairo.Context cr_controls;    // Render on zoom/scroll/resize
     private Cairo.Context cr_scale;       // Render on bit_uuid changed/resize
+    private int do_render;
     private double offset;
     private double edge_angle_max;
     private double zoomed_extent = 0;
@@ -564,10 +571,15 @@ namespace WizWidgets {
       this.draw_scale             = true;
       this.padding                = 8;
       this.controls_height        = 20;
-      this.handle_width           = 9;
+      this.handle_width           = 13;
       this.scale_padding          = 2;
       this.scale_height           = 20;
       this.easing_radius          = 1.1;
+      this.do_render              = (int)Render.CONTROLS | 
+                                    (int)Render.GRAPH |
+                                    (int)Render.SCALE |
+                                    (int)Render.BACKGROUND;
+      stdout.printf("render...%d\n", this.do_render);
       this.orientation_timeline   = Constant.HORIZONTAL;
       this.orientation_controls   = Constant.HORIZONTAL;
       
@@ -596,10 +608,10 @@ namespace WizWidgets {
       this.update_branch_positions();
       this.update_node_positions();
       this.create_surfaces();
-      //this.render_background();
-      this.render_graph();
-      this.render_controls();
-      this.render_scale();
+      this.do_render = (int)Render.CONTROLS | 
+                       (int)Render.GRAPH |
+                       (int)Render.SCALE |
+                       (int)Render.BACKGROUND;
     }
 
     public override void realize () {
@@ -622,10 +634,6 @@ namespace WizWidgets {
       this.update_branch_positions();
       this.update_node_positions();
       this.create_surfaces();
-      //this.render_background();
-      this.render_graph();
-      this.render_controls();
-      this.render_scale();
     }
 
     public override void unrealize () {
@@ -824,6 +832,7 @@ namespace WizWidgets {
       if (max_globbed > 0) {
         this.node_glob_size = (this.node_max_size - this.node_min_size) / max_globbed;
       }
+      this.do_render = this.do_render | (int)Render.GRAPH; 
     }
 
     /*
@@ -863,10 +872,15 @@ namespace WizWidgets {
         if (this.end_timestamp > this.newest_timestamp) {
           this.end_timestamp = this.newest_timestamp;
         }
-        // TODO 3, only when the difference has changed (zoom)
         if ((last_start != this.start_timestamp) ||
             (last_end != this.end_timestamp)) {
+          this.do_render = this.do_render |  (int)Render.CONTROLS; 
+        }
+        int old_diff = last_end - last_start;
+        int new_diff = this.end_timestamp - this.start_timestamp;
+        if (old_diff != new_diff) {
           this.update_node_positions();
+          this.do_render = this.do_render | (int)Render.BACKGROUND;
         }
       }
     }
@@ -881,7 +895,7 @@ namespace WizWidgets {
         offset = this.zoomed_extent * (offset / t);
         this.offset = graph_height - this.zoomed_extent + offset;
       } else {
-        double graph_width = this.graph_width;// - this.branch_width;
+        double graph_width = this.graph_width - this.branch_width;
         this.zoomed_extent = graph_width / (r / t);
         offset = this.zoomed_extent * (offset / t);
         this.offset = 0 - graph_width + this.zoomed_extent - offset;// - this.branch_width;
@@ -1028,7 +1042,8 @@ namespace WizWidgets {
         this.start_timestamp = this.end_timestamp - diff;
         ret = false;
       }
-      this.update_node_positions(); // TODO 3 Won't be needed in future :)
+      //this.update_node_positions(); // TODO 3 Won't be needed in future :)
+      this.do_render = this.do_render | (int)Render.CONTROLS;
       this.queue_draw();
       return ret;
     }
@@ -1194,7 +1209,7 @@ namespace WizWidgets {
       } else {
         this.grab_handle = Handle.NONE;
       }
-
+      stdout.printf("Grab %d\n", this.grab_handle);
       return true;
     }
 
@@ -1290,7 +1305,20 @@ namespace WizWidgets {
     // TODO 3
     public override bool expose_event (Gdk.EventExpose event) {
       this.cr = Gdk.cairo_create (this.window);
+      if ((this.do_render & (int)Render.CONTROLS) == (int)Render.CONTROLS) {
+        this.render_controls();
+      }
+      if ((this.do_render & (int)Render.GRAPH) == (int)Render.GRAPH) {
+        this.render_graph();
+      }
+      if ((this.do_render & (int)Render.SCALE) == (int)Render.SCALE) {
+        this.render_scale();
+      }
+      //if ((this.do_render & (int)Render.BACKGROUND) == (int)Render.BACKGROUND) {
+      //  this.render_background();
+      //}
       this.composite();
+      this.do_render = 0;
       return true;
     }
 
@@ -1408,7 +1436,7 @@ namespace WizWidgets {
     // TODO 3
     private void render_scale() {
       TimeUnit scaleunit = this.get_scale_unit(this.oldest_timestamp,
-                                                 this.newest_timestamp);
+                                               this.newest_timestamp);
       TimeUnit graphunit = (TimeUnit)((int)scaleunit - 1);
       int timestamp = get_highest_scale_timestamp(this.oldest_timestamp, graphunit);
       int next_timestamp;
@@ -1418,18 +1446,16 @@ namespace WizWidgets {
       int px_end;
       double gap;
 
-      this.cr_scale.save();
       this.cr_scale.set_line_width(1);
-      this.cr_scale.set_source_rgb(1,0,1);
-      this.cr_scale.paint();
+      this.cr_scale.save();
       stdout.printf("Drawing scale\n");
       if (this.orientation_controls == Constant.VERTICAL) {
         // TODO 8
       } else {
-        this.cr_scale.rectangle(0.5, 0.5, this.widget_width, 15);
+        this.cr_scale.rectangle(0.5, 4.5, this.widget_width, 15);
         this.cr_scale.set_source_rgba(0.0,0.12,0.4,0.6);
         this.cr_scale.stroke();
-        this.cr_scale.rectangle(0.5, 0.5, this.widget_width, 15);
+        this.cr_scale.rectangle(0, 0, this.widget_width, 20);
         this.cr_scale.clip();
       }
 
@@ -1452,8 +1478,8 @@ namespace WizWidgets {
         if (this.orientation_controls == Constant.VERTICAL) {
           // TODO 8
         } else {
-          this.cr_scale.rectangle(px_pos + 2.5, 15 - (int)(graphheight * gap) + 0.5,
-                       px_end - px_pos - 3, (int)(graphheight * gap));
+          this.cr_scale.rectangle(px_pos + 2.5, 15 - (int)(graphheight * gap) + 4.5,
+                       px_end - px_pos -4, (int)(graphheight * gap));
         }
         timestamp = next_timestamp;
       }
@@ -1468,8 +1494,8 @@ namespace WizWidgets {
         if (this.orientation_controls == Constant.VERTICAL) {
           // TODO 8
         } else {
-          this.cr_scale.move_to(px_pos + 0.5, - 8.5);
-          this.cr_scale.line_to(px_pos + 0.5, 15 + 0.5);
+          this.cr_scale.move_to(px_pos + 0.5, 0);
+          this.cr_scale.line_to(px_pos + 0.5, this.scale_height);
         }
         timestamp = get_next_scale_timestamp(timestamp, scaleunit);
       }
@@ -1479,7 +1505,7 @@ namespace WizWidgets {
 
     // TODO 8
     private void render_controls_handle(int timestamp) {
-      double hhw = this.handle_width / 2;
+      double hhw = (double)this.handle_width / 2.0;
 
       var hpos = this.timestamp_to_scale_pos(timestamp);
       // Handle outline
@@ -1551,14 +1577,22 @@ namespace WizWidgets {
     }
 
     private void render_controls() {
-      this.cr_controls.set_source_rgb(0,1,1);
+      this.cr_controls.set_operator(Cairo.Operator.CLEAR);
       this.cr_controls.paint();
+      this.cr_controls.set_operator(Cairo.Operator.OVER);
       this.render_controls_slider();
       this.render_controls_handle(this.start_timestamp);
       this.render_controls_handle(this.end_timestamp);
     }
 
     private void render_graph() {
+      this.cr_nodes.set_operator(Cairo.Operator.CLEAR);
+      this.cr_nodes.paint();
+      this.cr_nodes.set_operator(Cairo.Operator.OVER);
+
+      this.cr_edges.set_operator(Cairo.Operator.CLEAR);
+      this.cr_edges.paint();
+      this.cr_edges.set_operator(Cairo.Operator.OVER);
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) {
           if (edge.child == node) {
@@ -1588,8 +1622,8 @@ namespace WizWidgets {
       int graph_height = 0;
       int controls_width = 0;
       int controls_height = 0;
-      int scale_width;
-      int scale_height;
+      int scale_width = 0;
+      int scale_height = 0;
 
       if (this.orientation_timeline == Constant.VERTICAL) {
         graph_width     = this.graph_width;
@@ -1656,17 +1690,18 @@ namespace WizWidgets {
         cx = (this.padding*2) + this.graph_width;
         sx = cx + this.controls_height + this.scale_padding;
         cw = this.controls_height;
-        ch = this.widget_height;
+        ch = this.allocation.height + 1;
         sw = this.scale_height;
         sh = this.widget_height + 1;
       } else {
         cy = (this.padding*2) + this.graph_height;
         sy = cy + this.controls_height + this.scale_padding;
-        cw = this.widget_width;
+        cw = this.allocation.width + 1;
         ch = this.controls_height;
         sw = this.widget_width + 1;
         sh = this.scale_height;
       }
+
 
       this.cr.set_source_rgb(1,1,0);
       this.cr.paint();
@@ -1678,18 +1713,19 @@ namespace WizWidgets {
 */
       this.cr.set_source_surface(this.cr_edges.get_group_target(),
                                  this.padding + this.offset, this.padding);
+      this.cr.paint();
       this.cr.rectangle(0, 0, this.graph_width, this.graph_height);
       this.cr.fill();
 
       this.cr.set_source_surface(this.cr_nodes.get_group_target(),
                                  this.padding + this.offset, this.padding);
+      this.cr.paint();
       this.cr.rectangle(0, 0, this.graph_width, this.graph_height);
       this.cr.fill();
 
       this.cr.set_source_surface(this.cr_controls.get_group_target(), cx, cy);
-      this.cr.paint();
-      //this.cr.rectangle(0, 0, cw, ch);
-      //this.cr.fill();
+      this.cr.rectangle(cx, cy, cw, ch);
+      this.cr.fill();
 
       this.cr.set_source_surface(this.cr_scale.get_group_target(), sx, sy);
       this.cr.rectangle(sx, sy, sw, sh);
