@@ -101,7 +101,7 @@ namespace WizWidgets {
       this.child = child;
     }
 
-    public void render(Cairo.Context cr, double max_angle, Constants orientation) {
+    public void render(Cairo.Context cr, double max_angle, Constant orientation) {
       // Draw a line from each parent.x/y to child.x/y
       int kx, ky; // Kink position
       int px, py, cx, cy;
@@ -592,6 +592,7 @@ namespace WizWidgets {
       // size has changed so we update the position calculations
       this.update_branch_positions();
       this.update_node_positions();
+      //this.create_surfaces();
       //this.render_background();
       //this.render_graph();
       //this.render_controls();
@@ -617,44 +618,7 @@ namespace WizWidgets {
       // Initial positioning calculations, now that we know the widge size
       this.update_branch_positions();
       this.update_node_positions();
-
-      this.cr = Gdk.cairo_create (this.window);
-      var surface = cr.get_group_target();
-
-      this.cr_background = new Cairo.Context(
-                             new Cairo.Surface.similar(surface,
-                                                       Cairo.Content.COLOR,
-                                                       this.graph_width,
-                                                       this.graph_height)
-                           );
-
-      this.cr_edges = new Cairo.Context(
-                        new Cairo.Surface.similar(surface,
-                                                  Cairo.Content.COLOR_ALPHA,
-                                                  this.graph_width,
-                                                  this.graph_height)
-                      );
-
-      this.cr_nodes = new Cairo.Context(
-                        new Cairo.Surface.similar(surface,
-                                                  Cairo.Content.COLOR_ALPHA,
-                                                  this.graph_width,
-                                                  this.graph_height)
-                      );
-
-      this.cr_controls = new Cairo.Context(
-                           new Cairo.Surface.similar(surface,
-                                                     Cairo.Content.COLOR_ALPHA,
-                                                     this.widget_width,
-                                                     this.controls_height)
-                         );
-      this.cr_scale = new Cairo.Context(
-                        new Cairo.Surface.similar(surface,
-                                                  Cairo.Content.COLOR_ALPHA,
-                                                  this.widget_width,
-                                                  this.scale_height)
-                      );
-
+      //this.create_surfaces();
       //this.render_background();
       //this.render_graph();
       //this.render_controls();
@@ -897,6 +861,7 @@ namespace WizWidgets {
         if (this.end_timestamp > this.newest_timestamp) {
           this.end_timestamp = this.newest_timestamp;
         }
+        // TODO 3, only when the difference has changed (zoom)
         if ((last_start != this.start_timestamp) ||
             (last_end != this.end_timestamp)) {
           this.update_node_positions();
@@ -1205,9 +1170,7 @@ namespace WizWidgets {
           node.render(cr_foreground, this.orientation_timeline);
         }
       }
-      cr.rectangle(this.padding,
-                   this.padding,
-                   this.graph_width, this.graph_height);
+      cr.rectangle(this.padding, this.padding, this.graph_width, this.graph_height);
       cr.set_source_rgb(0.0,0.0,0.0);
       cr.stroke();
       /* TODO 3
@@ -1243,7 +1206,7 @@ namespace WizWidgets {
         this.start_timestamp = this.end_timestamp - diff;
         ret = false;
       }
-      //this.update_node_positions();
+      this.update_node_positions(); // TODO 3 Won't be needed in future :)
       this.queue_draw();
       return ret;
     }
@@ -1517,7 +1480,7 @@ namespace WizWidgets {
           // TODO 8
         } else {
           cr.rectangle(px_pos + 2.5, this.widget_height + 15 - (int)(graphheight * gap) + 0.5,
-                       px_end - px_pos - 2, (int)(graphheight * gap));
+                       px_end - px_pos - 3, (int)(graphheight * gap));
         }
         timestamp = next_timestamp;
       }
@@ -1645,9 +1608,69 @@ namespace WizWidgets {
           node.render(this.cr_nodes, this.orientation_timeline);
         }
       }
-      this.cr_background.rectangle(0, 0, this.graph_width, this.graph_height);
-      this.cr_background.set_source_rgb(0.0,0.0,0.0);
-      this.cr_background.stroke();
+      this.cr_nodes.rectangle(0, 0, this.graph_width, this.graph_height);
+      this.cr_nodes.set_source_rgb(0.0,0.0,0.0);
+      this.cr_nodes.stroke();
+    }
+
+    private void create_surfaces() {
+      this.cr = Gdk.cairo_create (this.window);
+      var surface = this.cr.get_group_target();
+      int graph_width = 0;
+      int graph_height = 0;
+      int controls_width = 0;
+      int controls_height = 0;
+      int scale_width;
+      int scale_height;
+
+      if (this.orientation_timeline == Constant.VERTICAL) {
+        graph_width     = this.graph_width;
+        graph_height    = (int)this.zoomed_extent + 1;
+        controls_height = this.widget_height;
+        controls_width  = this.controls_height;
+        scale_height    = this.widget_height;
+        scale_width     = this.scale_height;
+      } else {
+        graph_width     = (int)this.zoomed_extent + 1;
+        graph_height    = this.graph_height;
+        controls_height = this.controls_height;
+        controls_width  = this.widget_width;
+        scale_height    = this.scale_height;
+        scale_width     = this.widget_width;
+      }
+      this.cr_background = new Cairo.Context(
+                             new Cairo.Surface.similar(surface,
+                                                       Cairo.Content.COLOR,
+                                                       graph_width,
+                                                       graph_height)
+                           );
+
+      this.cr_edges = new Cairo.Context(
+                        new Cairo.Surface.similar(surface,
+                                                  Cairo.Content.COLOR_ALPHA,
+                                                  graph_width,
+                                                  graph_height)
+                      );
+
+      this.cr_nodes = new Cairo.Context(
+                        new Cairo.Surface.similar(surface,
+                                                  Cairo.Content.COLOR_ALPHA,
+                                                  graph_width,
+                                                  graph_height)
+                      );
+
+      this.cr_controls = new Cairo.Context(
+                           new Cairo.Surface.similar(surface,
+                                                     Cairo.Content.COLOR_ALPHA,
+                                                     controls_width,
+                                                     controls_height)
+                         );
+      this.cr_scale = new Cairo.Context(
+                        new Cairo.Surface.similar(surface,
+                                                  Cairo.Content.COLOR_ALPHA,
+                                                  scale_width,
+                                                  scale_height)
+                      );
     }
 
     private void composite() {
