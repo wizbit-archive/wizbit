@@ -1697,9 +1697,6 @@ namespace WizWidgets {
         sh = this.scale_height;
       }
 
-
-      this.cr.set_source_rgb(1,1,0);
-      this.cr.paint();
 /*
       this.cr.set_source_surface(this.cr_background.get_group_target(),
                                  this.padding + this.offset, this.padding);
