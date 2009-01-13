@@ -392,6 +392,9 @@ namespace WizWidgets {
     private int mouse_press_y;
     private int mouse_release_x;
     private int mouse_release_y;
+    private int mouse_last_x;
+    private int mouse_last_y;
+    private int mouse_direction;
 
     // Scrolling
     private int grab_handle;
@@ -1146,6 +1149,9 @@ namespace WizWidgets {
       this.mouse_down = true;
       this.mouse_press_x = (int)event.x;
       this.mouse_press_y = (int)event.y;
+      this.mouse_last_x = (int)event.x;
+      this.mouse_last_y = (int)event.y;
+      // These numbers are based on the size of the handles?!
       var st = this.timestamp_to_scale_pos(this.start_timestamp) - 5;
       var et = this.timestamp_to_scale_pos(this.end_timestamp) + 5;
       var sv = this.widget_height - 25;
@@ -1177,6 +1183,7 @@ namespace WizWidgets {
                  (this.mouse_press_y > this.padding) &&
                  (this.mouse_press_y < this.graph_height + this.padding)) {
         this.grab_handle = Handle.KINETIC;
+        this.mouse_direction = 0;
         TimeVal t = TimeVal();
         t.get_current_time();
         this.kinetic_start_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
@@ -1241,20 +1248,39 @@ namespace WizWidgets {
 
     // TODO 8
     public override bool motion_notify_event (Gdk.EventMotion event) {
-      if (this.mouse_down && this.grab_handle > (int)Handle.KINETIC) {
-        if (event.x != this.mouse_press_x) {
-          this.update_controls((int)event.x);
-          this.queue_draw();
+      bool ret = false;
+      int direction;
+      if (this.mouse_down) {  
+        if (this.grab_handle > (int)Handle.KINETIC) {
+          if (event.x != this.mouse_press_x) {
+            this.update_controls((int)event.x);
+            this.queue_draw();
+          }
+          ret = true;
+        } else if (this.grab_handle == (int)Handle.KINETIC) {
+          int timestamp = this.graph_pos_to_timestamp(((int)event.x), this.pan_offset);
+          this.pan_to_timestamp(timestamp);
+          direction = this.mouse_direction;
+          if (this.orientation_timeline == Constant.VERTICAL) {
+            this.mouse_direction = this.mouse_last_y - (int)event.y;
+          } else {
+            this.mouse_direction = this.mouse_last_x - (int)event.x;
+          }
+          if (this.mouse_direction > 0) {
+            this.mouse_direction = 1;
+          } else if (this.mouse_direction < 0) {
+            this.mouse_direction = -1;
+          }
+          if (direction != this.mouse_direction) {
+            this.mouse_press_x = (int)event.x;
+            this.mouse_press_y = (int)event.y;
+          }
+          ret = true;
         }
-        return true;
-      } else if (this.mouse_down && this.grab_handle == (int)Handle.KINETIC) {
-        int timestamp = this.graph_pos_to_timestamp(((int)event.x), this.pan_offset);
-        this.pan_to_timestamp(timestamp);
-        // TODO 13 If the cursor has changed direction since last motion event
-        //         set the mouse_press_(x|y) to the last co-ords
-        return true;
+        this.mouse_last_x = (int)event.x;
+        this.mouse_last_y = (int)event.y;
       }
-      return false;
+      return ret;
     }
 
     // TODO 3
