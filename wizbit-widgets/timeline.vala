@@ -564,7 +564,7 @@ namespace WizWidgets {
       this.draw_scale             = true;
       this.padding                = 8;
       this.controls_height        = 20;
-      this.handle_width           = 13;
+      this.handle_width           = 9;
       this.scale_padding          = 2;
       this.scale_height           = 20;
       this.easing_radius          = 1.1;
@@ -881,10 +881,10 @@ namespace WizWidgets {
         offset = this.zoomed_extent * (offset / t);
         this.offset = graph_height - this.zoomed_extent + offset;
       } else {
-        double graph_width = this.graph_width - this.branch_width;
+        double graph_width = this.graph_width;// - this.branch_width;
         this.zoomed_extent = graph_width / (r / t);
         offset = this.zoomed_extent * (offset / t);
-        this.offset = 0 - graph_width + this.zoomed_extent - offset - this.branch_width;
+        this.offset = 0 - graph_width + this.zoomed_extent - offset;// - this.branch_width;
       }
     }
     /* Converts a timestamp into a scale horizontal position. */
@@ -1289,7 +1289,6 @@ namespace WizWidgets {
 
     // TODO 3
     public override bool expose_event (Gdk.EventExpose event) {
-      
       this.cr = Gdk.cairo_create (this.window);
       this.composite();
       return true;
@@ -1480,14 +1479,16 @@ namespace WizWidgets {
 
     // TODO 8
     private void render_controls_handle(int timestamp) {
+      double hhw = this.handle_width / 2;
+
       var hpos = this.timestamp_to_scale_pos(timestamp);
       // Handle outline
-      this.cr_controls.move_to(hpos - 4.5, this.widget_height - 24.5);
-      this.cr_controls.line_to(hpos - 4.5, this.widget_height - 15.5);
-      this.cr_controls.line_to(hpos, this.widget_height - 11.5);
-      this.cr_controls.line_to(hpos + 4.5, this.widget_height - 15.5);
-      this.cr_controls.line_to(hpos + 4.5, this.widget_height - 24.5);
-      this.cr_controls.line_to(hpos - 4.5, this.widget_height - 24.5);
+      this.cr_controls.move_to(hpos - hhw, 0.5);
+      this.cr_controls.line_to(hpos - hhw, 9.5);
+      this.cr_controls.line_to(hpos, 13.5);
+      this.cr_controls.line_to(hpos + hhw, 9.5);
+      this.cr_controls.line_to(hpos + hhw, 0.5);
+      this.cr_controls.line_to(hpos - hhw, 0.5);
       // Handle fill
       var pattern = new Cairo.Pattern.linear(hpos - 4.5, 0, hpos + 4.5, 0);
       pattern.add_color_stop_rgb(0, 0xee/255.0, 0xee/255.0, 0xec/255.0);
@@ -1498,13 +1499,14 @@ namespace WizWidgets {
       this.cr_controls.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
       this.cr_controls.stroke();
 
+      hhw = hhw - 1;
       // Handle inner highlight
-      this.cr_controls.move_to(hpos - 3.5, this.widget_height - 23.5);
-      this.cr_controls.line_to(hpos - 3.5, this.widget_height - 15.85);
-      this.cr_controls.line_to(hpos, this.widget_height - 13.0);
-      this.cr_controls.line_to(hpos + 3.5, this.widget_height - 15.85);
-      this.cr_controls.line_to(hpos + 3.5, this.widget_height - 23.5);
-      this.cr_controls.line_to(hpos - 3.5, this.widget_height - 23.5);
+      this.cr_controls.move_to(hpos - hhw, 1.5);
+      this.cr_controls.line_to(hpos - hhw, 9.85);
+      this.cr_controls.line_to(hpos, 12.0);
+      this.cr_controls.line_to(hpos + hhw, 9.85);
+      this.cr_controls.line_to(hpos + hhw, 1.5);
+      this.cr_controls.line_to(hpos - hhw, 1.5);
 
       this.cr_controls.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
       this.cr_controls.stroke();
@@ -1512,11 +1514,8 @@ namespace WizWidgets {
 
     // TODO 8
     private void render_controls_slider() {
-      this.cr_controls.rectangle(this.padding + 0.5,
-                   this.widget_height - 22.5,
-                   this.widget_width, 6.0);
-      var pattern = new Cairo.Pattern.linear(0, this.widget_height - 22.5,
-                                             0, this.widget_height - 16.5);
+      this.cr_controls.rectangle(0.5, 3.5, this.widget_width, 6.0);
+      var pattern = new Cairo.Pattern.linear(0, 3.5, 0, 9.5);
       pattern.add_color_stop_rgb(0, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
       pattern.add_color_stop_rgb(1, 0xee/255.0, 0xee/255.0, 0xec/255.0);
       this.cr_controls.set_line_width(1);
@@ -1524,16 +1523,15 @@ namespace WizWidgets {
       this.cr_controls.fill_preserve();
       this.cr_controls.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
       this.cr_controls.stroke();
+
       int start_pos = this.timestamp_to_scale_pos(this.start_timestamp);
       int end_pos = this.timestamp_to_scale_pos(this.end_timestamp);
       double center = (this.end_timestamp - this.start_timestamp)/2;
       center = center + this.start_timestamp;
       center = (double)this.timestamp_to_scale_pos((int)center) - 3.5;
 
-      this.cr_controls.rectangle (start_pos + 4.5, this.widget_height - 24.5,
-                    end_pos - start_pos - 9, 9);
-      pattern = new Cairo.Pattern.linear(0, this.widget_height - 24.5,
-                                         0,this.widget_height - 15.5);
+      this.cr_controls.rectangle (start_pos + 4.5, 0.5, end_pos - start_pos - 9, 12);
+      pattern = new Cairo.Pattern.linear(0, 0.5, 0, 9.5);
       pattern.add_color_stop_rgb(0, 0x72/255.0,0x9f/255.0,0xcf/255.0);
       pattern.add_color_stop_rgb(1, 0x34/255.0,0x65/255.0,0xa4/255.0);
       this.cr_controls.set_source (pattern);
@@ -1541,18 +1539,20 @@ namespace WizWidgets {
       this.cr_controls.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
       // Render some ticks in the middle of the slider
       for (var i = 0; i < 3; i++) {
-        this.cr_controls.move_to(center + (i * 3), this.widget_height - 22.5);
-        this.cr_controls.line_to(center + (i * 3), this.widget_height - 17.5);
+        this.cr_controls.move_to(center + (i * 3), 3.5);
+        this.cr_controls.line_to(center + (i * 3), 8.5);
       }
       this.cr_controls.stroke();
       // Slider Highlight
       this.cr_controls.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
-      this.cr_controls.rectangle (start_pos + 5.5, this.widget_height - 23.5,
+      this.cr_controls.rectangle (start_pos + 5.5, 1.5,
                     end_pos - start_pos - 11, 7);
       this.cr_controls.stroke();
     }
 
     private void render_controls() {
+      this.cr_controls.set_source_rgb(0,1,1);
+      this.cr_controls.paint();
       this.render_controls_slider();
       this.render_controls_handle(this.start_timestamp);
       this.render_controls_handle(this.end_timestamp);
@@ -1571,9 +1571,11 @@ namespace WizWidgets {
         }
       }
       // TODO 12
+      this.cr_edges.set_line_width(2);
       this.cr_edges.set_source_rgb(0.4,0,0);
       this.cr_edges.stroke();
 
+      this.cr_nodes.set_line_width(1);
       this.cr_nodes.rectangle(0, 0, this.graph_width, this.graph_height);
       this.cr_nodes.set_source_rgb(0.0,0.0,0.0);
       this.cr_nodes.stroke();
@@ -1592,15 +1594,15 @@ namespace WizWidgets {
       if (this.orientation_timeline == Constant.VERTICAL) {
         graph_width     = this.graph_width;
         graph_height    = (int)this.zoomed_extent + 1;
-        controls_height = this.widget_height + 1;
+        controls_height = this.widget_height + 1 + this.handle_width;
         controls_width  = this.controls_height;
         scale_height    = this.widget_height + 1;
         scale_width     = this.scale_height;
       } else {
-        graph_width     = (int)this.zoomed_extent + this.branch_width;
+        graph_width     = (int)this.zoomed_extent + 1;
         graph_height    = this.graph_height;
         controls_height = this.controls_height;
-        controls_width  = this.widget_width + 1;
+        controls_width  = this.allocation.width + 1;
         scale_height    = this.scale_height;
         scale_width     = this.widget_width + 1;
       }
@@ -1641,8 +1643,8 @@ namespace WizWidgets {
     }
 
     private void composite() {
-      double cx = this.padding;
-      double cy = this.padding;
+      double cx = 0;
+      double cy = 0;
       int cw = 0;
       int ch = 0;
       double sx = this.padding;
@@ -1668,24 +1670,21 @@ namespace WizWidgets {
 
       this.cr.set_source_rgb(1,1,0);
       this.cr.paint();
-
-      /*this.cr.set_source_surface(this.cr_background.get_group_target(),
-                                 this.padding + (double)this.branch_width/2.0 + this.offset, this.padding);
-      this.cr.paint();
-      //this.cr.rectangle(0, 0, this.graph_width, this.graph_height);
-      //this.cr.fill();
+/*
+      this.cr.set_source_surface(this.cr_background.get_group_target(),
+                                 this.padding + this.offset, this.padding);
+      this.cr.rectangle(0, 0, this.graph_width, this.graph_height);
+      this.cr.fill();
 */
       this.cr.set_source_surface(this.cr_edges.get_group_target(),
-                                 this.padding + (double)this.branch_width + this.offset, this.padding);
-      this.cr.paint();
-      //this.cr.rectangle(0, 0, this.graph_width, this.graph_height);
-      //this.cr.fill();
+                                 this.padding + this.offset, this.padding);
+      this.cr.rectangle(0, 0, this.graph_width, this.graph_height);
+      this.cr.fill();
 
       this.cr.set_source_surface(this.cr_nodes.get_group_target(),
-                                 this.padding + (double)this.branch_width + this.offset, this.padding);
-      this.cr.paint();
-      //this.cr.rectangle(0, 0, this.graph_width, this.graph_height);
-      //this.cr.fill();
+                                 this.padding + this.offset, this.padding);
+      this.cr.rectangle(0, 0, this.graph_width, this.graph_height);
+      this.cr.fill();
 
       this.cr.set_source_surface(this.cr_controls.get_group_target(), cx, cy);
       this.cr.paint();
