@@ -644,7 +644,6 @@ namespace WizWidgets {
       return node;
     }
 
-
     private void recurse_children (Node node, Branch branch) {
       node.branch = branch;
       if (this.branches.index(branch) < 0) {
@@ -1009,6 +1008,139 @@ namespace WizWidgets {
       return TimeUnit.YEARS;
     }
 
+    private bool pan_to_timestamp(int timestamp) {
+      int pan_diff = (timestamp - this.pan_cursor_timestamp);
+      int diff = this.end_timestamp - this.start_timestamp;
+      bool ret = true;
+      this.start_timestamp = this.pan_start_timestamp - pan_diff;
+      this.end_timestamp = this.start_timestamp + diff;
+
+      if (this.start_timestamp < this.oldest_timestamp) {
+        this.start_timestamp = this.oldest_timestamp;
+        this.end_timestamp = this.start_timestamp + diff;
+        ret = false;
+      }
+      if (this.end_timestamp > this.newest_timestamp) {
+        this.end_timestamp = this.newest_timestamp;
+        this.start_timestamp = this.end_timestamp - diff;
+        ret = false;
+      }
+      this.update_node_positions(); // TODO 3 Won't be needed in future :)
+      this.queue_draw();
+      return ret;
+    }
+
+    private bool move_to_timestamp(int timestamp) {
+      int diff = (this.end_timestamp - this.start_timestamp) / 2;
+      if (this.start_timestamp + diff == timestamp) {
+        return false;
+      }
+      this.start_timestamp = timestamp - diff;
+      this.end_timestamp = timestamp + diff;
+
+      if (this.start_timestamp < this.oldest_timestamp) {
+        this.start_timestamp = this.oldest_timestamp;
+        this.end_timestamp = this.start_timestamp + (diff * 2);
+      }
+      if (this.end_timestamp > this.newest_timestamp) {
+        this.end_timestamp = this.newest_timestamp;
+        this.start_timestamp = this.end_timestamp - (diff * 2);
+      }
+      this.update_node_positions();
+      this.queue_draw();
+      return true;
+    }
+
+    private bool scroll_tick() {
+      double t;
+      TimeVal tv = TimeVal();
+      tv.get_current_time();
+      t = ((double)tv.tv_usec/1000000)+tv.tv_sec;
+      t = t - this.anim_start_time;
+      t = (t/this.anim_duration);
+
+      double b = 1 - t + this.easing_diff;
+      double angle_b = Math.acos(b/this.easing_radius);
+      double a = Math.sin(angle_b) * this.easing_radius;
+      double d = a - this.easing_diff;
+      int diff = this.anim_end_timestamp - this.anim_start_timestamp;
+
+      this.move_to_timestamp( this.anim_start_timestamp + (int)(diff * d) );
+      if ((t > 1) || this.mouse_down) {
+        return false;
+      } else {
+        return true;
+      }
+    }
+
+    private void scroll_to_timestamp(int timestamp) {
+      int diff = (this.end_timestamp - this.start_timestamp) / 2;
+
+      this.anim_start_timestamp = this.start_timestamp + diff;
+
+      if (timestamp > this.newest_timestamp - diff) {
+        timestamp = this.newest_timestamp - diff;
+      }
+      if (timestamp < this.oldest_timestamp + diff) {
+        timestamp = this.oldest_timestamp + diff;
+      }
+      this.anim_end_timestamp = timestamp;
+      TimeVal t = TimeVal();
+      t.get_current_time();
+      this.anim_start_time = ((double)t.tv_usec/1000000)+t.tv_sec;
+      this.anim_duration = (double)(this.anim_end_timestamp - this.anim_start_timestamp);
+      this.anim_duration = (this.anim_duration/diff)*2;
+      if (this.anim_duration < 0) { this.anim_duration = this.anim_duration * -1; }
+      Timeout.add (30, scroll_tick);
+    }
+
+    // TODO 8
+    private bool kinetic_tick() {
+      if ((int)this.velocity > -20 && (int)this.velocity < 20 || this.mouse_down) {
+        return false;
+      }
+
+      double t;
+      TimeVal tv = TimeVal();
+      tv.get_current_time();
+      t = ((double)tv.tv_usec/1000000)+tv.tv_sec;
+
+      double tmp = t - this.kinetic_last_tick_timestamp;
+      this.kinetic_last_tick_timestamp = t;
+      t = tmp;
+
+      double seconds = t;
+      double dist = seconds * (this.velocity);
+      this.total_distance_travelled = this.total_distance_travelled + (int) dist;
+
+      int px_pos = (int)(this.mouse_release_x - this.total_distance_travelled);
+      int timestamp = this.graph_pos_to_timestamp(px_pos, this.pan_offset);
+      this.pan_to_timestamp(timestamp);
+      this.velocity = this.velocity * 0.95;
+      return true;
+    }
+
+    private void kinetic_scroll() {
+      TimeVal t = TimeVal();
+      t.get_current_time();
+      int dist = 0;
+      this.kinetic_end_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
+      if (this.orientation_timeline == Constant.HORIZONTAL) {
+        dist = this.mouse_press_x - this.mouse_release_x;
+      } else {
+        dist = this.mouse_press_y - this.mouse_release_y;
+      }
+      this.velocity = dist/(this.kinetic_end_timestamp - this.kinetic_start_timestamp);
+      this.pan_offset = this.offset;
+      int timestamp = this.graph_pos_to_timestamp(this.mouse_release_x, this.pan_offset);
+      this.pan_start_timestamp = this.start_timestamp;
+      this.pan_cursor_timestamp = timestamp;
+      this.total_distance_travelled = 0;
+      this.kinetic_last_tick_timestamp = this.kinetic_end_timestamp;
+      this.pan_to_timestamp(timestamp);
+      Timeout.add(30, kinetic_tick);
+    }
+
     // TODO 8
     public override bool button_press_event (Gdk.EventButton event) {
       this.mouse_down = true;
@@ -1187,139 +1319,6 @@ namespace WizWidgets {
       cr.paint();
       this.render_controls(cr);
       return true;
-    }
-
-    private bool pan_to_timestamp(int timestamp) {
-      int pan_diff = (timestamp - this.pan_cursor_timestamp);
-      int diff = this.end_timestamp - this.start_timestamp;
-      bool ret = true;
-      this.start_timestamp = this.pan_start_timestamp - pan_diff;
-      this.end_timestamp = this.start_timestamp + diff;
-
-      if (this.start_timestamp < this.oldest_timestamp) {
-        this.start_timestamp = this.oldest_timestamp;
-        this.end_timestamp = this.start_timestamp + diff;
-        ret = false;
-      }
-      if (this.end_timestamp > this.newest_timestamp) {
-        this.end_timestamp = this.newest_timestamp;
-        this.start_timestamp = this.end_timestamp - diff;
-        ret = false;
-      }
-      this.update_node_positions(); // TODO 3 Won't be needed in future :)
-      this.queue_draw();
-      return ret;
-    }
-
-    private bool move_to_timestamp(int timestamp) {
-      int diff = (this.end_timestamp - this.start_timestamp) / 2;
-      if (this.start_timestamp + diff == timestamp) {
-        return false;
-      }
-      this.start_timestamp = timestamp - diff;
-      this.end_timestamp = timestamp + diff;
-
-      if (this.start_timestamp < this.oldest_timestamp) {
-        this.start_timestamp = this.oldest_timestamp;
-        this.end_timestamp = this.start_timestamp + (diff * 2);
-      }
-      if (this.end_timestamp > this.newest_timestamp) {
-        this.end_timestamp = this.newest_timestamp;
-        this.start_timestamp = this.end_timestamp - (diff * 2);
-      }
-      this.update_node_positions();
-      this.queue_draw();
-      return true;
-    }
-
-    private bool scroll_tick() {
-      double t;
-      TimeVal tv = TimeVal();
-      tv.get_current_time();
-      t = ((double)tv.tv_usec/1000000)+tv.tv_sec;
-      t = t - this.anim_start_time;
-      t = (t/this.anim_duration);
-
-      double b = 1 - t + this.easing_diff;
-      double angle_b = Math.acos(b/this.easing_radius);
-      double a = Math.sin(angle_b) * this.easing_radius;
-      double d = a - this.easing_diff;
-      int diff = this.anim_end_timestamp - this.anim_start_timestamp;
-
-      this.move_to_timestamp( this.anim_start_timestamp + (int)(diff * d) );
-      if ((t > 1) || this.mouse_down) {
-        return false;
-      } else {
-        return true;
-      }
-    }
-
-    private void scroll_to_timestamp(int timestamp) {
-      int diff = (this.end_timestamp - this.start_timestamp) / 2;
-
-      this.anim_start_timestamp = this.start_timestamp + diff;
-
-      if (timestamp > this.newest_timestamp - diff) {
-        timestamp = this.newest_timestamp - diff;
-      }
-      if (timestamp < this.oldest_timestamp + diff) {
-        timestamp = this.oldest_timestamp + diff;
-      }
-      this.anim_end_timestamp = timestamp;
-      TimeVal t = TimeVal();
-      t.get_current_time();
-      this.anim_start_time = ((double)t.tv_usec/1000000)+t.tv_sec;
-      this.anim_duration = (double)(this.anim_end_timestamp - this.anim_start_timestamp);
-      this.anim_duration = (this.anim_duration/diff)*2;
-      if (this.anim_duration < 0) { this.anim_duration = this.anim_duration * -1; }
-      Timeout.add (30, scroll_tick);
-    }
-
-    // TODO 8
-    private bool kinetic_tick() {
-      if ((int)this.velocity > -20 && (int)this.velocity < 20 || this.mouse_down) {
-        return false;
-      }
-
-      double t;
-      TimeVal tv = TimeVal();
-      tv.get_current_time();
-      t = ((double)tv.tv_usec/1000000)+tv.tv_sec;
-
-      double tmp = t - this.kinetic_last_tick_timestamp;
-      this.kinetic_last_tick_timestamp = t;
-      t = tmp;
-
-      double seconds = t;
-      double dist = seconds * (this.velocity);
-      this.total_distance_travelled = this.total_distance_travelled + (int) dist;
-
-      int px_pos = (int)(this.mouse_release_x - this.total_distance_travelled);
-      int timestamp = this.graph_pos_to_timestamp(px_pos, this.pan_offset);
-      this.pan_to_timestamp(timestamp);
-      this.velocity = this.velocity * 0.95;
-      return true;
-    }
-
-    private void kinetic_scroll() {
-      TimeVal t = TimeVal();
-      t.get_current_time();
-      int dist = 0;
-      this.kinetic_end_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
-      if (this.orientation_timeline == Constant.HORIZONTAL) {
-        dist = this.mouse_press_x - this.mouse_release_x;
-      } else {
-        dist = this.mouse_press_y - this.mouse_release_y;
-      }
-      this.velocity = dist/(this.kinetic_end_timestamp - this.kinetic_start_timestamp);
-      this.pan_offset = this.offset;
-      int timestamp = this.graph_pos_to_timestamp(this.mouse_release_x, this.pan_offset);
-      this.pan_start_timestamp = this.start_timestamp;
-      this.pan_cursor_timestamp = timestamp;
-      this.total_distance_travelled = 0;
-      this.kinetic_last_tick_timestamp = this.kinetic_end_timestamp;
-      this.pan_to_timestamp(timestamp);
-      Timeout.add(30, kinetic_tick);
     }
 
     private void render_background(Cairo.Context cr, Cairo.Context fg) {      
