@@ -18,10 +18,10 @@
  * 8x  work out the horizontal/vertical positioning stuff
  * 9x  Fix hugging bug for negative columns
  * 10. Animations while timeline view changes, don't let zooming/panning
- *     be jumpy. Branches can slide and fade...
+ *     be jumpy.
  * 11. use CIEXYZ colourspace for branch colouring
  * 12. Create the gradient blend for the column edges.
- * 13. Kinetic scrolling - add timing/timer stuff into signal handlers
+ * 13x Kinetic scrolling - add timing/timer stuff into signal handlers
  */
 
 using GLib;
@@ -30,26 +30,20 @@ using Cairo;
 using Wiz;
 
 namespace WizWidgets {
-  public enum TimelineProperties {
+  public enum Constants {
     HORIZONTAL = 0,
-    VERTICAL = 1,
-    PADDING = 8,
-    SCALE_INDENT = 50 // TODO 4 TimelineHandle.TOTAL_HEIGHT
+    VERTICAL = 1
   }
 
-  public enum TimelineHandle {
+  private enum Handle { // TODO 4
     NONE = 0,
     KINETIC = 1,
     LIMIT_OLD = 2,
     SLIDER = 3,
-    LIMIT_NEW = 4,
-    HANDLE_WIDTH = 12,
-    HANDLE_HEIGHT = 18,
-    SCALE_HEIGHT = 40,
-    SCALE_PADDING = 2
+    LIMIT_NEW = 4
   }
 
-  public enum TimelineUnit {
+  private enum TimeUnit {
     MINUTES,
     HOURS,
     DAYS,
@@ -59,25 +53,22 @@ namespace WizWidgets {
   }
 
   // TODO 4
-  public enum TimelineNodeType {
+  private enum NodeType {
     NORMAL,
     ROOT,
     PRIMARY_TIP,
     TIP
   }
 
-  // A class for animated branchess
-  // TODO 10, 11
-  private class TimelineBranch : GLib.Object {
+  // TODO 11
+  private class Branch : GLib.Object {
+    public Branch parent = null;
+    public List<Node> nodes; // All the nodes that belong to this branch
     public int position;             // The position of this branch
-    public double opacity;           // The current opacity
+    public int px_position = 0;      // This branches pixel position: x or y
     public int offset;               // The current offset position
-    public bool visible;             // Visibility of this branch
-    public List<TimelineNode> nodes; // All the nodes that belong to this branch
     public int oldest = 0;
     public int newest = 0;
-    public TimelineBranch parent = null;
-    public int px_position = 0;      // This branches pixel position: x or y
 
     public double stroke_r;
     public double stroke_g = 0.0;
@@ -87,53 +78,23 @@ namespace WizWidgets {
     public double fill_g = 0.0;
     public double fill_b = 0.0;
 
-    public TimelineBranch(TimelineBranch? parent) {
+    public Branch(Branch? parent) {
       this.stroke_r = 0xa4/255.0;
       this.fill_r = 0xcc/255.0;
       this.parent = parent;
-      this.nodes = new List<TimelineNode>();
+      this.nodes = new List<Node>();
       this.position = 0;
-    }
-
-    public void SlideOut() {
-    }
-    public void SlideIn() {
-    }
-    public void FadeOut() {
-    }
-    public void FadeIn() {
-    }
-
-    public void Hide() {
-    }
-    public void Show() {
-    }
-
-    /* Figure out if we're hiding or showing dependent on the state of the nodes
-     * This is called on all branchs on a button release event, causing the
-     * branchs to re-organise on screen.
-     */
-    public void Animate() {
-      foreach (var node in this.nodes) {
-        if ((node.visible == true) && (this.visible == false)) {
-          this.Show();
-          return;
-        }
-      }
-      if (this.visible == true) {
-          this.Hide();
-      }
     }
   }
 
   /* Each edge is a connetion in a certain direction, from the parent to the
    * child
    */
-  private class TimelineEdge : GLib.Object {
-    public TimelineNode parent;
-    public TimelineNode child;
+  private class Edge : GLib.Object {
+    public Node parent;
+    public Node child;
 
-    public TimelineEdge(TimelineNode parent, TimelineNode child) {
+    public Edge(Node parent, Node child) {
       this.parent = parent;
       this.child = child;
     }
@@ -143,7 +104,7 @@ namespace WizWidgets {
       int kx, ky; // Kink position
       int px, py, cx, cy;
       double odist, adist;
-      if (orientation == (int)TimelineProperties.VERTICAL) {
+      if (orientation == (int)Constants.VERTICAL) {
         px = parent.branch.px_position;
         py = parent.px_position;
         cx = child.branch.px_position;
@@ -154,7 +115,7 @@ namespace WizWidgets {
         cy = child.branch.px_position;
         cx = child.px_position;
       }
-      if (orientation == (int)TimelineProperties.VERTICAL) {
+      if (orientation == (int)Constants.VERTICAL) {
         odist = py - cy;
         adist = px - cx;
       } else {
@@ -166,7 +127,7 @@ namespace WizWidgets {
       double angle = Math.atan( odist/adist ) * (180.0/Math.PI);
 
       cr.move_to(px, py);
-      if (orientation == (int)TimelineProperties.VERTICAL) {
+      if (orientation == (int)Constants.VERTICAL) {
         if (angle < max_angle) {
           kx = cx;
           ky = (int)(Math.tan(max_angle*(Math.PI/180.0)) * adist);
@@ -192,23 +153,28 @@ namespace WizWidgets {
    * the edges contain the direction of this connection. The node also stores
    * its position and size within the widget.
    */
-  private class TimelineNode : GLib.Object {
-    private TimelineBranch t_branch = null;
+  private class Node : GLib.Object {
+    public List<Node> globbed_nodes;
+    public Node globbed_by;
+    public weak List<Edge> edges { get; construct; } // Might not be best to make this weak
+    public bool globbed { get; set; }
     public bool visible { get; set; }
-    public int node_type { get; set; } // TODO 4
-    public int px_position;
-    public double size;
+    public bool selected { get; set; }
     public string uuid;
     public int timestamp;
-    public bool selected { get; set; }
-    public bool globbed { get; set; }
-    public TimelineNode globbed_by;
-    public List<TimelineNode> globbed_nodes;
+    public int node_type { get; set; } // TODO 4
+    public int px_position;
+    private int orientation;
+    private Cairo.Context cr;
+    private int animating;
+    private int timer_id;
+    public double size; // private/animated
+    // private double size;
+    private double opacity;
+    private double end_size;
 
-    // Might not be best to make this weak
-    public weak List<TimelineEdge> edges { get; construct; }
-
-    public TimelineBranch branch {
+    private Branch t_branch = null;
+    public Branch branch {
       get {
         return this.t_branch;
       }
@@ -232,43 +198,42 @@ namespace WizWidgets {
       }
     }
 
-    public TimelineNode (string uuid, int timestamp) {
+    public Node (string uuid, int timestamp) {
       this.uuid = uuid;
       this.timestamp = timestamp;
-      this.edges = new List<TimelineEdge>();
-      this.node_type = TimelineNodeType.NORMAL;
+      this.edges = new List<Edge>();
+      this.node_type = NodeType.NORMAL;
       this.selected = false;
       this.globbed = false;
-      this.size;// = 15; // Edge size should be set based on branch_width
-                      // and globbing of nodes
+      this.size;
     }
 
-    public void add_edge(TimelineNode node) {
+    public void add_edge(Node node) {
       this.add_child(node);
       node.add_parent(this);
     }
 
-    public void add_child(TimelineNode node) {
-      this.edges.append(new TimelineEdge(this, node));
+    public void add_child(Node node) {
+      this.edges.append(new Edge(this, node));
     }
 
-    public void add_parent(TimelineNode node) {
-      this.edges.append(new TimelineEdge(node, this));
+    public void add_parent(Node node) {
+      this.edges.append(new Edge(node, this));
     }
 
-    public bool at_coords(int x, int y, int orientation, int offset) {
+    public bool at_coords(int x, int y, int orientation, int offset, int padding) {
       double o = 0, a = 0;
       int nx, ny;
-      if (orientation == (int)TimelineProperties.VERTICAL) {
+      if (orientation == (int)Constants.VERTICAL) {
         nx = this.branch.px_position;
         ny = this.px_position;
-        o = (nx - x) + (int)TimelineProperties.PADDING;
+        o = (nx - x) + padding;
         a = (ny - y) - offset;
       } else {
         ny = this.branch.px_position;
         nx = this.px_position;
         o = (nx - x) + offset + 8;
-        a = (ny - y) + (int)TimelineProperties.PADDING;
+        a = (ny - y) + padding;
       }
       if (o < 0) { o = o * -1; }
       if (a < 0) { a = a * -1; }
@@ -280,9 +245,32 @@ namespace WizWidgets {
       return false;
     }
 
+    public bool shrink(double size){
+      return false;
+    }
+    public bool fade_out() {
+      return false;
+    }
+    public bool fade_in() {
+      return false;
+    }
+    public bool grow(double size) {
+      return false;
+    }
+
+    private void render_tip() {
+    }
+    private void render_node() {
+    }
+    private void render_root() {
+    }
+
     public void render(Cairo.Context cr, int orientation) {
+      this.orientation = orientation;
+      this.cr = cr;
+
       int x, y;
-      if (orientation == (int)TimelineProperties.VERTICAL) {
+      if (orientation == (int)Constants.VERTICAL) {
         x = this.branch.px_position;
         y = this.px_position;
       } else {
@@ -290,8 +278,8 @@ namespace WizWidgets {
         x = this.px_position;
       }
 
-      if (this.node_type == TimelineNodeType.PRIMARY_TIP) {
-        if (orientation == (int)TimelineProperties.VERTICAL) {
+      if (this.node_type == NodeType.PRIMARY_TIP) {
+        if (orientation == (int)Constants.VERTICAL) {
           cr.arc_negative(x, y, this.size, 0, Math.PI);
           cr.move_to(x+this.size,y);
           cr.line_to(x,y+this.size);
@@ -306,8 +294,8 @@ namespace WizWidgets {
         cr.fill_preserve();
         cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
         cr.stroke();
-      } else if (this.node_type == TimelineNodeType.TIP) {
-        if (orientation == (int)TimelineProperties.VERTICAL) {
+      } else if (this.node_type == NodeType.TIP) {
+        if (orientation == (int)Constants.VERTICAL) {
           cr.arc_negative(x, y, this.size, 0, Math.PI);
           cr.move_to(x+this.size,y);
           cr.line_to(x,y+this.size);
@@ -322,8 +310,8 @@ namespace WizWidgets {
         cr.fill_preserve();
         cr.set_source_rgb(0x4e/255.0,0x9a/255.0,0x06/255.0);
         cr.stroke();
-      } else if (this.node_type == TimelineNodeType.ROOT) {
-        if (orientation == (int)TimelineProperties.VERTICAL) {
+      } else if (this.node_type == NodeType.ROOT) {
+        if (orientation == (int)Constants.VERTICAL) {
           cr.move_to(x+this.size,y);
           cr.arc(x, y, this.size, 0, Math.PI);
           cr.move_to(x+this.size,y);
@@ -362,27 +350,26 @@ namespace WizWidgets {
         cr.fill_preserve();
         cr.set_source_rgba(1,1,1,0.4);
         cr.stroke();
-
       }
     }
   }
 
   public class Timeline : Gtk.Widget {
-    private Wiz.Bit bit = null;
-    private Wiz.Store store = null;
-    private Wiz.CommitStore commit_store = null;
+    private Wiz.Bit bit                   = null;
+    private Wiz.Store store               = null;
+    private Wiz.CommitStore commit_store  = null;
 
     // The dag itself
-    private TimelineNode primary_tip = null;
-    private TimelineNode root = null;
-    private TimelineNode selected = null;
-    private List<TimelineNode> nodes;
-    private List<TimelineNode> tips;
+    private Node primary_tip              = null;
+    private Node root                     = null;
+    private Node selected                 = null;
+    private List<Node> nodes;
+    private List<Node> tips;
 
     // Branch hugging
-    private List<TimelineBranch> branches;
-    private int lowest_branch_position;
-    private int highest_branch_position;
+    private List<Branch> branches;
+    private int lowest_branch_position    = 0;
+    private int highest_branch_position   = 0;
 
     // Node globbing
     private double node_min_size;
@@ -396,7 +383,7 @@ namespace WizWidgets {
     private int end_timestamp;
 
     // Mouse handling
-    private bool mouse_down;
+    private bool mouse_down               = false;
     private int mouse_press_x;
     private int mouse_press_y;
     private int mouse_release_x;
@@ -423,23 +410,32 @@ namespace WizWidgets {
     private double pan_offset;
 
     // Drawing information
-    private double offset { get; set; }
-    private double edge_angle_max { get; set; }
+    private double offset;
+    private double edge_angle_max;
     private double zoomed_extent = 0;
+    public int padding { get; set; }
+    public int controls_height { get; set; }
+    public int handle_width { get; set; }
+    public int scale_padding { get; set; }
+    public int scale_height { get; set; }
 
     /*
      * The orientation of the timeline
      */
-    public int orientation_timeline = TimelineProperties.HORIZONTAL;
+    public int orientation_timeline = Constants.HORIZONTAL;
     /*
      * The orientation of the controls
      */
-    public int orientation_controls = TimelineProperties.HORIZONTAL;
+    public int orientation_controls = Constants.HORIZONTAL;
 
     private int graph_height {
       get {
-        if (this.orientation_controls == (int)TimelineProperties.HORIZONTAL) {
-          return this.widget_height - (int)TimelineProperties.SCALE_INDENT;
+        if (this.orientation_controls == (int)Constants.HORIZONTAL) {
+          return this.widget_height - 
+                 ( this.controls_height + 
+                   this.scale_padding + 
+                   this.scale_height + 
+                   this.padding );
         } else {
           return this.widget_height;
         }
@@ -447,10 +443,14 @@ namespace WizWidgets {
     }
     private int graph_width {
       get {
-        if (this.orientation_controls == (int)TimelineProperties.HORIZONTAL) {
+        if (this.orientation_controls == (int)Constants.HORIZONTAL) {
           return this.widget_width;
         } else {
-          return this.widget_width - (int)TimelineProperties.SCALE_INDENT;
+          return this.widget_width - 
+                 ( this.controls_height + 
+                   this.scale_padding + 
+                   this.scale_height + 
+                   this.padding );
         }
       }
     }
@@ -458,7 +458,7 @@ namespace WizWidgets {
     // Pixel width of an individual branch
     private int branch_width {
       get {
-        if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+        if (this.orientation_timeline == (int)Constants.VERTICAL) {
           int rows = this.highest_branch_position - this.lowest_branch_position + 1;
           return this.graph_width / rows;
         } else {
@@ -471,12 +471,12 @@ namespace WizWidgets {
     // Size of the allocation
     private int widget_width {
       get {
-        return this.allocation.width - ((2 * (int)TimelineProperties.PADDING) + 1);
+        return this.allocation.width - ((2 * this.padding) + 1);
       }
     }
     private int widget_height {
       get {
-        return this.allocation.height - ((2 * (int)TimelineProperties.PADDING) + 1);
+        return this.allocation.height - ((2 * this.padding) + 1);
       }
     }
 
@@ -541,20 +541,24 @@ namespace WizWidgets {
      */
     public Timeline(Wiz.Store store, string? bit_uuid) {
       this.set_double_buffered(true);
-      this.nodes = new List<TimelineNode>();
-      this.tips = new List<TimelineNode>();
-      this.branches = new List<TimelineBranch>();
-      this.mouse_down = false;
-      this.selected = null;
-      this.lowest_branch_position = 0;
-      this.store = store;
-      this.bit_uuid = bit_uuid;
-      this.easing_radius = 1.1;
+      this.nodes                  = new List<Node>();
+      this.tips                   = new List<Node>();
+      this.branches               = new List<Branch>();
+      this.store                  = store;
+      this.bit_uuid               = bit_uuid;
+      this.padding                = 8;
+      this.controls_height        = 20;
+      this.handle_width           = 13;
+      this.scale_padding          = 2;
+      this.scale_height           = 20;
+      this.easing_radius          = 1.1;
+
       double h = Math.sqrt(2);
       double angle_n = Math.acos((h/2.0)/this.easing_radius);
       double angle = Math.PI - (2 * angle_n);
       double angle_r = (((Math.PI/2) - angle)/2);
-      this.easing_diff = (Math.cos(angle_r)*this.easing_radius) - 1;
+
+      this.easing_diff            = (Math.cos(angle_r)*this.easing_radius) - 1;
     }
 
     public override void size_request (out Gtk.Requisition requisition) {
@@ -600,13 +604,13 @@ namespace WizWidgets {
       this.window.set_user_data (null);
     }
 
-    private TimelineNode get_node(string uuid, bool prepend) {
+    private Node get_node(string uuid, bool prepend) {
       foreach (var node in this.nodes) {
         if (node.uuid == uuid) {
           return node;
         }
       }
-      var node = new TimelineNode(uuid, this.commit_store.get_timestamp(uuid));
+      var node = new Node(uuid, this.commit_store.get_timestamp(uuid));
       if (prepend) {
         this.nodes.prepend(node);
       } else {
@@ -616,7 +620,7 @@ namespace WizWidgets {
     }
 
 
-    private void recurse_children (TimelineNode node, TimelineBranch branch) {
+    private void recurse_children (Node node, Branch branch) {
       node.branch = branch;
       if (this.branches.index(branch) < 0) {
         this.branches.append(branch);
@@ -624,11 +628,11 @@ namespace WizWidgets {
 
       var first_child = this.commit_store.get_forward(node.uuid);
       if (first_child == null) {
-        node.node_type = TimelineNodeType.TIP;
+        node.node_type = NodeType.TIP;
         this.tips.append(node);
         return;
       }
-      TimelineNode child_node = this.get_node(first_child, false);
+      Node child_node = this.get_node(first_child, false);
       node.add_edge(child_node);
       this.recurse_children(child_node, branch);
 
@@ -638,7 +642,7 @@ namespace WizWidgets {
         if (child == first_child) { continue; }
         child_node = this.get_node(child, false);
         node.add_edge(child_node);
-        this.recurse_children(child_node, new TimelineBranch(branch));
+        this.recurse_children(child_node, new Branch(branch));
       }
     }
 
@@ -649,9 +653,9 @@ namespace WizWidgets {
       string primary_tip = this.commit_store.get_primary_tip();
       this.primary_tip = this.get_node(primary_tip, false);
       this.tips.append(this.primary_tip);
-      this.primary_tip.node_type = TimelineNodeType.PRIMARY_TIP;
-      TimelineNode node = this.primary_tip;
-      TimelineBranch branch = new TimelineBranch(null);
+      this.primary_tip.node_type = NodeType.PRIMARY_TIP;
+      Node node = this.primary_tip;
+      Branch branch = new Branch(null);
       this.branches.append(branch);
       branch.position = 0;
 
@@ -662,13 +666,13 @@ namespace WizWidgets {
           if (child == child_uuid) { continue; }
           var child_node = this.get_node(child, false);
           node.add_edge(child_node);
-          this.recurse_children(child_node, new TimelineBranch(branch));
+          this.recurse_children(child_node, new Branch(branch));
         }
         child_uuid = node.uuid;
         node.branch = branch;
         if (node.uuid == root) {
           this.root = node;
-          this.root.node_type = TimelineNodeType.ROOT;
+          this.root.node_type = NodeType.ROOT;
           break;
         }
         var last_node = node;
@@ -754,7 +758,7 @@ namespace WizWidgets {
       foreach (var node in this.nodes) {
         r = node.timestamp - this.oldest_timestamp;
         position = (int)(((t - r) / t) * this.zoomed_extent);
-        if (this.orientation_timeline == (int)TimelineProperties.HORIZONTAL) {
+        if (this.orientation_timeline == (int)Constants.HORIZONTAL) {
           position = (int)this.graph_width - position;
         }
         node.px_position = position;
@@ -767,13 +771,13 @@ namespace WizWidgets {
           if (edge.child != node) {
             continue;
           }
-          // TODO 7
           if (edge.parent.branch.px_position == node.branch.px_position) {
             // distance between nodes..
             int node_dist = node.px_position - edge.parent.px_position;
-            node.globbed_nodes = new List<TimelineNode>();
-            if ((node_dist < ((int)this.node_min_size - 1)) && (edge.parent.node_type != TimelineNodeType.ROOT)) { // made up value
-              // This should only be set if the node only has one child
+            node.globbed_nodes = new List<Node>();
+            if ((node_dist < ((int)this.node_min_size - 1)) && 
+                (edge.parent.node_type != NodeType.ROOT)) {
+              // TODO 7 This should only be set if the node only has one child
               edge.parent.globbed = true;
               edge.parent.globbed_by = node;
               node.globbed_nodes.append(edge.parent);
@@ -782,7 +786,7 @@ namespace WizWidgets {
                 globbed_node.globbed_by = node;
                 node.globbed_nodes.append(globbed_node);
               }
-              edge.parent.globbed_nodes = new List<TimelineNode>();
+              edge.parent.globbed_nodes = new List<Node>();
               if (node.globbed_nodes.length() > max_globbed) {
                 max_globbed = (int)node.globbed_nodes.length();
               }
@@ -815,13 +819,13 @@ namespace WizWidgets {
     private void update_controls(int x) {
       int last_start = this.start_timestamp;
       int last_end = this.end_timestamp;
-      if (this.grab_handle > (int)TimelineHandle.NONE) {
+      if (this.grab_handle > (int)Handle.NONE) {
         var xpos = x - this.grab_offset;
-        if (this.grab_handle == TimelineHandle.LIMIT_OLD) {
+        if (this.grab_handle == Handle.LIMIT_OLD) {
           this.start_timestamp = this.scale_pos_to_timestamp(xpos);
-        } else if (this.grab_handle == TimelineHandle.LIMIT_NEW) {
+        } else if (this.grab_handle == Handle.LIMIT_NEW) {
           this.end_timestamp = this.scale_pos_to_timestamp(xpos);
-        } else if (this.grab_handle == TimelineHandle.SLIDER) {
+        } else if (this.grab_handle == Handle.SLIDER) {
           var click_timestamp = this.scale_pos_to_timestamp(xpos);
           var half_time = (this.end_timestamp - this.start_timestamp)/2;
           var tmp_s = click_timestamp - half_time;
@@ -855,7 +859,7 @@ namespace WizWidgets {
       double t = this.newest_timestamp - this.oldest_timestamp;
       double r = this.end_timestamp - this.start_timestamp;
       double offset = this.start_timestamp - this.oldest_timestamp;
-      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+      if (this.orientation_timeline == (int)Constants.VERTICAL) {
         double graph_height = this.graph_height - this.branch_width;
         this.zoomed_extent = graph_height / (r / t);
         offset = this.zoomed_extent * (offset / t);
@@ -872,47 +876,47 @@ namespace WizWidgets {
     private int timestamp_to_scale_pos(int timestamp) {
       var range = this.newest_timestamp - this.oldest_timestamp;
       double pos = (double)(timestamp - this.oldest_timestamp) / (double)range;
-      return (int)Math.ceil((pos * (double)this.widget_width) + (double)TimelineProperties.PADDING + 0.5);
+      return (int)Math.ceil((pos * (double)this.widget_width) + this.padding + 0.5);
     }
 
     // TODO 8
     private int scale_pos_to_timestamp(int xpos) {
       double t = this.newest_timestamp - this.oldest_timestamp;
-      double ratio = (xpos - (double)TimelineProperties.PADDING + 0.5) / (this.widget_width);
+      double ratio = (xpos - this.padding + 0.5) / (this.widget_width);
       return (int) Math.ceil((t * ratio) + this.oldest_timestamp);
     }
 
     private int graph_pos_to_timestamp(int px_pos, double offset) {
       double t = this.newest_timestamp - this.oldest_timestamp;
       offset = this.zoomed_extent - (offset + this.graph_width);
-      px_pos = px_pos + (int)(TimelineProperties.PADDING) + (int)offset;
+      px_pos = px_pos + this.padding + (int)offset;
       double ratio = px_pos / this.zoomed_extent;
       return (int) Math.ceil(this.oldest_timestamp + (t * ratio));
     }
 
     // Get the tick timestamp equal to are larger than start timestamp
-    private int get_lowest_scale_timestamp(int start_timestamp, TimelineUnit unit) {
+    private int get_lowest_scale_timestamp(int start_timestamp, TimeUnit unit) {
       Time t = Time.gm((time_t) start_timestamp);
       t.second = 0;
-      if (unit == TimelineUnit.MINUTES) {
+      if (unit == TimeUnit.MINUTES) {
         t.minute = t.minute + 1;
-      } else if (unit == TimelineUnit.HOURS) {
+      } else if (unit == TimeUnit.HOURS) {
         t.minute = 0;
         t.hour = t.hour + 1;
-      } else if (unit == TimelineUnit.DAYS) {
+      } else if (unit == TimeUnit.DAYS) {
         t.minute = 0;
         t.hour = 0;
         t.day = t.day + 1;
-      } else if (unit == TimelineUnit.WEEKS) {
+      } else if (unit == TimeUnit.WEEKS) {
         t.minute = 0;
         t.hour = 0;
         return ((int)t.mktime() + ((6 - t.weekday) * 60 * 60 * 24));
-      } else if (unit == TimelineUnit.MONTHS) {
+      } else if (unit == TimeUnit.MONTHS) {
         t.minute = 0;
         t.hour = 0;
         t.day = 0;
         t.month = t.month + 1;
-      } else if (unit == TimelineUnit.YEARS) {
+      } else if (unit == TimeUnit.YEARS) {
         t.minute = 0;
         t.hour = 0;
         t.day = 0;
@@ -923,23 +927,23 @@ namespace WizWidgets {
     }
 
     // Get the tick timestamp equal to are larger than start timestamp
-    private int get_highest_scale_timestamp(int end_timestamp, TimelineUnit unit) {
+    private int get_highest_scale_timestamp(int end_timestamp, TimeUnit unit) {
       Time t = Time.gm((time_t) end_timestamp);
       t.second = 0;
-      if (unit == TimelineUnit.HOURS) {
+      if (unit == TimeUnit.HOURS) {
         t.minute = 0;
-      } else if (unit == TimelineUnit.DAYS) {
+      } else if (unit == TimeUnit.DAYS) {
         t.minute = 0;
         t.hour = 0;
-      } else if (unit == TimelineUnit.MONTHS) {
+      } else if (unit == TimeUnit.MONTHS) {
         t.minute = 0;
         t.hour = 0;
         t.day = 0;
-      } else if (unit == TimelineUnit.WEEKS) {
+      } else if (unit == TimeUnit.WEEKS) {
         t.minute = 0;
         t.hour = 0;
         return ((int)t.mktime() - ((t.weekday-6) * 60 * 60 * 24));
-      } else if (unit == TimelineUnit.YEARS) {
+      } else if (unit == TimeUnit.YEARS) {
         t.minute = 0;
         t.hour = 0;
         t.day = 0;
@@ -948,25 +952,25 @@ namespace WizWidgets {
       return (int)t.mktime();
     }
 
-    private int get_next_scale_timestamp(int timestamp, TimelineUnit unit) {
-      if (unit == TimelineUnit.MINUTES) {
+    private int get_next_scale_timestamp(int timestamp, TimeUnit unit) {
+      if (unit == TimeUnit.MINUTES) {
         return timestamp + 60;
-      } else if (unit == TimelineUnit.HOURS) {
+      } else if (unit == TimeUnit.HOURS) {
         return timestamp + (60 * 60);
-      } else if (unit == TimelineUnit.DAYS) {
+      } else if (unit == TimeUnit.DAYS) {
         return timestamp + (60 * 60 * 24);
-      } else if (unit == TimelineUnit.WEEKS) {
+      } else if (unit == TimeUnit.WEEKS) {
         Time t = Time.gm((time_t) timestamp);
         if (t.weekday == 1) {
           return timestamp + (60 * 60 * 24 * 5);
         } else {
           return timestamp + (60 * 60 * 24 * 2);
         }
-      } else if (unit == TimelineUnit.MONTHS) {
+      } else if (unit == TimeUnit.MONTHS) {
         Time t = Time.gm((time_t) timestamp);
         t.month = t.month + 1;
         return (int)t.mktime();
-      } else if (unit == TimelineUnit.YEARS) {
+      } else if (unit == TimeUnit.YEARS) {
         return timestamp + (60 * 60 * 24 * 365);
       }
       return 0;
@@ -974,21 +978,21 @@ namespace WizWidgets {
 
     // Returns the best scale unit for the range of time between start and
     // end timestamps.
-    private TimelineUnit get_scale_unit(int start_timestamp, int end_timestamp) {
+    private TimeUnit get_scale_unit(int start_timestamp, int end_timestamp) {
       int t = end_timestamp - start_timestamp;
       // This isn't the best way to do this but nevermind :/
       if (t < 60 * 60 ) {
-        return TimelineUnit.MINUTES;
+        return TimeUnit.MINUTES;
       } else if (t < 60 * 60 * 24) {
-        return TimelineUnit.HOURS;
+        return TimeUnit.HOURS;
       } else if (t < 60 * 60 * 24 * 7) {
-        return TimelineUnit.DAYS;
+        return TimeUnit.DAYS;
       } else if (t < 60 * 60 * 24 * 30) {
-        return TimelineUnit.WEEKS;
+        return TimeUnit.WEEKS;
       } else if (t < 60 * 60 * 24 * 365) {
-        return TimelineUnit.MONTHS;
+        return TimeUnit.MONTHS;
       }
-      return TimelineUnit.YEARS;
+      return TimeUnit.YEARS;
     }
 
     // TODO 8
@@ -1010,23 +1014,23 @@ namespace WizWidgets {
         // figure out which part of the control we're over
         if (this.mouse_press_x <= st + 10) {
           // Over left handle
-          this.grab_handle = TimelineHandle.LIMIT_OLD;
+          this.grab_handle = Handle.LIMIT_OLD;
           this.grab_offset = this.mouse_press_x - st;
         } else if (this.mouse_press_x >= et - 10) {
           // Over right handle
-          this.grab_handle = TimelineHandle.LIMIT_NEW;
+          this.grab_handle = Handle.LIMIT_NEW;
           this.grab_offset = this.mouse_press_x - et;
         } else {
           // Over the slider bar
-          this.grab_handle = TimelineHandle.SLIDER;
+          this.grab_handle = Handle.SLIDER;
           this.grab_offset = this.mouse_press_x - (st + ((et - st)/2));
         }
       // Cursor over the graph
-      } else if ((this.mouse_press_x > (int)TimelineProperties.PADDING) &&
-                 (this.mouse_press_x < this.graph_width + (int)TimelineProperties.PADDING) &&
-                 (this.mouse_press_y > (int)TimelineProperties.PADDING) &&
-                 (this.mouse_press_y < this.graph_height + (int)TimelineProperties.PADDING)) {
-        this.grab_handle = TimelineHandle.KINETIC;
+      } else if ((this.mouse_press_x > this.padding) &&
+                 (this.mouse_press_x < this.graph_width + this.padding) &&
+                 (this.mouse_press_y > this.padding) &&
+                 (this.mouse_press_y < this.graph_height + this.padding)) {
+        this.grab_handle = Handle.KINETIC;
         TimeVal t = TimeVal();
         t.get_current_time();
         this.kinetic_start_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
@@ -1035,7 +1039,7 @@ namespace WizWidgets {
         this.pan_start_timestamp = this.start_timestamp;
         this.pan_to_timestamp(this.pan_cursor_timestamp);
       } else {
-        this.grab_handle = TimelineHandle.NONE;
+        this.grab_handle = Handle.NONE;
       }
 
       return true;
@@ -1045,7 +1049,7 @@ namespace WizWidgets {
       this.mouse_down = false;
       this.mouse_release_x = (int)event.x;
       this.mouse_release_y = (int)event.y;
-      if (this.grab_handle > (int)TimelineHandle.KINETIC) {
+      if (this.grab_handle > (int)Handle.KINETIC) {
         // TODO 8 - update controls should pick point by orientation
         this.update_controls(this.mouse_release_x);
         this.queue_draw();
@@ -1053,33 +1057,15 @@ namespace WizWidgets {
                                                 this.mouse_press_y,
                                                 this.mouse_release_x,
                                                 this.mouse_release_y) &&
-                 (this.grab_handle == (int)TimelineHandle.KINETIC)) {
-        TimeVal t = TimeVal();
-        t.get_current_time();
-        int dist = 0;
-        this.kinetic_end_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
-        if (this.orientation_timeline == TimelineProperties.HORIZONTAL) {
-          dist = this.mouse_press_x - this.mouse_release_x;
-        } else {
-          dist = this.mouse_press_y - this.mouse_release_y;
-        }
-        this.velocity = dist/(this.kinetic_end_timestamp - this.kinetic_start_timestamp);
-        stdout.printf("%d Pixels in %f seconds so %f pixels/s\n", dist, (this.kinetic_end_timestamp - this.kinetic_start_timestamp), this.velocity);
-        this.pan_offset = this.offset;
-        int timestamp = this.graph_pos_to_timestamp(this.mouse_release_x, this.pan_offset);
-        this.pan_start_timestamp = this.start_timestamp;
-        this.pan_cursor_timestamp = timestamp;
-        this.total_distance_travelled = 0;
-        this.kinetic_last_tick_timestamp = this.kinetic_end_timestamp;
-        this.pan_to_timestamp(timestamp);
+                 (this.grab_handle == (int)Handle.KINETIC)) {
         this.kinetic_scroll();
       } else {
-        TimelineNode last = this.selected;
+        Node last = this.selected;
         this.selected = null;
         foreach (var node in this.nodes) {
           if (node.at_coords(this.mouse_release_x, this.mouse_release_y,
                              this.orientation_timeline,
-                             (int)(this.offset+(this.branch_width/2)))) {
+                             (int)(this.offset+(this.branch_width/2)),this.padding)) {
             if (node != last) {
               this.selected = node;
               this.selected.selected = true;
@@ -1103,24 +1089,23 @@ namespace WizWidgets {
           this.queue_draw();
         }
       }
-      this.grab_handle = TimelineHandle.NONE;
+      this.grab_handle = Handle.NONE;
       return true;
     }
 
     // TODO 8
     public override bool motion_notify_event (Gdk.EventMotion event) {
-      if (this.mouse_down && this.grab_handle > (int)TimelineHandle.KINETIC) {
+      if (this.mouse_down && this.grab_handle > (int)Handle.KINETIC) {
         if (event.x != this.mouse_press_x) {
           this.update_controls((int)event.x);
           this.queue_draw();
         }
         return true;
-      } else if (this.mouse_down && this.grab_handle == (int)TimelineHandle.KINETIC) {
-        // TODO 13
+      } else if (this.mouse_down && this.grab_handle == (int)Handle.KINETIC) {
         int timestamp = this.graph_pos_to_timestamp(((int)event.x), this.pan_offset);
         this.pan_to_timestamp(timestamp);
-        // If the cursor has changed direction since last motion event
-        //    set the mouse_press_(x|y) to the last co-ords
+        // TODO 13 If the cursor has changed direction since last motion event
+        //         set the mouse_press_(x|y) to the last co-ords
         return true;
       }
       return false;
@@ -1142,7 +1127,7 @@ namespace WizWidgets {
                                                       this.graph_height)
                           );
 
-      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+      if (this.orientation_timeline == (int)Constants.VERTICAL) {
         cr_foreground.translate(0, (double)this.branch_width/2.0 + this.offset);
         cr_background.translate(0, (double)this.branch_width/2.0 + this.offset);
       } else {
@@ -1172,19 +1157,19 @@ namespace WizWidgets {
           node.render(cr_foreground, (int)this.orientation_timeline);
         }
       }
-      cr.rectangle((double)TimelineProperties.PADDING,
-                   (double)TimelineProperties.PADDING,
+      cr.rectangle(this.padding,
+                   this.padding,
                    this.graph_width, this.graph_height);
       cr.set_source_rgb(0.0,0.0,0.0);
       cr.stroke();
       // composite surfaces together
       cr.set_source_surface(cr_background.get_group_target(),
-                            (double)TimelineProperties.PADDING,
-                            (double)TimelineProperties.PADDING);
+                            this.padding,
+                            this.padding);
       cr.paint();
       cr.set_source_surface(cr_foreground.get_group_target(),
-                            (double)TimelineProperties.PADDING,
-                            (double)TimelineProperties.PADDING);
+                            this.padding,
+                            this.padding);
       cr.paint();
       this.render_controls(cr);
       return true;
@@ -1248,7 +1233,7 @@ namespace WizWidgets {
       int diff = this.anim_end_timestamp - this.anim_start_timestamp;
 
       this.move_to_timestamp( this.anim_start_timestamp + (int)(diff * d) );
-      if (t > 1) {
+      if ((t > 1) || this.mouse_down) {
         return false;
       } else {
         return true;
@@ -1275,8 +1260,13 @@ namespace WizWidgets {
       if (this.anim_duration < 0) { this.anim_duration = this.anim_duration * -1; }
       Timeout.add (30, scroll_tick);
     }
+
     // TODO 8
     private bool kinetic_tick() {
+      if ((int)this.velocity > -20 && (int)this.velocity < 20 || this.mouse_down) {
+        return false;
+      }
+
       double t;
       TimeVal tv = TimeVal();
       tv.get_current_time();
@@ -1286,28 +1276,40 @@ namespace WizWidgets {
       this.kinetic_last_tick_timestamp = t;
       t = tmp;
 
-      double seconds = t;//(t - this.kinetic_end_timestamp);
+      double seconds = t;
       double dist = seconds * (this.velocity);
       this.total_distance_travelled = this.total_distance_travelled + (int) dist;
 
       int px_pos = (int)(this.mouse_release_x - this.total_distance_travelled);
       int timestamp = this.graph_pos_to_timestamp(px_pos, this.pan_offset);
-      if ((int)this.velocity > -20 && (int)this.velocity < 20) {
-        return false;
-      }
       this.pan_to_timestamp(timestamp);
       this.velocity = this.velocity * 0.95;
       return true;
     }
 
     private void kinetic_scroll() {
-      
-
+      TimeVal t = TimeVal();
+      t.get_current_time();
+      int dist = 0;
+      this.kinetic_end_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
+      if (this.orientation_timeline == Constants.HORIZONTAL) {
+        dist = this.mouse_press_x - this.mouse_release_x;
+      } else {
+        dist = this.mouse_press_y - this.mouse_release_y;
+      }
+      this.velocity = dist/(this.kinetic_end_timestamp - this.kinetic_start_timestamp);
+      this.pan_offset = this.offset;
+      int timestamp = this.graph_pos_to_timestamp(this.mouse_release_x, this.pan_offset);
+      this.pan_start_timestamp = this.start_timestamp;
+      this.pan_cursor_timestamp = timestamp;
+      this.total_distance_travelled = 0;
+      this.kinetic_last_tick_timestamp = this.kinetic_end_timestamp;
+      this.pan_to_timestamp(timestamp);
       Timeout.add(30, kinetic_tick);
     }
 
     private void render_scale(Cairo.Context cr, Cairo.Context fg) {
-      TimelineUnit scaleunit = this.get_scale_unit(this.start_timestamp,
+      TimeUnit scaleunit = this.get_scale_unit(this.start_timestamp,
                                                    this.end_timestamp);
       double t = this.newest_timestamp - this.oldest_timestamp;
       double r = this.end_timestamp - this.start_timestamp;
@@ -1330,7 +1332,7 @@ namespace WizWidgets {
         unit = null;
         r = timestamp - this.oldest_timestamp;
         px_pos = (int)(((t - r) / t) * this.zoomed_extent);
-        if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+        if (this.orientation_timeline == (int)Constants.VERTICAL) {
           cr.move_to((this.graph_width/2) + 0.5, px_pos + 0.5);
           cr.line_to((this.graph_width/2) + 8.5, px_pos + 0.5);
           cr.stroke();
@@ -1338,13 +1340,13 @@ namespace WizWidgets {
           px_pos = (int)this.graph_width - px_pos;
           Time tm = Time.gm((time_t) timestamp);
 
-          if (scaleunit == TimelineUnit.MINUTES) {
+          if (scaleunit == TimeUnit.MINUTES) {
             unit = tm.format("%H:%M");
-          } else if (scaleunit == TimelineUnit.HOURS) {
+          } else if (scaleunit == TimeUnit.HOURS) {
             unit = tm.format("%H:00");
-          } else if (scaleunit == TimelineUnit.DAYS) {
+          } else if (scaleunit == TimeUnit.DAYS) {
             unit = tm.format("%A");
-          } else if (scaleunit == TimelineUnit.WEEKS) {
+          } else if (scaleunit == TimeUnit.WEEKS) {
             if (tm.weekday == 6) {
               r = 60 * 60 * 24 * 2;
               px_width = (int)(((r / t) * this.zoomed_extent) + 1);
@@ -1358,9 +1360,9 @@ namespace WizWidgets {
               r = 60 * 60 * 24 * 2.5;
               px_width = (int)(((r / t) * this.zoomed_extent) + 1);
             }
-          } else if (scaleunit == TimelineUnit.MONTHS) {
+          } else if (scaleunit == TimeUnit.MONTHS) {
             unit = tm.format("%B");
-          } else if (scaleunit == TimelineUnit.YEARS) {
+          } else if (scaleunit == TimeUnit.YEARS) {
             unit = tm.format("%G");
           } else {
             unit = null;
@@ -1388,7 +1390,7 @@ namespace WizWidgets {
       }
 
       cr.set_source_rgba(0,0,0,1);
-      if (this.orientation_timeline == (int)TimelineProperties.VERTICAL) {
+      if (this.orientation_timeline == (int)Constants.VERTICAL) {
         //TODO 8
       } else {
         int steps = (this.highest_branch_position - this.lowest_branch_position);
@@ -1403,7 +1405,7 @@ namespace WizWidgets {
       cr.stroke();
       cr.restore();
 
-      if (scaleunit != TimelineUnit.WEEKS) {
+      if (scaleunit != TimeUnit.WEEKS) {
         cr.save();
         var pattern = new Cairo.Pattern.linear(0, 12, 0, 35);
         pattern.add_color_stop_rgba(0, 0xee/255.0, 0xee/255.0, 0xec/255.0, 1);
@@ -1416,9 +1418,9 @@ namespace WizWidgets {
     }
 
     private void render_controls_scale(Cairo.Context cr) {
-      TimelineUnit scaleunit = this.get_scale_unit(this.oldest_timestamp,
+      TimeUnit scaleunit = this.get_scale_unit(this.oldest_timestamp,
                                                  this.newest_timestamp);
-      TimelineUnit graphunit = (TimelineUnit)((int)scaleunit - 1);
+      TimeUnit graphunit = (TimeUnit)((int)scaleunit - 1);
       int timestamp = get_highest_scale_timestamp(this.oldest_timestamp, graphunit);
       int next_timestamp;
       int graphheight;
@@ -1428,15 +1430,15 @@ namespace WizWidgets {
       double gap;
 
       cr.save();
-      if (this.orientation_controls == (int)TimelineProperties.VERTICAL) {
+      if (this.orientation_controls == (int)Constants.VERTICAL) {
         // TODO 8
       } else {
-        cr.rectangle((double)TimelineProperties.PADDING + 0.5,
+        cr.rectangle(this.padding + 0.5,
                      this.widget_height + 0.5,
                      this.widget_width, 15);
         cr.set_source_rgba(0.0,0.12,0.4,0.6);
         cr.stroke();
-        cr.rectangle((double)TimelineProperties.PADDING + 0.5,
+        cr.rectangle(this.padding + 0.5,
                      this.widget_height + 0.5,
                      this.widget_width, 15);
         cr.clip();
@@ -1458,7 +1460,7 @@ namespace WizWidgets {
         next_timestamp = get_next_scale_timestamp(timestamp, graphunit);
         px_end = timestamp_to_scale_pos(next_timestamp);
         graphheight = this.commit_store.get_commits_between_timestamps(timestamp, next_timestamp);
-        if (this.orientation_controls == (int)TimelineProperties.VERTICAL) {
+        if (this.orientation_controls == (int)Constants.VERTICAL) {
           // TODO 8
         } else {
           cr.rectangle(px_pos + 2.5, this.widget_height + 15 - (int)(graphheight * gap) + 0.5,
@@ -1474,7 +1476,7 @@ namespace WizWidgets {
       timestamp = get_lowest_scale_timestamp(this.oldest_timestamp, scaleunit);
       while (timestamp < this.newest_timestamp) {
         px_pos = timestamp_to_scale_pos(timestamp);
-        if (this.orientation_controls == (int)TimelineProperties.VERTICAL) {
+        if (this.orientation_controls == (int)Constants.VERTICAL) {
           // TODO 8
         } else {
           cr.move_to(px_pos + 0.5, this.widget_height - 8.5);
@@ -1520,7 +1522,7 @@ namespace WizWidgets {
 
     // TODO 8
     private void render_controls_background(Cairo.Context cr) {
-      cr.rectangle((double)TimelineProperties.PADDING + 0.5,
+      cr.rectangle(this.padding + 0.5,
                    this.widget_height - 22.5,
                    this.widget_width, 6.0);
       var pattern = new Cairo.Pattern.linear(0, this.widget_height - 22.5,
