@@ -1271,9 +1271,13 @@ namespace WizWidgets {
           } else if (this.mouse_direction < 0) {
             this.mouse_direction = -1;
           }
-          if (direction != this.mouse_direction) {
+          if (direction != this.mouse_direction && this.mouse_direction != 0) {
             this.mouse_press_x = (int)event.x;
-            this.mouse_press_y = (int)event.y;
+            this.mouse_press_y = (int)event.y;            
+            TimeVal t = TimeVal();
+            t.get_current_time();
+            this.kinetic_start_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
+            stdout.printf("Direction change %d\n", this.mouse_direction);
           }
           ret = true;
         }
@@ -1567,7 +1571,7 @@ namespace WizWidgets {
     }
 
     // TODO 8
-    private void render_controls_background(Cairo.Context cr) {
+    private void render_controls_slider(Cairo.Context cr) {
       cr.rectangle(this.padding + 0.5,
                    this.widget_height - 22.5,
                    this.widget_width, 6.0);
@@ -1588,7 +1592,7 @@ namespace WizWidgets {
 
       cr.rectangle (start_pos + 4.5, this.widget_height - 24.5,
                     end_pos - start_pos - 9, 9);
-      var pattern = new Cairo.Pattern.linear(0, this.widget_height - 24.5,
+      pattern = new Cairo.Pattern.linear(0, this.widget_height - 24.5,
                                          0,this.widget_height - 15.5);
       pattern.add_color_stop_rgb(0, 0x72/255.0,0x9f/255.0,0xcf/255.0);
       pattern.add_color_stop_rgb(1, 0x34/255.0,0x65/255.0,0xa4/255.0);
@@ -1628,9 +1632,7 @@ namespace WizWidgets {
         }
       }
       // TODO 12
-      this.cr_edges.set_source_rgb(node.branch.stroke_r,
-                                   node.branch.stroke_g,
-                                   node.branch.stroke_b);
+      this.cr_edges.set_source_rgb(0.4,0,0);
       this.cr_edges.stroke();
 
       this.cr_nodes.rectangle(0, 0, this.graph_width, this.graph_height);
