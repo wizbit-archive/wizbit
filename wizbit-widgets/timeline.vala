@@ -6,11 +6,13 @@
  * TODO
  * 1x  Create renderer for the scale.
  * 2x  Clean up some of the calculations
- * 3x  Optimize the shizzle out of it!
+ * 3_  Optimize the shizzle out of it!
        - Merge update_from_store and update_branches
          - Separate nicely from DB
        - Push out update_branch_positions to on configure not on expose
        - Push oout update_node_positions to when zoom has changed not on expose
+       * Cut down number of rendering redraws by using the offset to 
+         composite layers and only redraw parts when required.
  * 4_  Rename a bunch of things which are horribly named!
  * 5x  Node click zones calculations
  * 6x  Setting the selected node will scroll it to center
@@ -99,7 +101,7 @@ namespace WizWidgets {
       this.child = child;
     }
 
-    public void render(Cairo.Context cr, double max_angle, int orientation) {
+    public void render(Cairo.Context cr, double max_angle, Constants orientation) {
       // Draw a line from each parent.x/y to child.x/y
       int kx, ky; // Kink position
       int px, py, cx, cy;
@@ -115,7 +117,7 @@ namespace WizWidgets {
         cy = child.branch.px_position;
         cx = child.px_position;
       }
-      if (orientation == (int)Constants.VERTICAL) {
+      if (orientation == Constants.VERTICAL) {
         odist = py - cy;
         adist = px - cx;
       } else {
@@ -221,6 +223,8 @@ namespace WizWidgets {
       this.edges.append(new Edge(node, this));
     }
 
+    // FIXME padding and offset should be implicit... x and y should maybe be
+    // branch_px and node_px for simplicity sake
     public bool at_coords(int x, int y, int orientation, int offset, int padding) {
       double o = 0, a = 0;
       int nx, ny;
@@ -410,6 +414,13 @@ namespace WizWidgets {
     private double pan_offset;
 
     // Drawing information
+    // TODO 3
+    private Cairo.Context cr;             // The widget cairo context
+    private Cairo.Context cr_background;  // Render on zoom/resize
+    private Cairo.Context cr_edges;       // Render on zoom/resize
+    private Cairo.Context cr_nodes;       // Render on zoom/resize
+    private Cairo.Context cr_controls;    // Render on zoom/scroll/resize
+    private Cairo.Context cr_scale;       // Render on bit_uuid changed/resize
     private double offset;
     private double edge_angle_max;
     private double zoomed_extent = 0;
@@ -418,6 +429,7 @@ namespace WizWidgets {
     public int handle_width { get; set; }
     public int scale_padding { get; set; }
     public int scale_height { get; set; }
+    public bool draw_scale { get; set; }
 
     /*
      * The orientation of the timeline
@@ -546,6 +558,7 @@ namespace WizWidgets {
       this.branches               = new List<Branch>();
       this.store                  = store;
       this.bit_uuid               = bit_uuid;
+      this.draw_scale             = true;
       this.padding                = 8;
       this.controls_height        = 20;
       this.handle_width           = 13;
@@ -577,6 +590,10 @@ namespace WizWidgets {
       // size has changed so we update the position calculations
       this.update_branch_positions();
       this.update_node_positions();
+      //this.render_background();
+      //this.render_graph();
+      //this.render_controls();
+      //this.render_scale();
     }
 
     public override void realize () {
@@ -595,9 +612,51 @@ namespace WizWidgets {
       this.style.set_background (this.window, Gtk.StateType.NORMAL);
       this.window.move_resize (this.allocation.x, this.allocation.y,
                                this.allocation.width, this.allocation.height);
-      // Initial positioning calculations, now that we know how bit the widget is
+      // Initial positioning calculations, now that we know the widge size
       this.update_branch_positions();
       this.update_node_positions();
+
+      this.cr = Gdk.cairo_create (this.window);
+      var surface = cr.get_group_target();
+
+      this.cr_background = new Cairo.Context(
+                             new Cairo.Surface.similar(surface,
+                                                       Cairo.Content.COLOR,
+                                                       this.graph_width,
+                                                       this.graph_height)
+                           );
+
+      this.cr_edges = new Cairo.Context(
+                        new Cairo.Surface.similar(surface,
+                                                  Cairo.Content.COLOR_ALPHA,
+                                                  this.graph_width,
+                                                  this.graph_height)
+                      );
+
+      this.cr_nodes = new Cairo.Context(
+                        new Cairo.Surface.similar(surface,
+                                                  Cairo.Content.COLOR_ALPHA,
+                                                  this.graph_width,
+                                                  this.graph_height)
+                      );
+
+      this.cr_controls = new Cairo.Context(
+                           new Cairo.Surface.similar(surface,
+                                                     Cairo.Content.COLOR_ALPHA,
+                                                     this.widget_width,
+                                                     this.controls_height)
+                         );
+      this.cr_scale = new Cairo.Context(
+                        new Cairo.Surface.similar(surface,
+                                                  Cairo.Content.COLOR_ALPHA,
+                                                  this.widget_width,
+                                                  this.scale_height)
+                      );
+
+      //this.render_background();
+      //this.render_graph();
+      //this.render_controls();
+      //this.render_scale();
     }
 
     public override void unrealize () {
@@ -724,18 +783,6 @@ namespace WizWidgets {
           this.lowest_branch_position = branch.position;
         } else if (branch.position > this.highest_branch_position) {
           this.highest_branch_position = branch.position;
-        }
-      }
-    }
-
-    // TODO 10
-    private void update_visibility() {
-      foreach (var node in this.nodes) {
-        if ((node.timestamp <= this.end_timestamp) &&
-            (node.timestamp >= this.start_timestamp)) {
-          node.visible = true;
-        } else {
-          node.visible = false;
         }
       }
     }
@@ -1111,6 +1158,7 @@ namespace WizWidgets {
       return false;
     }
 
+    // TODO 3
     public override bool expose_event (Gdk.EventExpose event) {
       var cr = Gdk.cairo_create (this.window);
       var surface = cr.get_group_target();
@@ -1134,10 +1182,8 @@ namespace WizWidgets {
         cr_foreground.translate((int)((double)this.branch_width/2.0 + this.offset), 0);
         cr_background.translate((int)((double)this.branch_width/2.0 + this.offset), 0);
       }
-      cr_background.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
-      cr_background.paint();
-
-      this.render_scale(cr_background, cr_foreground);
+      this.render_background(cr_background, cr_foreground);
+      // TODO 3 /*
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) {
           if (edge.child == node) {
@@ -1162,6 +1208,9 @@ namespace WizWidgets {
                    this.graph_width, this.graph_height);
       cr.set_source_rgb(0.0,0.0,0.0);
       cr.stroke();
+      /* TODO 3
+      this.composite();
+      */
       // composite surfaces together
       cr.set_source_surface(cr_background.get_group_target(),
                             this.padding,
@@ -1192,7 +1241,7 @@ namespace WizWidgets {
         this.start_timestamp = this.end_timestamp - diff;
         ret = false;
       }
-      this.update_node_positions();
+      //this.update_node_positions();
       this.queue_draw();
       return ret;
     }
@@ -1308,9 +1357,11 @@ namespace WizWidgets {
       Timeout.add(30, kinetic_tick);
     }
 
-    private void render_scale(Cairo.Context cr, Cairo.Context fg) {
+    private void render_background(Cairo.Context cr, Cairo.Context fg) {      
+      cr.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
+      cr.paint();
       TimeUnit scaleunit = this.get_scale_unit(this.start_timestamp,
-                                                   this.end_timestamp);
+                                               this.end_timestamp);
       double t = this.newest_timestamp - this.oldest_timestamp;
       double r = this.end_timestamp - this.start_timestamp;
       int timestamp = get_highest_scale_timestamp(this.start_timestamp, scaleunit);
@@ -1572,6 +1623,52 @@ namespace WizWidgets {
       this.render_controls_handle(cr, this.start_timestamp);
       this.render_controls_handle(cr, this.end_timestamp);
       this.render_controls_scale(cr);
+    }
+
+    private void render_graph() {
+      foreach (var node in this.nodes) {
+        foreach (var edge in node.edges) {
+          if (edge.child == node) {
+            // Render the edges onto the underneath surface
+            edge.render(this.cr_edges, this.edge_angle_max, this.orientation_timeline);
+          }
+          // TODO 12
+          // Don't render all of strokes one after the other, wait until all of
+          // the nodes have drawn their lines and stroke it all at once with
+          // a pattern generated from the branch positions
+        }
+        if (!node.globbed) {
+          node.size = (node.globbed_nodes.length() * this.node_glob_size) + this.node_min_size;
+          // Render the node onto the ontop surface
+          node.render(this.cr_nodes, this.orientation_timeline);
+        }
+      }
+      this.cr_background.rectangle(0, 0, this.graph_width, this.graph_height);
+      this.cr_background.set_source_rgb(0.0,0.0,0.0);
+      this.cr_background.stroke();
+    }
+
+    private void composite() {
+      this.cr.set_source_surface(this.cr_background.get_group_target(),
+                                 this.padding, // FIXME
+                                 this.padding);// FIXME
+      this.cr.paint();
+      this.cr.set_source_surface(this.cr_edges.get_group_target(),
+                                 this.padding,// FIXME
+                                 this.padding);// FIXME
+      this.cr.paint();
+      this.cr.set_source_surface(this.cr_nodes.get_group_target(),
+                                 this.padding,// FIXME
+                                 this.padding);// FIXME
+      this.cr.paint();
+      this.cr.set_source_surface(this.cr_controls.get_group_target(),
+                                 this.padding, // FIXME
+                                 this.padding);// FIXME
+      this.cr.paint();
+      this.cr.set_source_surface(this.cr_scale.get_group_target(),
+                                 this.padding,// FIXME
+                                 this.padding);// FIXME
+      this.cr.paint();
     }
   }
 }
