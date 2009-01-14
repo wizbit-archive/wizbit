@@ -874,6 +874,7 @@ namespace WizWidgets {
         }
         if ((last_start != this.start_timestamp) ||
             (last_end != this.end_timestamp)) {
+          this.calculate_zoom();
           this.do_render = this.do_render |  (int)Render.CONTROLS; 
         }
         int old_diff = last_end - last_start;
@@ -1043,6 +1044,7 @@ namespace WizWidgets {
         ret = false;
       }
       //this.update_node_positions(); // TODO 3 Won't be needed in future :)
+      this.calculate_zoom();
       this.do_render = this.do_render | (int)Render.CONTROLS;
       this.queue_draw();
       return ret;
@@ -1169,8 +1171,8 @@ namespace WizWidgets {
       // These numbers are based on the size of the handles?!
       var st = this.timestamp_to_scale_pos(this.start_timestamp) - 5;
       var et = this.timestamp_to_scale_pos(this.end_timestamp) + 5;
-      var sv = this.widget_height - 25;
-      var ev = this.widget_height - 11;
+      var sv = this.widget_height - this.scale_height - this.scale_padding - this.controls_height + this.padding;
+      var ev = this.widget_height - this.scale_height - this.scale_padding + this.padding;
       this.velocity = 0;
 
       // Cursor over the controls
@@ -1509,9 +1511,9 @@ namespace WizWidgets {
       var hpos = this.timestamp_to_scale_pos(timestamp);
       // Handle outline
       this.cr_controls.move_to(hpos - hhw, 0.5);
-      this.cr_controls.line_to(hpos - hhw, 9.5);
-      this.cr_controls.line_to(hpos, 13.5);
-      this.cr_controls.line_to(hpos + hhw, 9.5);
+      this.cr_controls.line_to(hpos - hhw, (double)this.controls_height - 5.5);
+      this.cr_controls.line_to(hpos, (double)this.controls_height - 0.5);
+      this.cr_controls.line_to(hpos + hhw, (double)this.controls_height - 5.5);
       this.cr_controls.line_to(hpos + hhw, 0.5);
       this.cr_controls.line_to(hpos - hhw, 0.5);
       // Handle fill
@@ -1527,9 +1529,9 @@ namespace WizWidgets {
       hhw = hhw - 1;
       // Handle inner highlight
       this.cr_controls.move_to(hpos - hhw, 1.5);
-      this.cr_controls.line_to(hpos - hhw, 9.85);
-      this.cr_controls.line_to(hpos, 12.0);
-      this.cr_controls.line_to(hpos + hhw, 9.85);
+      this.cr_controls.line_to(hpos - hhw, (double)this.controls_height - 6.15);
+      this.cr_controls.line_to(hpos, this.controls_height - 2);
+      this.cr_controls.line_to(hpos + hhw, (double)this.controls_height - 6.15);
       this.cr_controls.line_to(hpos + hhw, 1.5);
       this.cr_controls.line_to(hpos - hhw, 1.5);
 
@@ -1539,10 +1541,10 @@ namespace WizWidgets {
 
     // TODO 8
     private void render_controls_slider() {
-      this.cr_controls.rectangle(0.5, 3.5, this.widget_width, 6.0);
       var pattern = new Cairo.Pattern.linear(0, 3.5, 0, 9.5);
       pattern.add_color_stop_rgb(0, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
       pattern.add_color_stop_rgb(1, 0xee/255.0, 0xee/255.0, 0xec/255.0);
+      this.cr_controls.rectangle(0.5 + this.padding, 3.5, this.widget_width, 6.0);
       this.cr_controls.set_line_width(1);
       this.cr_controls.set_source (pattern);
       this.cr_controls.fill_preserve();
@@ -1555,8 +1557,8 @@ namespace WizWidgets {
       center = center + this.start_timestamp;
       center = (double)this.timestamp_to_scale_pos((int)center) - 3.5;
 
-      this.cr_controls.rectangle (start_pos + 4.5, 0.5, end_pos - start_pos - 9, 12);
-      pattern = new Cairo.Pattern.linear(0, 0.5, 0, 9.5);
+      this.cr_controls.rectangle (start_pos + 4.5, 0.5, end_pos - start_pos - 9, (double)this.controls_height - 6);
+      pattern = new Cairo.Pattern.linear(0, 0.5, 0, (double)this.controls_height - 6);
       pattern.add_color_stop_rgb(0, 0x72/255.0,0x9f/255.0,0xcf/255.0);
       pattern.add_color_stop_rgb(1, 0x34/255.0,0x65/255.0,0xa4/255.0);
       this.cr_controls.set_source (pattern);
@@ -1565,13 +1567,13 @@ namespace WizWidgets {
       // Render some ticks in the middle of the slider
       for (var i = 0; i < 3; i++) {
         this.cr_controls.move_to(center + (i * 3), 3.5);
-        this.cr_controls.line_to(center + (i * 3), 8.5);
+        this.cr_controls.line_to(center + (i * 3), (double)this.controls_height - 9);
       }
       this.cr_controls.stroke();
       // Slider Highlight
       this.cr_controls.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
       this.cr_controls.rectangle (start_pos + 5.5, 1.5,
-                    end_pos - start_pos - 11, 7);
+                    end_pos - start_pos - 11, (double)this.controls_height - 8);
       this.cr_controls.stroke();
     }
 
@@ -1585,6 +1587,30 @@ namespace WizWidgets {
     }
 
     private void render_graph() {
+      int graph_width = 0;
+      int graph_height = 0;
+      if (this.orientation_timeline == Constant.VERTICAL) {
+        graph_width     = this.graph_width;
+        graph_height    = (int)this.zoomed_extent + (int)(1.5*this.branch_width);
+      } else {
+        graph_width     = (int)this.zoomed_extent + (int)(1.5*this.branch_width);
+        graph_height    = this.graph_height;
+      }
+
+      this.cr_edges = new Cairo.Context(
+                        new Cairo.Surface.similar(this.cr.get_group_target(),
+                                                  Cairo.Content.COLOR_ALPHA,
+                                                  graph_width,
+                                                  graph_height)
+                      );
+
+      this.cr_nodes = new Cairo.Context(
+                        new Cairo.Surface.similar(this.cr.get_group_target(),
+                                                  Cairo.Content.COLOR_ALPHA,
+                                                  graph_width,
+                                                  graph_height)
+                      );
+/*
       this.cr_nodes.set_operator(Cairo.Operator.CLEAR);
       this.cr_nodes.paint();
       this.cr_nodes.set_operator(Cairo.Operator.OVER);
@@ -1592,7 +1618,7 @@ namespace WizWidgets {
       this.cr_edges.set_operator(Cairo.Operator.CLEAR);
       this.cr_edges.paint();
       this.cr_edges.set_operator(Cairo.Operator.OVER);
-
+*/
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) {
           if (edge.child == node) {
@@ -1642,7 +1668,7 @@ namespace WizWidgets {
                                                        graph_width,
                                                        graph_height)
                            );
-
+/*
       this.cr_edges = new Cairo.Context(
                         new Cairo.Surface.similar(surface,
                                                   Cairo.Content.COLOR_ALPHA,
@@ -1656,7 +1682,7 @@ namespace WizWidgets {
                                                   graph_width,
                                                   graph_height)
                       );
-
+*/
       this.cr_controls = new Cairo.Context(
                            new Cairo.Surface.similar(surface,
                                                      Cairo.Content.COLOR_ALPHA,
@@ -1705,7 +1731,6 @@ namespace WizWidgets {
 */
       this.cr.set_source_surface(this.cr_edges.get_group_target(),
                                  this.padding + this.offset + (this.branch_width/2), this.padding);
-      //this.cr.paint();
       this.cr.rectangle(this.padding, this.padding, this.graph_width, this.graph_height);
       this.cr.fill();
 
