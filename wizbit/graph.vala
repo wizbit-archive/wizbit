@@ -89,7 +89,7 @@ namespace Graph {
 		}
 
 		public void write() throws GLib.FileError {
-			this.store.write(this);
+			this.uuid = this.store.write(this);
 		}
 	}
 }
