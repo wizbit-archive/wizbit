@@ -122,7 +122,7 @@ public class SyncSource : Object {
 	public string grab_blob(string bit_uuid, string version_uuid) {
 		var b = this.store.open_bit(bit_uuid);
 		var v = new Version(b, version_uuid);
-		return "%s%s".printf(v.blob_id, v.read_as_string());
+		return "%s%.*s".printf(v.blob_id, v.get_length(), v.read_as_string());
 	}
 }
 
