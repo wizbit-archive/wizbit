@@ -43,7 +43,7 @@ namespace Graph {
 			return new MappedFile(path, false);
 		}
 
-		public string write(Object obj) throws GLib.FileError{
+		public string write(Blob obj) throws GLib.FileError{
 			void *bufptr;
 			long size;
 			obj.serialize(out bufptr, out size);
@@ -55,30 +55,11 @@ namespace Graph {
 		}
 	}
 
-	public class Object : GLib.Object {
+	public class Blob : GLib.Object {
 		public bool parsed { get; set; }
 		public Store store { get; construct; }
 		public string uuid { get; set; }
 
-		public Object(Store store) {
-			this.store = store;
-			this.parsed = true;
-		}
-
-		public Object.from_uuid(Store store, string uuid) {
-			this.store = store;
-			this.uuid = uuid;
-			this.parsed = false;
-		}
-
-		public void write() throws GLib.FileError{
-			this.uuid = this.store.write(this);
-		}
-
-		public virtual void serialize(out void *bufptr, out long size) {}
-	}
-
-	public class Blob : Object {
 		private MappedFile file;
 		private void *bufptr;
 		private long size;
@@ -87,7 +68,6 @@ namespace Graph {
 			return this.store.read(this.uuid);
 		}
 
-		/* Duplicated because vala won't use the ones in Object yet */
 		public Blob(Store store) {
 			this.store = store;
 			this.parsed = true;
@@ -109,9 +89,13 @@ namespace Graph {
 			this.size = file.get_length();
 		}
 
-		public override void serialize(out void *bufptr, out long size) {
+		public void serialize(out void *bufptr, out long size) {
 			bufptr = this.bufptr;
 			size = this.size;
+		}
+
+		public void write() throws GLib.FileError {
+			this.store.write(this);
 		}
 	}
 }
