@@ -1316,17 +1316,34 @@ namespace WizWidgets {
       if ((this.do_render & (int)Render.SCALE) == (int)Render.SCALE) {
         this.render_scale();
       }
-      //if ((this.do_render & (int)Render.BACKGROUND) == (int)Render.BACKGROUND) {
-      //  this.render_background();
-      //}
+      if ((this.do_render & (int)Render.BACKGROUND) == (int)Render.BACKGROUND) {
+        this.render_background();
+      }
       this.composite();
       this.do_render = 0;
       return true;
     }
 
-    private void render_background(Cairo.Context cr, Cairo.Context fg) {      
-      cr.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
-      cr.paint();
+    private void render_background() {    
+      int graph_width = 0;
+      int graph_height = 0;
+      if (this.orientation_timeline == Constant.VERTICAL) {
+        graph_width     = this.graph_width;
+        graph_height    = (int)this.zoomed_extent + (int)(1.5*this.branch_width);
+      } else {
+        graph_width     = (int)this.zoomed_extent + (int)(1.5*this.branch_width);
+        graph_height    = this.graph_height;
+      }
+
+      this.cr_background = new Cairo.Context(
+                             new Cairo.Surface.similar(this.cr.get_group_target(),
+                                                       Cairo.Content.COLOR,
+                                                       graph_width,
+                                                       graph_height)
+                           );
+
+      this.cr_background.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
+      this.cr_background.paint();
       TimeUnit scaleunit = this.get_scale_unit(this.start_timestamp,
                                                this.end_timestamp);
       double t = this.newest_timestamp - this.oldest_timestamp;
@@ -1342,20 +1359,20 @@ namespace WizWidgets {
 
       dash[0] = 1.5;
       dash[1] = 2.0;
-      cr.save();
-      cr.set_dash(dash, 2);
-      cr.set_line_width(1);
-      cr.set_source_rgba(0.0,0.0,0.0, 0.4);
+      this.cr_background.save();
+      this.cr_background.set_dash(dash, 2);
+      this.cr_background.set_line_width(1);
+      this.cr_background.set_source_rgba(0.0,0.0,0.0, 0.4);
       while (timestamp <= end_timestamp) {
         unit = null;
         r = timestamp - this.oldest_timestamp;
         px_pos = (int)(((t - r) / t) * this.zoomed_extent);
         if (this.orientation_timeline == Constant.VERTICAL) {
-          cr.move_to((this.graph_width/2) + 0.5, px_pos + 0.5);
-          cr.line_to((this.graph_width/2) + 8.5, px_pos + 0.5);
-          cr.stroke();
+          this.cr_background.move_to((this.graph_width/2) + 0.5, px_pos + 0.5);
+          this.cr_background.line_to((this.graph_width/2) + 8.5, px_pos + 0.5);
+          this.cr_background.stroke();
         } else {
-          px_pos = (int)this.graph_width - px_pos;
+          px_pos = (int)this.zoomed_extent - px_pos;
           Time tm = Time.gm((time_t) timestamp);
 
           if (scaleunit == TimeUnit.MINUTES) {
@@ -1368,11 +1385,11 @@ namespace WizWidgets {
             if (tm.weekday == 6) {
               r = 60 * 60 * 24 * 2;
               px_width = (int)(((r / t) * this.zoomed_extent) + 1);
-              cr.save();
-              cr.rectangle(px_pos, 0, px_width, this.graph_height);
-              cr.set_source_rgba(0,0,0,0.06);
-              cr.fill();
-              cr.restore();
+              this.cr_background.save();
+              this.cr_background.rectangle(px_pos, 0, px_width, this.graph_height);
+              this.cr_background.set_source_rgba(0,0,0,0.06);
+              this.cr_background.fill();
+              this.cr_background.restore();
             } else if (tm.weekday == 1) {
               unit = tm.format("Week %V %G");
               r = 60 * 60 * 24 * 2.5;
@@ -1386,52 +1403,52 @@ namespace WizWidgets {
             unit = null;
           }
 
-          cr.save();
-          cr.set_source_rgba(0,0,0,1);
-          cr.move_to(px_pos+0.5, 0);
-          cr.line_to(px_pos+0.5, this.graph_height);
-          cr.stroke();
-          cr.restore();
-
+          this.cr_background.save();
+          this.cr_background.set_source_rgba(0,0,0,1);
+          this.cr_background.move_to(px_pos+0.5, 0);
+          this.cr_background.line_to(px_pos+0.5, this.graph_height);
+          this.cr_background.stroke();
+          this.cr_background.restore();
+/*
           if (unit != null) {
             layout = this.create_pango_layout (unit);
             layout.get_pixel_size (out fontw, out fonth);
-            fg.save();
-            fg.move_to (px_pos + px_width - (fontw/2), 0);
-            fg.set_source_rgba(0,0,0,0.4);
-            Pango.cairo_update_layout (fg, layout);
-            Pango.cairo_show_layout (fg, layout);
-            fg.restore();
+            this.cr_background.save();
+            this.cr_background.move_to (px_pos + px_width - (fontw/2), 0);
+            this.cr_background.set_source_rgba(0,0,0,0.4);
+            Pango.cairo_update_layout (this.cr_background, layout);
+            Pango.cairo_show_layout (this.cr_background, layout);
+            this.cr_background.restore();
           }
+*/
         }
         timestamp = get_next_scale_timestamp(timestamp, scaleunit);
       }
 
-      cr.set_source_rgba(0,0,0,1);
+      this.cr_background.set_source_rgba(0,0,0,1);
       if (this.orientation_timeline == Constant.VERTICAL) {
         //TODO 8
       } else {
         int steps = (this.highest_branch_position - this.lowest_branch_position);
 
         for (var i = 1; i <= steps; i++) {
-          cr.move_to((-1*this.offset) - (this.branch_width/2),
-                     (i*this.branch_width)+0.5);
-          cr.line_to((this.branch_width/2) + this.graph_width + (-1*this.offset),
-                     (i*this.branch_width)+0.5);
+          this.cr_background.move_to(0, (i*this.branch_width)+0.5);
+          this.cr_background.line_to(this.zoomed_extent + this.branch_width,
+                                     (i*this.branch_width)+0.5);
         }
       }
-      cr.stroke();
-      cr.restore();
+      this.cr_background.stroke();
+      this.cr_background.restore();
 
       if (scaleunit != TimeUnit.WEEKS) {
-        cr.save();
+        this.cr_background.save();
         var pattern = new Cairo.Pattern.linear(0, 12, 0, 35);
         pattern.add_color_stop_rgba(0, 0xee/255.0, 0xee/255.0, 0xec/255.0, 1);
         pattern.add_color_stop_rgba(1, 0xee/255.0, 0xee/255.0, 0xec/255.0, 0);
-        cr.set_source (pattern);
-        cr.rectangle(0+(-1*this.offset)-(this.branch_width/2),0,this.graph_width, this.graph_height);
-        cr.fill();
-        cr.restore();
+        this.cr_background.set_source (pattern);
+        this.cr_background.rectangle(0+(-1*this.offset)-(this.branch_width/2),0,this.graph_width, this.graph_height);
+        this.cr_background.fill();
+        this.cr_background.restore();
       }
     }
 
@@ -1610,15 +1627,7 @@ namespace WizWidgets {
                                                   graph_width,
                                                   graph_height)
                       );
-/*
-      this.cr_nodes.set_operator(Cairo.Operator.CLEAR);
-      this.cr_nodes.paint();
-      this.cr_nodes.set_operator(Cairo.Operator.OVER);
 
-      this.cr_edges.set_operator(Cairo.Operator.CLEAR);
-      this.cr_edges.paint();
-      this.cr_edges.set_operator(Cairo.Operator.OVER);
-*/
       foreach (var node in this.nodes) {
         foreach (var edge in node.edges) {
           if (edge.child == node) {
@@ -1639,50 +1648,23 @@ namespace WizWidgets {
     private void create_surfaces() {
       this.cr = Gdk.cairo_create (this.window);
       var surface = this.cr.get_group_target();
-      int graph_width = 0;
-      int graph_height = 0;
       int controls_width = 0;
       int controls_height = 0;
       int scale_width = 0;
       int scale_height = 0;
 
       if (this.orientation_timeline == Constant.VERTICAL) {
-        graph_width     = this.graph_width;
-        graph_height    = (int)this.zoomed_extent + (int)(1.5*this.branch_width);
         controls_height = this.widget_height + 1 + this.handle_width;
         controls_width  = this.controls_height;
         scale_height    = this.widget_height + 1;
         scale_width     = this.scale_height;
       } else {
-        graph_width     = (int)this.zoomed_extent + (int)(1.5*this.branch_width);
-        graph_height    = this.graph_height;
         controls_height = this.controls_height;
         controls_width  = this.allocation.width + 1;
         scale_height    = this.scale_height;
         scale_width     = this.widget_width + 1;
       }
 
-      this.cr_background = new Cairo.Context(
-                             new Cairo.Surface.similar(surface,
-                                                       Cairo.Content.COLOR,
-                                                       graph_width,
-                                                       graph_height)
-                           );
-/*
-      this.cr_edges = new Cairo.Context(
-                        new Cairo.Surface.similar(surface,
-                                                  Cairo.Content.COLOR_ALPHA,
-                                                  graph_width,
-                                                  graph_height)
-                      );
-
-      this.cr_nodes = new Cairo.Context(
-                        new Cairo.Surface.similar(surface,
-                                                  Cairo.Content.COLOR_ALPHA,
-                                                  graph_width,
-                                                  graph_height)
-                      );
-*/
       this.cr_controls = new Cairo.Context(
                            new Cairo.Surface.similar(surface,
                                                      Cairo.Content.COLOR_ALPHA,
@@ -1710,29 +1692,27 @@ namespace WizWidgets {
       int sh = 0;
 
       if (this.orientation_timeline == Constant.VERTICAL) {
+        gy =  this.padding - (this.zoomed_extent - this.offset - this.graph_height); // TODO 8
         cx = (this.padding*2) + this.graph_width;
         sx = cx + this.controls_height + this.scale_padding;
         cw = this.controls_height;
         ch = this.allocation.height + 1;
         sw = this.scale_height;
         sh = this.widget_height + 1;
-        gy =  this.padding - (this.zoomed_extent - this.offset - this.graph_height);
       } else {
+        gx = this.padding - (this.zoomed_extent - this.offset - this.graph_width);
         cy = (this.padding*2) + this.graph_height;
         sy = cy + this.controls_height + this.scale_padding;
         cw = this.allocation.width + 1;
         ch = this.controls_height;
         sw = this.widget_width + 1;
         sh = this.scale_height;
-        gx = this.padding - (this.zoomed_extent - this.offset - this.graph_width);
-        gy = gy - 0.5;
       }
 
-/*
       this.cr.set_source_surface(this.cr_background.get_group_target(), gx, gy);
-      this.cr.rectangle(0, 0, this.graph_width, this.graph_height);
+      this.cr.rectangle(this.padding, this.padding, this.graph_width, this.graph_height);
       this.cr.fill();
-*/
+
       this.cr.set_source_surface(this.cr_edges.get_group_target(), gx, gy);
       this.cr.rectangle(this.padding, this.padding, this.graph_width, this.graph_height);
       this.cr.fill();
