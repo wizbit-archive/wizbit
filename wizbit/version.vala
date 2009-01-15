@@ -79,7 +79,7 @@ namespace Wiz {
 		}
 
 		void _open_blob() throws GLib.FileError {
-			if (this.file != null) {
+			if (this.file == null) {
 				this.blob = new Graph.Blob.from_uuid(this.bit.blobs, this.commit.blob);
 				this.file = this.blob.read();
 			}
