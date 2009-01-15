@@ -1698,6 +1698,8 @@ namespace WizWidgets {
     }
 
     private void composite() {
+      double gx = this.padding;
+      double gy = this.padding;
       double cx = 0;
       double cy = 0;
       int cw = 0;
@@ -1714,6 +1716,7 @@ namespace WizWidgets {
         ch = this.allocation.height + 1;
         sw = this.scale_height;
         sh = this.widget_height + 1;
+        gy =  this.padding - (this.zoomed_extent - this.offset - this.graph_height);
       } else {
         cy = (this.padding*2) + this.graph_height;
         sy = cy + this.controls_height + this.scale_padding;
@@ -1721,21 +1724,20 @@ namespace WizWidgets {
         ch = this.controls_height;
         sw = this.widget_width + 1;
         sh = this.scale_height;
+        gx = this.padding - (this.zoomed_extent - this.offset - this.graph_width);
+        gy = gy - 0.5;
       }
 
 /*
-      this.cr.set_source_surface(this.cr_background.get_group_target(),
-                                 this.padding + this.offset, this.padding);
+      this.cr.set_source_surface(this.cr_background.get_group_target(), gx, gy);
       this.cr.rectangle(0, 0, this.graph_width, this.graph_height);
       this.cr.fill();
 */
-      this.cr.set_source_surface(this.cr_edges.get_group_target(),
-                                 this.padding - (this.zoomed_extent - this.offset - this.graph_width), this.padding);
+      this.cr.set_source_surface(this.cr_edges.get_group_target(), gx, gy);
       this.cr.rectangle(this.padding, this.padding, this.graph_width, this.graph_height);
       this.cr.fill();
 
-      this.cr.set_source_surface(this.cr_nodes.get_group_target(),
-                                 this.padding - (this.zoomed_extent - this.offset - this.graph_width), this.padding);
+      this.cr.set_source_surface(this.cr_nodes.get_group_target(), gx, gy);
       this.cr.rectangle(this.padding, this.padding, this.graph_width, this.graph_height);
       this.cr.fill();
 
@@ -1752,9 +1754,6 @@ namespace WizWidgets {
       this.cr.set_source_surface(this.cr_scale.get_group_target(), sx, sy);
       this.cr.rectangle(sx, sy, sw, sh);
       this.cr.fill();
-      stdout.printf("Root px_position %d\n", this.root.px_position);
-      stdout.printf("PTip px_position %d\n", this.primary_tip.px_position);
-      stdout.printf("Offset %f\n", this.offset);
     }
   }
 }
