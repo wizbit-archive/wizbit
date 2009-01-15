@@ -782,7 +782,7 @@ namespace WizWidgets {
         r = node.timestamp - this.oldest_timestamp;
         position = (int)(((t - r) / t) * this.zoomed_extent);
         if (this.orientation_timeline == Constant.HORIZONTAL) {
-          position = (int)this.graph_width - position;
+          position = (int)this.zoomed_extent - position + (this.branch_width/2);
         }
         node.px_position = position;
       }
@@ -1730,12 +1730,12 @@ namespace WizWidgets {
       this.cr.fill();
 */
       this.cr.set_source_surface(this.cr_edges.get_group_target(),
-                                 this.padding + this.offset + (this.branch_width/2), this.padding);
+                                 this.padding - (this.zoomed_extent - this.offset - this.graph_width), this.padding);
       this.cr.rectangle(this.padding, this.padding, this.graph_width, this.graph_height);
       this.cr.fill();
 
       this.cr.set_source_surface(this.cr_nodes.get_group_target(),
-                                 this.padding + this.offset + (this.branch_width/2), this.padding);
+                                 this.padding - (this.zoomed_extent - this.offset - this.graph_width), this.padding);
       this.cr.rectangle(this.padding, this.padding, this.graph_width, this.graph_height);
       this.cr.fill();
 
@@ -1752,6 +1752,9 @@ namespace WizWidgets {
       this.cr.set_source_surface(this.cr_scale.get_group_target(), sx, sy);
       this.cr.rectangle(sx, sy, sw, sh);
       this.cr.fill();
+      stdout.printf("Root px_position %d\n", this.root.px_position);
+      stdout.printf("PTip px_position %d\n", this.primary_tip.px_position);
+      stdout.printf("Offset %f\n", this.offset);
     }
   }
 }
