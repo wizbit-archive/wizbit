@@ -149,11 +149,6 @@ namespace WizWidgets {
         }
       }
       cr.line_to(cx, cy);
-      // TODO 3, 12
-      cr.set_source_rgb(child.branch.stroke_r,
-                        child.branch.stroke_g,
-                        child.branch.stroke_b);
-      cr.stroke();
     }
   }
 
@@ -423,7 +418,6 @@ namespace WizWidgets {
     private double pan_offset;
 
     // Drawing information
-    // TODO 3
     private Cairo.Context cr;             // The widget cairo context
     private Cairo.Context cr_background;  // Render on zoom/resize
     private Cairo.Context cr_edges;       // Render on zoom/resize
@@ -737,7 +731,6 @@ namespace WizWidgets {
           } else if (branch.oldest < branch_match.oldest) {
             branch.position = branch_match.position + 1;
           } else if (branch.oldest > branch_match.oldest) {
-            // TODO 9 I think this now works... not sure without a much more complex graph...
             if (branch.position > 0) {
               if ((branch_match.position + branch.position) > branch_match.position) {
                 branch.position = branch.position * -1;
@@ -749,7 +742,6 @@ namespace WizWidgets {
             }
           } else {
             // This should never ever happen
-            stdout.printf("Branch position wasn't hugged\n");
             branch.position = branch_match.position * -1;
           }
         }
@@ -1304,7 +1296,6 @@ namespace WizWidgets {
       return ret;
     }
 
-    // TODO 3
     public override bool expose_event (Gdk.EventExpose event) {
       this.cr = Gdk.cairo_create (this.window);
       if ((this.do_render & (int)Render.CONTROLS) == (int)Render.CONTROLS) {
