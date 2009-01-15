@@ -1684,8 +1684,8 @@ namespace WizWidgets {
     }
 
     private void composite() {
-      double gx = this.padding;
-      double gy = this.padding;
+      int gx = this.padding;
+      int gy = this.padding;
       double cx = 0;
       double cy = 0;
       int cw = 0;
@@ -1696,7 +1696,7 @@ namespace WizWidgets {
       int sh = 0;
 
       if (this.orientation_timeline == Constant.VERTICAL) {
-        gy =  this.padding - (this.zoomed_extent - this.offset - this.graph_height); // TODO 8
+        gy =  this.padding - (int)(this.zoomed_extent - this.offset - this.graph_height); // TODO 8
         cx = (this.padding*2) + this.graph_width;
         sx = cx + this.controls_height + this.scale_padding;
         cw = this.controls_height;
@@ -1704,7 +1704,7 @@ namespace WizWidgets {
         sw = this.scale_height;
         sh = this.widget_height + 1;
       } else {
-        gx = this.padding - (this.zoomed_extent - this.offset - this.graph_width);
+        gx = this.padding - (int)(this.zoomed_extent - this.offset - this.graph_width);
         cy = (this.padding*2) + this.graph_height;
         sy = cy + this.controls_height + this.scale_padding;
         cw = this.allocation.width + 1;
