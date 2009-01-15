@@ -16,16 +16,10 @@ namespace Graph {
 		   It hides whether or not we are dealing with loose or packed objects
 		*/
 
-		private GLib.Vfs vfs;
-
 		public string directory { get; construct; }
 
 		public Store(string directory) {
 			this.directory = directory;
-		}
-
-		construct {
-			this.vfs = new GLib.Vfs();
 		}
 
 		private string get_path_for_uuid(string uuid) {
