@@ -1043,7 +1043,6 @@ namespace WizWidgets {
         this.start_timestamp = this.end_timestamp - diff;
         ret = false;
       }
-      //this.update_node_positions(); // TODO 3 Won't be needed in future :)
       this.calculate_zoom();
       this.do_render = this.do_render | (int)Render.CONTROLS;
       this.queue_draw();
@@ -1066,7 +1065,8 @@ namespace WizWidgets {
         this.end_timestamp = this.newest_timestamp;
         this.start_timestamp = this.end_timestamp - (diff * 2);
       }
-      this.update_node_positions();
+      this.calculate_zoom();
+      this.do_render = this.do_render | (int)Render.CONTROLS;
       this.queue_draw();
       return true;
     }
@@ -1341,15 +1341,20 @@ namespace WizWidgets {
                                                        graph_width,
                                                        graph_height)
                            );
-
+      Cairo.Context cr_tmp = new Cairo.Context(
+                               new Cairo.Surface.similar(this.cr.get_group_target(),
+                                                         Cairo.Content.COLOR_ALPHA,
+                                                         graph_width,
+                                                         graph_height)
+                             );
       this.cr_background.set_source_rgb(0xee/255.0, 0xee/255.0, 0xec/255.0);
       this.cr_background.paint();
       TimeUnit scaleunit = this.get_scale_unit(this.start_timestamp,
                                                this.end_timestamp);
       double t = this.newest_timestamp - this.oldest_timestamp;
       double r = this.end_timestamp - this.start_timestamp;
-      int timestamp = get_highest_scale_timestamp(this.start_timestamp, scaleunit);
-      int end_timestamp = get_highest_scale_timestamp(this.end_timestamp, scaleunit);
+      int timestamp = get_highest_scale_timestamp(this.oldest_timestamp, scaleunit);
+      int end_timestamp = get_highest_scale_timestamp(this.newest_timestamp, scaleunit);
       end_timestamp = get_next_scale_timestamp(end_timestamp, scaleunit);
       int px_pos, px_width = 0;
       double [] dash = new double[2];
@@ -1409,18 +1414,15 @@ namespace WizWidgets {
           this.cr_background.line_to(px_pos+0.5, this.graph_height);
           this.cr_background.stroke();
           this.cr_background.restore();
-/*
+
           if (unit != null) {
             layout = this.create_pango_layout (unit);
             layout.get_pixel_size (out fontw, out fonth);
-            this.cr_background.save();
-            this.cr_background.move_to (px_pos + px_width - (fontw/2), 0);
-            this.cr_background.set_source_rgba(0,0,0,0.4);
-            Pango.cairo_update_layout (this.cr_background, layout);
-            Pango.cairo_show_layout (this.cr_background, layout);
-            this.cr_background.restore();
+            cr_tmp.move_to (px_pos + px_width - (fontw/2), 0);
+            cr_tmp.set_source_rgba(0,0,0,0.4);
+            Pango.cairo_update_layout (cr_tmp, layout);
+            Pango.cairo_show_layout (cr_tmp, layout);
           }
-*/
         }
         timestamp = get_next_scale_timestamp(timestamp, scaleunit);
       }
@@ -1446,10 +1448,12 @@ namespace WizWidgets {
         pattern.add_color_stop_rgba(0, 0xee/255.0, 0xee/255.0, 0xec/255.0, 1);
         pattern.add_color_stop_rgba(1, 0xee/255.0, 0xee/255.0, 0xec/255.0, 0);
         this.cr_background.set_source (pattern);
-        this.cr_background.rectangle(0+(-1*this.offset)-(this.branch_width/2),0,this.graph_width, this.graph_height);
+        this.cr_background.rectangle(0,0,this.zoomed_extent + this.branch_width, this.graph_height); // TODO 8
         this.cr_background.fill();
         this.cr_background.restore();
       }
+      this.cr_background.set_source_surface(cr_tmp.get_group_target(), 0, 0);
+      this.cr_background.paint();
     }
 
     // TODO 3
