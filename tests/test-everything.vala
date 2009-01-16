@@ -24,13 +24,13 @@ public void test_wiz_bit_1() {
 	assert( v2 != null );
 	assert( v2.committer != null );
 	assert( v2.parents.length() == 1 );
-	assert( v2.read_as_string() == "BARFOO" );
+	assert( Memory.cmp(v2.read_as_string(), "BARFOO", 6) == 0 );
 
 	v1 = v2.parents.nth_data(0);
 	assert( v1 != null );
 	assert( v1.committer != null);
 	assert( v1.parents.length() == 0 );
-	assert( v1.read_as_string() == "FOOBAR" );
+	assert( Memory.cmp(v1.read_as_string(), "FOOBAR", 6) == 0 );
 }
 
 public void test_wiz_refs_1() {
