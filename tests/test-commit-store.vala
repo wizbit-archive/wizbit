@@ -12,7 +12,7 @@ RarCommit create_dummy_commits(CommitStore store, uint no_commits, RarCommit ?gr
 		nw.blob = "abc123";
 
 		nw.timestamp = (int) time_t();
-		var t = new TimeVal();
+		var t = TimeVal();
 		t.get_current_time();
 		nw.timestamp2 = (int) t.tv_usec;
 
