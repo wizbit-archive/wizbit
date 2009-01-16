@@ -226,20 +226,18 @@ namespace WizWidgets {
 
     // FIXME padding and offset should be implicit... x and y should maybe be
     // branch_px and node_px for simplicity sake
-    public bool at_coords(int x, int y, Constant orientation, int offset, int padding) {
+    public bool at_coords(int x, int y, Constant orientation) {
       double o = 0, a = 0;
       int nx, ny;
       if (orientation == Constant.VERTICAL) {
         nx = this.branch.px_position;
         ny = this.px_position;
-        o = (nx - x) + padding;
-        a = (ny - y) - offset;
       } else {
         ny = this.branch.px_position;
         nx = this.px_position;
-        o = (nx - x) + offset + 8;
-        a = (ny - y) + padding;
       }
+      o = (nx - x);
+      a = (ny - y);
       if (o < 0) { o = o * -1; }
       if (a < 0) { a = a * -1; }
       double h = Math.sqrt((o*o)+(a*a));
@@ -1211,6 +1209,7 @@ namespace WizWidgets {
       this.mouse_down = false;
       this.mouse_release_x = (int)event.x;
       this.mouse_release_y = (int)event.y;
+      int nx, ny;
       if (this.grab_handle > (int)Handle.KINETIC) {
         // TODO 8 - update controls should pick point by orientation
         this.update_controls(this.mouse_release_x);
@@ -1224,10 +1223,16 @@ namespace WizWidgets {
       } else {
         Node last = this.selected;
         this.selected = null;
+        // TODO 8
+        if (this.orientation_timeline == Constant.VERTICAL) {
+          nx = this.mouse_release_x + (int)(this.zoomed_extent - this.offset - this.graph_width) - this.padding;
+          ny = this.mouse_release_y - this.padding;
+        } else {
+          nx = this.mouse_release_x + (int)(this.zoomed_extent - this.offset - this.graph_width) - this.padding;
+          ny = this.mouse_release_y - this.padding;
+        }
         foreach (var node in this.nodes) {
-          if (node.at_coords(this.mouse_release_x, this.mouse_release_y,
-                             this.orientation_timeline,
-                             (int)(this.offset+(this.branch_width/2)),this.padding)) {
+          if (node.at_coords(nx, ny, this.orientation_timeline)) {
             if (node != last) {
               this.selected = node;
               this.selected.selected = true;
@@ -1237,7 +1242,7 @@ namespace WizWidgets {
             break;
           }
         }
-        if (this.selected.globbed) {
+        if ((this.selected != null) && this.selected.globbed) {
           this.selected.selected = false;
           this.selected = this.selected.globbed_by;
           this.selected.selected = true;
