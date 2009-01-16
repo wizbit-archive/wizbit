@@ -108,10 +108,10 @@ public class Test.Widget : GLib.Object {
 	  timeline = new WizWidgets.Timeline (store, bit.uuid);
     timeline.selection_changed += selection_changed;
 
-    var vbox = new Gtk.VBox(false, 8);
+    var vbox = new Gtk.VBox(false, 0);
     label = new Gtk.Label("Label shows version contents please select a bit");
-    vbox.add(label);
-    vbox.add(timeline);
+    vbox.pack_start(label, false, true, 8);
+    vbox.pack_start(timeline, true, true, 0);
 	  win.add (vbox);
 
 	  win.show_all ();
