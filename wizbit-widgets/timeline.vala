@@ -896,7 +896,7 @@ namespace WizWidgets {
     private int timestamp_to_scale_pos(int timestamp) {
       var range = this.newest_timestamp - this.oldest_timestamp;
       double pos = (double)(timestamp - this.oldest_timestamp) / (double)range;
-      return (int)Math.ceil((pos * (double)this.widget_width) + this.padding + 0.5);
+      return (int)Math.ceil((pos * (double)this.widget_width) + 0.5);
     }
 
     // TODO 8
@@ -1158,8 +1158,8 @@ namespace WizWidgets {
       this.mouse_last_x = (int)event.x;
       this.mouse_last_y = (int)event.y;
       // These numbers are based on the size of the handles?!
-      var st = this.timestamp_to_scale_pos(this.start_timestamp) - 5;
-      var et = this.timestamp_to_scale_pos(this.end_timestamp) + 5;
+      var st = this.timestamp_to_scale_pos(this.start_timestamp) - 5 + this.padding;
+      var et = this.timestamp_to_scale_pos(this.end_timestamp) + 5 + this.padding;
       var sv = this.widget_height - this.scale_height - this.scale_padding - this.controls_height + this.padding;
       var ev = this.widget_height - this.scale_height - this.scale_padding + this.padding;
       this.velocity = 0;
@@ -1368,7 +1368,7 @@ namespace WizWidgets {
           this.cr_background.line_to((this.graph_width/2) + 8.5, px_pos + 0.5);
           this.cr_background.stroke();
         } else {
-          px_pos = (int)this.zoomed_extent - px_pos;
+          px_pos = (int)this.zoomed_extent - px_pos + (this.branch_width/2);
           Time tm = Time.gm((time_t) timestamp);
 
           if (scaleunit == TimeUnit.MINUTES) {
@@ -1520,7 +1520,7 @@ namespace WizWidgets {
     private void render_controls_handle(int timestamp) {
       double hhw = (double)this.handle_width / 2.0;
 
-      var hpos = this.timestamp_to_scale_pos(timestamp);
+      var hpos = this.timestamp_to_scale_pos(timestamp) + this.padding;
       // Handle outline
       this.cr_controls.move_to(hpos - hhw, 0.5);
       this.cr_controls.line_to(hpos - hhw, (double)this.controls_height - 5.5);
@@ -1563,11 +1563,11 @@ namespace WizWidgets {
       this.cr_controls.set_source_rgb(0x55/255.0, 0x57/255.0, 0x53/255.0);
       this.cr_controls.stroke();
 
-      int start_pos = this.timestamp_to_scale_pos(this.start_timestamp);
-      int end_pos = this.timestamp_to_scale_pos(this.end_timestamp);
+      int start_pos = this.timestamp_to_scale_pos(this.start_timestamp) + this.padding;
+      int end_pos = this.timestamp_to_scale_pos(this.end_timestamp) + this.padding;
       double center = (this.end_timestamp - this.start_timestamp)/2;
       center = center + this.start_timestamp;
-      center = (double)this.timestamp_to_scale_pos((int)center) - 3.5;
+      center = (double)this.timestamp_to_scale_pos((int)center) - 3.5 + this.padding;
 
       this.cr_controls.rectangle (start_pos + 4.5, 0.5, end_pos - start_pos - 9, (double)this.controls_height - 6);
       pattern = new Cairo.Pattern.linear(0, 0.5, 0, (double)this.controls_height - 6);
