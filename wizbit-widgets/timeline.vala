@@ -571,7 +571,6 @@ namespace WizWidgets {
                                     (int)Render.GRAPH |
                                     (int)Render.SCALE |
                                     (int)Render.BACKGROUND;
-      stdout.printf("render...%d\n", this.do_render);
       this.orientation_timeline   = Constant.HORIZONTAL;
       this.orientation_controls   = Constant.HORIZONTAL;
       
@@ -1201,7 +1200,6 @@ namespace WizWidgets {
       } else {
         this.grab_handle = Handle.NONE;
       }
-      stdout.printf("Grab %d\n", this.grab_handle);
       return true;
     }
 
@@ -1233,27 +1231,25 @@ namespace WizWidgets {
         }
         foreach (var node in this.nodes) {
           if (node.at_coords(nx, ny, this.orientation_timeline)) {
-            if (node != last) {
-              this.selected = node;
-              this.selected.selected = true;
-            } else {
-              this.selected = node;
-            }
+            this.selected = node;
             break;
           }
         }
-        if ((this.selected != null) && this.selected.globbed) {
-          this.selected.selected = false;
-          this.selected = this.selected.globbed_by;
-          this.selected.selected = true;
-        }
-        if (this.selected != last) {
-          last.selected = false;
-          this.selection_changed();
-          if (this.selected != null) {
+        if (this.selected != null) {
+          if (this.selected.globbed) {
+            this.selected = this.selected.globbed_by;
+          }
+          if (this.selected != last) {
+            last.selected = false;
+            this.selection_changed();
+            this.selected.selected = true;
+            this.do_render = this.do_render | (int)Render.GRAPH; 
             this.scroll_to_timestamp(this.selected.timestamp);
           }
           this.queue_draw();
+        } else if (last != null) {
+          last.selected = false;
+          this.selection_changed();
         }
       }
       this.grab_handle = Handle.NONE;
@@ -1291,7 +1287,6 @@ namespace WizWidgets {
             TimeVal t = TimeVal();
             t.get_current_time();
             this.kinetic_start_timestamp = ((double)t.tv_usec/1000000)+t.tv_sec;
-            stdout.printf("Direction change %d\n", this.mouse_direction);
           }
           ret = true;
         }
