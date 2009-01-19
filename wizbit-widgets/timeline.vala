@@ -472,11 +472,12 @@ namespace WizWidgets {
     // Pixel width of an individual branch
     private int branch_width {
       get {
+        int rows;
         if (this.orientation_timeline == Constant.VERTICAL) {
-          int rows = this.highest_branch_position - this.lowest_branch_position + 1;
+          rows = this.highest_branch_position - this.lowest_branch_position + 1;
           return this.graph_width / rows;
         } else {
-          int rows = this.highest_branch_position - this.lowest_branch_position + 1;
+          rows = this.highest_branch_position - this.lowest_branch_position + 1;
           return this.graph_height / rows;
         }
       }
@@ -729,13 +730,9 @@ namespace WizWidgets {
             branch.position = branch_match.position + 1;
           } else if (branch.oldest > branch_match.oldest) {
             if (branch.position > 0) {
-              if ((branch_match.position + branch.position) > branch_match.position) {
-                branch.position = branch.position * -1;
-              }
-            } else if (branch_match.position < 0) {
-              if ((branch_match.position + branch.position) < branch_match.position) {
-                branch.position = branch.position * -1;
-              }
+              branch.position = branch.position * -1;
+            } else if ((branch.position < 0) && (branch_match.position < 0)) {
+              branch.position = branch.position * -1;
             }
           } else {
             // This should never ever happen
