@@ -16,7 +16,7 @@
  * 4_  Rename a bunch of things which are horribly named!
  * 5x  Node click zones calculations
  * 6x  Setting the selected node will scroll it to center
- * 7x  Work out the node globbing (nodes close to each other combind and size increases)
+ * 7x  Work out the node blobbing (nodes close to each other combind and size increases)
  * 8x  work out the horizontal/vertical positioning stuff
  * 9x  Fix hugging bug for negative columns
  * 10. Animations while timeline view changes, don't let zooming/panning
@@ -157,10 +157,10 @@ namespace WizWidgets {
    * its position and size within the widget.
    */
   private class Node : GLib.Object {
-    public List<Node> globbed_nodes;
-    public Node globbed_by;
+    public List<Node> blobbed_nodes;
+    public Node blobbed_by;
     public weak List<Edge> edges { get; construct; } // Might not be best to make this weak
-    public bool globbed { get; set; }
+    public bool blobbed { get; set; }
     public bool visible { get; set; }
     public bool selected { get; set; }
     public string uuid;
@@ -207,7 +207,7 @@ namespace WizWidgets {
       this.edges = new List<Edge>();
       this.node_type = NodeType.NORMAL;
       this.selected = false;
-      this.globbed = false;
+      this.blobbed = false;
       this.size;
     }
 
@@ -374,10 +374,10 @@ namespace WizWidgets {
     private int lowest_branch_position    = 0;
     private int highest_branch_position   = 0;
 
-    // Node globbing
+    // Node blobbing
     private double node_min_size;
     private double node_max_size;
-    private double node_glob_size;
+    private double node_blob_size;
 
     // Scale ranges
     private int oldest_timestamp;
@@ -531,8 +531,8 @@ namespace WizWidgets {
         this.selected = null;
         foreach (var node in this.nodes) {
           if (node.uuid == value) {
-            if (node.globbed) {
-              this.selected = node.globbed_by;
+            if (node.blobbed) {
+              this.selected = node.blobbed_by;
             } else {
               this.selected = node;
               break;
@@ -762,7 +762,7 @@ namespace WizWidgets {
       double odist, adist, angle;
       double t = this.newest_timestamp - this.oldest_timestamp;
       double r;
-      int max_globbed = 0;
+      int max_blobbed = 0;
       this.calculate_zoom();
       foreach (var node in this.nodes) {
         r = node.timestamp - this.oldest_timestamp;
@@ -783,25 +783,25 @@ namespace WizWidgets {
           if (edge.parent.branch.px_position == node.branch.px_position) {
             // distance between nodes..
             int node_dist = node.px_position - edge.parent.px_position;
-            node.globbed_nodes = new List<Node>();
+            node.blobbed_nodes = new List<Node>();
             if ((node_dist < ((int)this.node_min_size - 1)) && 
                 (edge.parent.node_type != NodeType.ROOT)) {
               // TODO 7 This should only be set if the node only has one child
-              edge.parent.globbed = true;
-              edge.parent.globbed_by = node;
-              node.globbed_nodes.append(edge.parent);
-              foreach (var globbed_node in edge.parent.globbed_nodes) {
-                globbed_node.globbed = true;
-                globbed_node.globbed_by = node;
-                node.globbed_nodes.append(globbed_node);
+              edge.parent.blobbed = true;
+              edge.parent.blobbed_by = node;
+              node.blobbed_nodes.append(edge.parent);
+              foreach (var blobbed_node in edge.parent.blobbed_nodes) {
+                blobbed_node.blobbed = true;
+                blobbed_node.blobbed_by = node;
+                node.blobbed_nodes.append(blobbed_node);
               }
-              edge.parent.globbed_nodes = new List<Node>();
-              if (node.globbed_nodes.length() > max_globbed) {
-                max_globbed = (int)node.globbed_nodes.length();
+              edge.parent.blobbed_nodes = new List<Node>();
+              if (node.blobbed_nodes.length() > max_blobbed) {
+                max_blobbed = (int)node.blobbed_nodes.length();
               }
             } else {
-              edge.parent.globbed = false;
-              edge.parent.globbed_by = null;
+              edge.parent.blobbed = false;
+              edge.parent.blobbed_by = null;
             }
             continue;
           }
@@ -815,8 +815,8 @@ namespace WizWidgets {
           if (angle < this.edge_angle_max) { this.edge_angle_max = angle; }
         }
       }
-      if (max_globbed > 0) {
-        this.node_glob_size = (this.node_max_size - this.node_min_size) / max_globbed;
+      if (max_blobbed > 0) {
+        this.node_blob_size = (this.node_max_size - this.node_min_size) / max_blobbed;
       }
       this.do_render = this.do_render | (int)Render.GRAPH; 
     }
@@ -1234,8 +1234,8 @@ namespace WizWidgets {
           }
         }
         if (this.selected != null) {
-          if (this.selected.globbed) {
-            this.selected = this.selected.globbed_by;
+          if (this.selected.blobbed) {
+            this.selected = this.selected.blobbed_by;
           }
           if (this.selected != last) {
             last.selected = false;
@@ -1627,8 +1627,8 @@ namespace WizWidgets {
             edge.render(this.cr_edges, this.edge_angle_max, this.orientation_timeline);
           }
         }
-        if (!node.globbed) {
-          node.size = (node.globbed_nodes.length() * this.node_glob_size) + this.node_min_size;
+        if (!node.blobbed) {
+          node.size = (node.blobbed_nodes.length() * this.node_blob_size) + this.node_min_size;
           node.render(this.cr_nodes, this.orientation_timeline);
         }
       }
