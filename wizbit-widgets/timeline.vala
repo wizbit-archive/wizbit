@@ -261,18 +261,82 @@ namespace WizWidgets {
       return false;
     }
 
-    private void render_tip() {
+    private void render_tip(int x, int y) {
+      if (this.orientation == Constant.VERTICAL) {
+        this.cr.move_to(x+this.size,y);
+        this.cr.line_to(x,y+this.size);
+        this.cr.line_to(x-this.size,y);
+        this.cr.line_to(x-this.size, y-this.size);
+        this.cr.line_to(x+this.size, y-this.size);
+        this.cr.line_to(x+this.size,y);
+      } else {
+        this.cr.move_to(x,y-this.size);
+        this.cr.line_to(x-this.size,y);
+        this.cr.line_to(x,y+this.size);
+        this.cr.line_to(x+this.size, y+this.size);
+        this.cr.line_to(x+this.size, y-this.size);
+        this.cr.line_to(x,y-this.size);
+      }
+
+      if (this.node_type == NodeType.PRIMARY_TIP) {
+        this.cr.set_source_rgb(0x34/255.0,0x65/255.0,0xa4/255.0);
+        this.cr.fill_preserve();
+        this.cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
+        this.cr.stroke();
+      } else {
+        this.cr.set_source_rgb(0xed/255.0,0xd4/255.0,0x00/255.0);
+        this.cr.fill_preserve();
+        this.cr.set_source_rgb(0xc4/255.0,0xa0/255.0,0x00/255.0);
+        this.cr.stroke();
+      }
     }
-    private void render_node() {
+
+    private void render_node(int x, int y) {
+      this.cr.arc(x, y, this.size, 0, 2.0 * Math.PI);
+      this.cr.set_source_rgb(this.branch.fill_r,
+                             this.branch.fill_g,
+                             this.branch.fill_b);
+      this.cr.fill_preserve();
+      this.cr.set_source_rgb(this.branch.stroke_r,
+                             this.branch.stroke_g,
+                             this.branch.stroke_b);
+      this.cr.stroke();
+      if (this.selected) {
+        this.cr.arc(x, y, this.size, 0, 2.0 * Math.PI);
+        this.cr.set_source_rgba(1,1,1,0.2);
+        this.cr.fill_preserve();
+        this.cr.set_source_rgba(1,1,1,0.4);
+        this.cr.stroke();
+      }
     }
-    private void render_root() {
+
+    private void render_root(int x, int y) {
+      if (this.orientation == Constant.VERTICAL) {
+        this.cr.move_to(x+this.size,y);
+        this.cr.arc(x, y, this.size, 0, Math.PI);
+        this.cr.move_to(x+this.size,y);
+        this.cr.line_to(x,y-this.size);
+        this.cr.line_to(x-this.size,y);
+      } else {
+        this.cr.move_to(x,y+this.size);
+        this.cr.line_to(x+this.size,y);
+        this.cr.line_to(x,y-this.size);
+        this.cr.arc_negative(x, y, this.size, Math.PI+(Math.PI/2), Math.PI/2);
+      }
+      this.cr.set_source_rgb(this.branch.fill_r,
+                             this.branch.fill_g,
+                             this.branch.fill_b);
+      this.cr.fill_preserve();
+      this.cr.set_source_rgb(this.branch.stroke_r,
+                             this.branch.stroke_g,
+                             this.branch.stroke_b);
+      this.cr.stroke();
     }
 
     public void render(Cairo.Context cr, Constant orientation) {
+      int x, y;
       this.orientation = orientation;
       this.cr = cr;
-
-      int x, y;
       if (orientation == Constant.VERTICAL) {
         x = this.branch.px_position;
         y = this.px_position;
@@ -281,78 +345,12 @@ namespace WizWidgets {
         x = this.px_position;
       }
 
-      if (this.node_type == NodeType.PRIMARY_TIP) {
-        if (orientation == Constant.VERTICAL) {
-          cr.arc_negative(x, y, this.size, 0, Math.PI);
-          cr.move_to(x+this.size,y);
-          cr.line_to(x,y+this.size);
-          cr.line_to(x-this.size,y);
-        } else {
-          cr.arc_negative(x, y, this.size, Math.PI/2, Math.PI+(Math.PI/2));
-          cr.move_to(x,y-this.size);
-          cr.line_to(x-this.size,y);
-          cr.line_to(x,y+this.size);
-        }
-        cr.set_source_rgb(0x34/255.0,0x65/255.0,0xa4/255.0);
-        cr.fill_preserve();
-        cr.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
-        cr.stroke();
-      } else if (this.node_type == NodeType.TIP) {
-        if (orientation == Constant.VERTICAL) {
-          cr.arc_negative(x, y, this.size, 0, Math.PI);
-          cr.move_to(x+this.size,y);
-          cr.line_to(x,y+this.size);
-          cr.line_to(x-this.size,y);
-        } else {
-          cr.arc_negative(x, y, this.size, Math.PI/2, Math.PI+(Math.PI/2));
-          cr.move_to(x,y-this.size);
-          cr.line_to(x-this.size,y);
-          cr.line_to(x,y+this.size);
-        }
-        cr.set_source_rgb(0x73/255.0,0xd2/255.0,0x16/255.0);
-        cr.fill_preserve();
-        cr.set_source_rgb(0x4e/255.0,0x9a/255.0,0x06/255.0);
-        cr.stroke();
-      } else if (this.node_type == NodeType.ROOT) {
-        if (orientation == Constant.VERTICAL) {
-          cr.move_to(x+this.size,y);
-          cr.arc(x, y, this.size, 0, Math.PI);
-          cr.move_to(x+this.size,y);
-          cr.line_to(x,y-this.size);
-          cr.line_to(x-this.size,y);
-        } else {
-          cr.move_to(x,y+this.size);
-          cr.line_to(x+this.size,y);
-          cr.line_to(x,y-this.size);
-          cr.arc_negative(x, y, this.size, Math.PI+(Math.PI/2), Math.PI/2);
-        }
-
-        cr.set_source_rgb(this.branch.fill_r,
-                          this.branch.fill_g,
-                          this.branch.fill_b);
-        cr.fill_preserve();
-        cr.set_source_rgb(this.branch.stroke_r,
-                          this.branch.stroke_g,
-                          this.branch.stroke_b);
-        cr.stroke();
+      if (this.node_type == NodeType.ROOT) {
+        this.render_root(x, y);
+      } else if (this.node_type > (int)NodeType.ROOT) {
+        this.render_tip(x, y);
       } else {
-        cr.arc(x, y, this.size, 0, 2.0 * Math.PI);
-        cr.set_source_rgb(this.branch.fill_r,
-                          this.branch.fill_g,
-                          this.branch.fill_b);
-        cr.fill_preserve();
-        cr.set_source_rgb(this.branch.stroke_r,
-                          this.branch.stroke_g,
-                          this.branch.stroke_b);
-        cr.stroke();
-      }
-
-      if (this.selected) {
-        cr.arc(x, y, this.size, 0, 2.0 * Math.PI);
-        cr.set_source_rgba(1,1,1,0.2);
-        cr.fill_preserve();
-        cr.set_source_rgba(1,1,1,0.4);
-        cr.stroke();
+        this.render_node(x, y);
       }
     }
   }
