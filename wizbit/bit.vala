@@ -112,7 +112,8 @@ namespace Wiz {
 			commit.blob = blob.uuid;
 			if (parent != null)
 				commit.parents.append( parent.version_uuid );
-			// TODO Should get the committer from the env, or contacts :D
+			// TODO
+      // Committer should be retrieved from (getpwnam)->pw_gecos
 			commit.committer = "John Carr <john.carr@unrouted.co.uk>";
 			commit.timestamp = timestamp;
 
