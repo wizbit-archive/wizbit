@@ -10,7 +10,7 @@ INCLUDES= \
 BUILT_SOURCES = libwizbit.vala.stamp
 
 libwizbit_la_VALASOURCES = \
-	graph.vala \
+	blob_store.vala \
 	commit_store.vala \
 	store.vala \
 	bit.vala \
