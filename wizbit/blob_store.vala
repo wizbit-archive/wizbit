@@ -7,7 +7,8 @@ namespace Wiz {
 		public string directory { get; construct; }
 
 		public BlobStore(string directory) {
-			DirUtils.create_with_parents(directory, 0755);
+			if (!FileUtils.test(directory, FileTest.IS_DIR))
+				DirUtils.create_with_parents(directory, 0755);
 			this.directory = directory;
 		}
 

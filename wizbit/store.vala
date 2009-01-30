@@ -7,7 +7,6 @@ namespace Wiz {
 
 		private BlobStore store;
 
-		string object_dir;
 		string refs_dir;
 
 		public Store(string uuid, string? directory = null) {
@@ -22,15 +21,12 @@ namespace Wiz {
 			if (this.directory == null) {
 				this.directory = Path.build_filename(Environment.get_home_dir(), ".wizbit/%s".printf(this.uuid));
 			}
-			this.object_dir = Path.build_filename(this.directory, "objects");
-			this.refs_dir = Path.build_filename(this.directory, "refs");
 
+			this.refs_dir = Path.build_filename(this.directory, "refs");
 			if (!FileUtils.test(this.refs_dir, FileTest.IS_DIR))
 				DirUtils.create_with_parents(this.refs_dir, 0755);
-			if (!FileUtils.test(this.object_dir, FileTest.IS_DIR))
-				DirUtils.create_with_parents(this.object_dir, 0755);
 
-			this.store = new BlobStore(this.object_dir);
+			this.store = new BlobStore(Path.build_filename(this.directory, "objects"));
 		}
 
 		public bool has_bit(string uuid) {
