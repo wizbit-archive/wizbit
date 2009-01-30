@@ -1,14 +1,5 @@
 using GLib;
 
-/* FIXME:
- *
- * In order to get things moving as quickly as possible i am just vommiting code. As such there are
- * at *least* the following inconsistencies:
- *
- * 1. This list of fixmes is out of date.
- *
- */
-
 namespace Graph {
 
 	public class Store : GLib.Object {
