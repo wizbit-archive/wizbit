@@ -2,10 +2,19 @@ using GLib;
 
 namespace Wiz {
 
+	/**
+	 * Represents a collection of raw objects
+	 */
 	public class BlobStore : GLib.Object {
 
 		public string directory { get; construct; }
 
+		/**
+		 * Creates a new BlobStore object
+		 *
+		 * @param      directory to store blobs in
+		 * @returns    a new BlobStore object
+		 */
 		public BlobStore(string directory) {
 			if (!FileUtils.test(directory, FileTest.IS_DIR))
 				DirUtils.create_with_parents(directory, 0755);
@@ -18,6 +27,12 @@ namespace Wiz {
 			return Path.build_filename(folder, uuid.substring(2,38));
 		}
 
+		/**
+		 * Does an object with a given unique identifier exist in this store
+		 *
+		 * @param uuid    unique identfier
+		 * @returns       true if object is store, false otherwise
+		 */
 		public bool exists(string uuid) {
 			return FileUtils.test(this.get_path_for_uuid(uuid), FileTest.EXISTS);
 		}
@@ -39,6 +54,10 @@ namespace Wiz {
 		}
 	}
 
+
+	/**
+	 * Represents a single raw object
+	 */
 	public class Blob : GLib.Object {
 		public bool parsed { get; set; }
 		public BlobStore store { get; construct; }
