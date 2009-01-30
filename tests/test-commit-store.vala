@@ -1,6 +1,5 @@
 using GLib;
 using Wiz;
-using Graph;
 
 RarCommit create_dummy_commits(CommitStore store, uint no_commits, RarCommit ?graft_point = null) {
 	RarCommit cur = graft_point;

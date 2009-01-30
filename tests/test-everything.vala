@@ -1,6 +1,5 @@
 using GLib;
 using Wiz;
-using Graph;
 
 public void test_wiz_store() {
 	var store = new Wiz.Store("repo_uuid", "data/wiz_store");
@@ -50,9 +49,9 @@ public void test_wiz_refs_2() {
 }
 
 public void test_graph() {
-	var store = new Graph.Store("data/graph");
+	var store = new BlobStore("data/graph");
 
-	var blob = new Graph.Blob(store);
+	var blob = new Blob(store);
 	blob.set_contents_from_file("data/blob-data");
 	blob.write();
 

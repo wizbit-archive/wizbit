@@ -5,7 +5,7 @@ namespace Wiz {
 		public string uuid { get; construct; }
 		public string directory { get; construct; }
 
-		private Graph.Store store;
+		private BlobStore store;
 
 		string object_dir;
 		string refs_dir;
@@ -30,7 +30,7 @@ namespace Wiz {
 			if (!FileUtils.test(this.object_dir, FileTest.IS_DIR))
 				DirUtils.create_with_parents(this.object_dir, 0755);
 
-			this.store = new Graph.Store(this.object_dir);
+			this.store = new BlobStore(this.object_dir);
 		}
 
 		public bool has_bit(string uuid) {

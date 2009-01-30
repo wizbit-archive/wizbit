@@ -1,15 +1,15 @@
 using GLib;
 
-namespace Graph {
+namespace Wiz {
 
-	public class Store : GLib.Object {
+	public class BlobStore : GLib.Object {
 		/* The store just provides a way to read or write from the store.
 		   It hides whether or not we are dealing with loose or packed objects
 		*/
 
 		public string directory { get; construct; }
 
-		public Store(string directory) {
+		public BlobStore(string directory) {
 			this.directory = directory;
 		}
 
@@ -42,7 +42,7 @@ namespace Graph {
 
 	public class Blob : GLib.Object {
 		public bool parsed { get; set; }
-		public Store store { get; construct; }
+		public BlobStore store { get; construct; }
 		public string uuid { get; set; }
 
 		private MappedFile file;
@@ -53,11 +53,11 @@ namespace Graph {
 			return this.store.read(this.uuid);
 		}
 
-		public Blob(Store store) {
+		public Blob(BlobStore store) {
 			this.store = store;
 			this.parsed = true;
 		}
-		public Blob.from_uuid(Store store, string uuid) {
+		public Blob.from_uuid(BlobStore store, string uuid) {
 			this.store = store;
 			this.uuid = uuid;
 			this.parsed = false;

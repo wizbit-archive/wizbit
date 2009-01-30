@@ -9,7 +9,7 @@ namespace Wiz {
 		private string refs_path;
 		private string objects_path;
 
-		protected Graph.Store blobs;
+		protected BlobStore blobs;
 		public CommitStore commits;
 
 		public string store_path { get; construct; }
@@ -57,7 +57,7 @@ namespace Wiz {
 			if (!FileUtils.test(this.objects_path, FileTest.IS_DIR))
 				DirUtils.create_with_parents(this.objects_path, 0755);
 
-			this.blobs = new Graph.Store(this.objects_path);
+			this.blobs = new BlobStore(this.objects_path);
 			this.commits = new CommitStore(Path.build_filename(this.refs_path, uuid), uuid);
 		}
 
@@ -79,7 +79,7 @@ namespace Wiz {
 		}
 
 		public Version create_next_version_from_string(string data, Version ?parent = null) throws GLib.FileError {
-			var blob = new Graph.Blob(this.blobs);
+			var blob = new Blob(this.blobs);
 			blob.set_contents((void *)data, data.len());
 			blob.write();
 
@@ -104,7 +104,7 @@ namespace Wiz {
 		}
 
 		public Version test_create_next_version_from_string(string data, Version ?parent = null, int timestamp) {
-			var blob = new Graph.Blob(this.blobs);
+			var blob = new Blob(this.blobs);
 			blob.set_contents((void *)data, data.len());
 			blob.write();
 

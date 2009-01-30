@@ -1,5 +1,4 @@
 using GLib;
-using Graph;
 
 namespace Wiz {
 	public class Version : GLib.Object {
@@ -66,7 +65,7 @@ namespace Wiz {
 			}
 		}
 
-		private Graph.Blob blob;
+		private Blob blob;
 		private MappedFile file;
 
 		public Version(Bit bit, string version_uuid) {
@@ -80,7 +79,7 @@ namespace Wiz {
 
 		void _open_blob() throws GLib.FileError {
 			if (this.file == null) {
-				this.blob = new Graph.Blob.from_uuid(this.bit.blobs, this.commit.blob);
+				this.blob = new Blob.from_uuid(this.bit.blobs, this.commit.blob);
 				this.file = this.blob.read();
 			}
 		}
