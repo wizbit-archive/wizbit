@@ -3,9 +3,6 @@ using GLib;
 namespace Wiz {
 
 	public class BlobStore : GLib.Object {
-		/* The store just provides a way to read or write from the store.
-		   It hides whether or not we are dealing with loose or packed objects
-		*/
 
 		public string directory { get; construct; }
 
