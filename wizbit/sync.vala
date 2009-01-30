@@ -122,7 +122,7 @@ public class SyncSource : Object {
 	public string grab_blob(string bit_uuid, string version_uuid) {
 		var b = this.store.open_bit(bit_uuid);
 		var v = new Version(b, version_uuid);
-		return "%s%.*s".printf(v.blob_id, v.get_length(), v.read_as_string());
+		return "%.*s".printf(v.get_length(), v.read_as_string());
 	}
 }
 
@@ -164,7 +164,7 @@ public class SyncClient : Object {
 				var uuid = want.pop_tail();
 
 				var blob = server.grab_blob(bit, uuid);
-				this.drop_raw(blob.substring(0,40), blob.substring(40, blob.len()));
+				this.drop_raw(blob);
 
 				this.drop_commit(bit, uuid, server.grab_commit(bit, uuid));
 			}
@@ -246,11 +246,15 @@ public class SyncClient : Object {
 		bit.commits.store_commit(c);
 	}
 
-	void drop_raw(string uuid, string raw) throws GLib.FileError {
-		string drop_dir = Path.build_filename(this.store.directory, "objects", uuid.substring(0,2));
+	void drop_raw(string raw) throws GLib.FileError {
+		Checksum sha1 = new Checksum(ChecksumType.SHA1);
+		sha1.update((uchar [])raw, raw.len());
+		string sha1_string = sha1.get_string();
+
+		string drop_dir = Path.build_filename(this.store.directory, "objects", sha1_string.substring(0,2));
 		if (!FileUtils.test(drop_dir, FileTest.IS_DIR))
 			DirUtils.create_with_parents(drop_dir, 0755);
-		string drop_path = Path.build_filename(drop_dir, uuid.substring(2,40));
+		string drop_path = Path.build_filename(drop_dir, sha1_string.substring(2));
 		FileUtils.set_contents(drop_path, raw);
 	}
 }
