@@ -29,8 +29,8 @@ namespace Wiz {
 			}
 		}
 
-		public Version? #previous {
-			get {
+		public Version? previous {
+			owned get {
 				var v = this.bit.commits.get_backward(this.version_uuid);
 				if (v == null)
 					return null;
@@ -38,8 +38,8 @@ namespace Wiz {
 			}
 		}
 
-		public Version? #next {
-			get {
+		public Version? next {
+			owned get {
 				var v = this.bit.commits.get_forward(this.version_uuid);
 				if (v == null)
 					return null;
@@ -47,8 +47,8 @@ namespace Wiz {
 			}
 		}
 
-		public List<Version> #parents {
-			get {
+		public List<Version> parents {
+			owned get {
 				var parents = new List<Version>();
 				foreach (var p in this.bit.commits.get_backwards(this.version_uuid))
 					parents.append(new Version(this.bit, p));
@@ -56,8 +56,8 @@ namespace Wiz {
 			}
 		}
 
-		public List<Version> #children {
-			get {
+		public List<Version> children {
+			owned get {
 				var children = new List<Version>();
 				foreach (var c in this.bit.commits.get_forwards(this.version_uuid))
 					children.append(new Version(this.bit, c));
