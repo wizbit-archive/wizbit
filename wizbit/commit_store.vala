@@ -60,9 +60,7 @@ namespace Wiz {
 		public CommitStore(string database, string uuid) {
 			this.database = database;
 			this.uuid = uuid;
-		}
 
-		construct {
 			Database.open(this.database, out this.db);
 
 			this.upgrade_database();
@@ -309,7 +307,7 @@ namespace Wiz {
 		public int timestamp2 {get; set; }
 		public List<string> parents;
 
-		construct {
+		public void RarCommit() {
 			this.parents = new List<string>();
 		}
 	}

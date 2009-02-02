@@ -71,9 +71,7 @@ namespace Wiz {
 		public Version(Bit bit, string version_uuid) {
 			this.bit = bit;
 			this.version_uuid = version_uuid;
-		}
 
-		construct {
 			this.commit = this.bit.commits.lookup_commit(this.version_uuid);
 		}
 
