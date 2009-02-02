@@ -42,7 +42,10 @@ namespace Wiz {
 			}
 		}
 
-		construct {
+		public Bit(string uuid, string? store_path) {
+			this.uuid = uuid;
+			this.store_path = store_path;
+
 			/* This shouldn't be here */
 			if (this.store_path == null) 
 				this.store_path = Path.build_filename(Environment.get_home_dir(), ".wizbit");
@@ -59,11 +62,6 @@ namespace Wiz {
 
 			this.blobs = new BlobStore(this.objects_path);
 			this.commits = new CommitStore(Path.build_filename(this.refs_path, uuid), uuid);
-		}
-
-		public Bit(string uuid, string? store_path) {
-			this.uuid = uuid;
-			this.store_path = store_path;
 		}
 
 		public bool has_version(string uuid) {
@@ -83,7 +81,7 @@ namespace Wiz {
 			blob.set_contents((void *)data, data.len());
 			blob.write();
 
-			var commit = new RarCommit();
+			var commit = new Commit();
 			commit.blob = blob.uuid;
 			if (parent != null)
 				commit.parents.append( parent.version_uuid );
@@ -108,7 +106,7 @@ namespace Wiz {
 			blob.set_contents((void *)data, data.len());
 			blob.write();
 
-			var commit = new RarCommit();
+			var commit = new Commit();
 			commit.blob = blob.uuid;
 			if (parent != null)
 				commit.parents.append( parent.version_uuid );

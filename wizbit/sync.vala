@@ -133,9 +133,6 @@ public class SyncClient : Object {
 
 	public SyncClient(Wiz.Store store) {
 		this.store = store;
-	}
-
-	construct {
 		this.iter = new Wiz.BreadthFirstIterator();
 	}
 
@@ -191,7 +188,7 @@ public class SyncClient : Object {
 		long mark;
 		long pos;
 
-		var c = new RarCommit();
+		var c = new Commit();
 		c.uuid = uuid;
 
 		bufptr = (char *) raw;

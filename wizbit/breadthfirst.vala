@@ -7,7 +7,7 @@ namespace Wiz {
 
 		public bool end { get; private set; default = true; }
 
-		construct {
+		public BreadthFirstIterator() {
 			this.visited = new List<Version>();
 			this.queue = new Queue<Version>();
 		}

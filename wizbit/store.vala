@@ -12,12 +12,10 @@ namespace Wiz {
 		public Store(string uuid, string? directory = null) {
 			this.uuid = uuid;
 			this.directory = directory;
-		}
 
-		construct {
-		/* The UUID becomes the name of the store
-		 * stores like tomboy, calendars, contacts, email, files, etc...
-		 */
+			/* The UUID becomes the name of the store
+			 * stores like tomboy, calendars, contacts, email, files, etc...
+			 */
 			if (this.directory == null) {
 				this.directory = Path.build_filename(Environment.get_home_dir(), ".wizbit/%s".printf(this.uuid));
 			}

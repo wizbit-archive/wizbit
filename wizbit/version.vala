@@ -8,7 +8,7 @@ namespace Wiz {
 		public Bit bit { get; construct; }
 		public string version_uuid { get; construct; }
 
-		private RarCommit commit;
+		private Commit commit;
 
 		/* deprecated */
 		protected string blob_id {
@@ -71,9 +71,7 @@ namespace Wiz {
 		public Version(Bit bit, string version_uuid) {
 			this.bit = bit;
 			this.version_uuid = version_uuid;
-		}
 
-		construct {
 			this.commit = this.bit.commits.lookup_commit(this.version_uuid);
 		}
 
