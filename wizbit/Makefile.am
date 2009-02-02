@@ -11,6 +11,7 @@ BUILT_SOURCES = libwizbit.vala.stamp
 
 libwizbit_la_VALASOURCES = \
 	blob_store.vala \
+	commit.vala \
 	commit_store.vala \
 	store.vala \
 	bit.vala \
