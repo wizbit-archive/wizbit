@@ -224,8 +224,6 @@ namespace WizWidgets {
       this.edges.append(new Edge(node, this));
     }
 
-    // FIXME padding and offset should be implicit... x and y should maybe be
-    // branch_px and node_px for simplicity sake
     public bool at_coords(int x, int y, Constant orientation) {
       double o = 0, a = 0;
       int nx, ny;
@@ -571,7 +569,7 @@ namespace WizWidgets {
                                     (int)Render.SCALE |
                                     (int)Render.BACKGROUND;
       this.orientation_timeline   = Constant.HORIZONTAL;
-      this.orientation_controls   = Constant.VERTICAL;
+      this.orientation_controls   = Constant.HORIZONTAL;
       
       double h = Math.sqrt(2);
       double angle_n = Math.acos((h/2.0)/this.easing_radius);
@@ -1605,7 +1603,6 @@ namespace WizWidgets {
       this.cr_controls.stroke();
     }
 
-    // TODO 8, this is upside down
     private void render_controls_slider() {
       Cairo.Pattern pattern;
       if (this.orientation_controls == Constant.VERTICAL) {
@@ -1630,6 +1627,7 @@ namespace WizWidgets {
       center = center + this.start_timestamp;
       center = (double)this.timestamp_to_scale_pos((int)center) - 3.5 + this.padding;
 
+    // TODO 8, this is upside down
       if (this.orientation_controls == Constant.VERTICAL) {
         this.cr_controls.rectangle (0.5, start_pos + 4.5, (double)this.controls_height - 6, end_pos - start_pos - 9);
         pattern = new Cairo.Pattern.linear(0.5, 0, (double)this.controls_height - 6, 0);
@@ -1644,6 +1642,7 @@ namespace WizWidgets {
       this.cr_controls.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
       // Render some ticks in the middle of the slider
       for (var i = 0; i < 3; i++) {
+        // TODO 8, this is upside down
         if (this.orientation_controls == Constant.VERTICAL) {
           this.cr_controls.move_to(3.5, center + (i * 3));
           this.cr_controls.line_to((double)this.controls_height - 9, center + (i * 3));
@@ -1654,6 +1653,7 @@ namespace WizWidgets {
       }
       this.cr_controls.stroke();
       // Slider Highlight
+    // TODO 8, this is upside down
       this.cr_controls.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
       if (this.orientation_controls == Constant.VERTICAL) {
         this.cr_controls.rectangle (1.5, start_pos + 5.5,
