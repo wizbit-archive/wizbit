@@ -1356,6 +1356,7 @@ namespace WizWidgets {
       Pango.Layout layout;
       int fontw, fonth;
       string unit = null;
+      Cairo.Pattern pattern;
 
       dash[0] = 1.5;
       dash[1] = 2.0;
@@ -1367,42 +1368,58 @@ namespace WizWidgets {
         unit = null;
         r = timestamp - this.oldest_timestamp;
         px_pos = (int)(((t - r) / t) * this.zoomed_extent);
-        if (this.orientation_timeline == Constant.VERTICAL) {
-          this.cr_background.move_to((this.graph_width/2) + 0.5, px_pos + 0.5);
-          this.cr_background.line_to((this.graph_width/2) + 8.5, px_pos + 0.5);
-          this.cr_background.stroke();
-        } else {
-          px_pos = (int)this.zoomed_extent - px_pos + (this.branch_width/2);
-          Time tm = Time.gm((time_t) timestamp);
+        px_pos = (int)this.zoomed_extent - px_pos + (this.branch_width/2);
+        Time tm = Time.gm((time_t) timestamp);
 
-          if (scaleunit == TimeUnit.MINUTES) {
-            unit = tm.format("%H:%M");
-          } else if (scaleunit == TimeUnit.HOURS) {
-            unit = tm.format("%H:00");
-          } else if (scaleunit == TimeUnit.DAYS) {
-            unit = tm.format("%A");
-          } else if (scaleunit == TimeUnit.WEEKS) {
-            if (tm.weekday == 6) {
-              r = 60 * 60 * 24 * 2;
-              px_width = (int)(((r / t) * this.zoomed_extent) + 1);
-              this.cr_background.save();
+        if (scaleunit == TimeUnit.MINUTES) {
+          unit = tm.format("%H:%M");
+        } else if (scaleunit == TimeUnit.HOURS) {
+          unit = tm.format("%H:00");
+        } else if (scaleunit == TimeUnit.DAYS) {
+          unit = tm.format("%A");
+        } else if (scaleunit == TimeUnit.WEEKS) {
+          if (tm.weekday == 6) {
+            r = 60 * 60 * 24 * 2;
+            px_width = (int)(((r / t) * this.zoomed_extent) + 1);
+            this.cr_background.save();
+            if (this.orientation_timeline == Constant.VERTICAL) {  // TODO 8, this is upside down
+              this.cr_background.rectangle(0, px_pos, this.graph_width, px_width);
+            } else {
               this.cr_background.rectangle(px_pos, 0, px_width, this.graph_height);
-              this.cr_background.set_source_rgba(0,0,0,0.06);
-              this.cr_background.fill();
-              this.cr_background.restore();
-            } else if (tm.weekday == 1) {
-              unit = tm.format("Week %V %G");
-              r = 60 * 60 * 24 * 2.5;
-              px_width = (int)(((r / t) * this.zoomed_extent) + 1);
             }
-          } else if (scaleunit == TimeUnit.MONTHS) {
-            unit = tm.format("%B");
-          } else if (scaleunit == TimeUnit.YEARS) {
-            unit = tm.format("%G");
-          } else {
-            unit = null;
+            this.cr_background.set_source_rgba(0,0,0,0.06);
+            this.cr_background.fill();
+            this.cr_background.restore();
+          } else if (tm.weekday == 1) {
+            unit = tm.format("Week %V %G");
+            r = 60 * 60 * 24 * 2.5;
+            px_width = (int)(((r / t) * this.zoomed_extent) + 1);
           }
+        } else if (scaleunit == TimeUnit.MONTHS) {
+          unit = tm.format("%B");
+        } else if (scaleunit == TimeUnit.YEARS) {
+          unit = tm.format("%G");
+        } else {
+          unit = null;
+        }
 
+        if (this.orientation_timeline == Constant.VERTICAL) { // TODO 8, this is upside down
+          this.cr_background.save();
+          this.cr_background.set_source_rgba(0,0,0,1);
+          this.cr_background.move_to(0, px_pos+0.5);
+          this.cr_background.line_to(this.graph_width, px_pos+0.5);
+          this.cr_background.stroke();
+          this.cr_background.restore();
+
+          if (unit != null) {
+            layout = this.create_pango_layout (unit);
+            layout.get_pixel_size (out fontw, out fonth);
+            cr_tmp.move_to (0, px_pos + px_width - (fontw/2));
+            cr_tmp.set_source_rgba(0,0,0,0.4);
+            Pango.cairo_update_layout (cr_tmp, layout);
+            Pango.cairo_show_layout (cr_tmp, layout);
+          }
+        } else {
           this.cr_background.save();
           this.cr_background.set_source_rgba(0,0,0,1);
           this.cr_background.move_to(px_pos+0.5, 0);
@@ -1424,7 +1441,13 @@ namespace WizWidgets {
 
       this.cr_background.set_source_rgba(0,0,0,1);
       if (this.orientation_timeline == Constant.VERTICAL) {
-        //TODO 8
+        int steps = (this.highest_branch_position - this.lowest_branch_position);
+
+        for (var i = 1; i <= steps; i++) {
+          this.cr_background.move_to((i*this.branch_width)+0.5, 0);
+          this.cr_background.line_to((i*this.branch_width)+0.5, 
+                                     this.zoomed_extent + this.branch_width);
+        }
       } else {
         int steps = (this.highest_branch_position - this.lowest_branch_position);
 
@@ -1439,11 +1462,16 @@ namespace WizWidgets {
 
       if (scaleunit != TimeUnit.WEEKS) {
         this.cr_background.save();
-        var pattern = new Cairo.Pattern.linear(0, 12, 0, 35);
+        if (this.orientation_timeline == Constant.VERTICAL) {
+          pattern = new Cairo.Pattern.linear(12, 0, 35, 0);
+          this.cr_background.rectangle(0,0, this.graph_width,this.zoomed_extent + this.branch_width);
+        } else {
+          pattern = new Cairo.Pattern.linear(0, 12, 0, 35);
+          this.cr_background.rectangle(0,0,this.zoomed_extent + this.branch_width, this.graph_height);
+        }
         pattern.add_color_stop_rgba(0, 0xee/255.0, 0xee/255.0, 0xec/255.0, 1);
         pattern.add_color_stop_rgba(1, 0xee/255.0, 0xee/255.0, 0xec/255.0, 0);
         this.cr_background.set_source (pattern);
-        this.cr_background.rectangle(0,0,this.zoomed_extent + this.branch_width, this.graph_height); // TODO 8
         this.cr_background.fill();
         this.cr_background.restore();
       }
@@ -1526,7 +1554,6 @@ namespace WizWidgets {
       this.cr_scale.stroke();
     }
 
-    // TODO 8
     private void render_controls_handle(int timestamp) {
       double hhw = (double)this.handle_width / 2.0;
       Cairo.Pattern pattern;
