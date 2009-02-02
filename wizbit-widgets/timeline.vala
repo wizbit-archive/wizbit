@@ -11,7 +11,7 @@
          - Separate nicely from DB
        - Push out update_branch_positions to on configure not on expose
        - Push oout update_node_positions to when zoom has changed not on expose
-       * Cut down number of rendering redraws by using the offset to 
+       - Cut down number of rendering redraws by using the offset to 
          composite layers and only redraw parts when required.
  * 4_  Rename a bunch of things which are horribly named!
  * 5x  Node click zones calculations
@@ -570,8 +570,8 @@ namespace WizWidgets {
                                     (int)Render.GRAPH |
                                     (int)Render.SCALE |
                                     (int)Render.BACKGROUND;
-      this.orientation_timeline   = Constant.HORIZONTAL;
-      this.orientation_controls   = Constant.HORIZONTAL;
+      this.orientation_timeline   = Constant.VERTICAL;
+      this.orientation_controls   = Constant.VERTICAL;
       
       double h = Math.sqrt(2);
       double angle_n = Math.acos((h/2.0)/this.easing_radius);
@@ -887,20 +887,28 @@ namespace WizWidgets {
       }
     }
     /* Converts a timestamp into a scale horizontal position. */
-    // TODO 8
     private int timestamp_to_scale_pos(int timestamp) {
       var range = this.newest_timestamp - this.oldest_timestamp;
       double pos = (double)(timestamp - this.oldest_timestamp) / (double)range;
-      return (int)Math.ceil((pos * (double)this.widget_width) + 0.5);
+      if (this.orientation_timeline == Constant.VERTICAL) {
+        return (int)Math.ceil((pos * (double)this.widget_height) + 0.5);
+      } else {
+        return (int)Math.ceil((pos * (double)this.widget_width) + 0.5);
+      }
     }
 
-    // TODO 8
     private int scale_pos_to_timestamp(int xpos) {
       double t = this.newest_timestamp - this.oldest_timestamp;
-      double ratio = (xpos - this.padding + 0.5) / (this.widget_width);
+      double ratio;
+      if (this.orientation_timeline == Constant.VERTICAL) {
+        ratio = (xpos - this.padding + 0.5) / (this.widget_height);
+      } else {
+        ratio = (xpos - this.padding + 0.5) / (this.widget_width);
+      }
       return (int) Math.ceil((t * ratio) + this.oldest_timestamp);
     }
 
+    // TODO 8
     private int graph_pos_to_timestamp(int px_pos, double offset) {
       double t = this.newest_timestamp - this.oldest_timestamp;
       offset = this.zoomed_extent - (offset + this.graph_width);
@@ -1443,7 +1451,6 @@ namespace WizWidgets {
       this.cr_background.paint();
     }
 
-    // TODO 3
     private void render_scale() {
       TimeUnit scaleunit = this.get_scale_unit(this.oldest_timestamp,
                                                this.newest_timestamp);
@@ -1459,7 +1466,11 @@ namespace WizWidgets {
       this.cr_scale.set_line_width(1);
       this.cr_scale.save();
       if (this.orientation_controls == Constant.VERTICAL) {
-        // TODO 8
+        this.cr_scale.rectangle(4.5, 0.5, 15, this.widget_height);
+        this.cr_scale.set_source_rgba(0.0,0.12,0.4,0.6);
+        this.cr_scale.stroke();
+        this.cr_scale.rectangle(0, 0, 20, this.widget_height);
+        this.cr_scale.clip();
       } else {
         this.cr_scale.rectangle(0.5, 4.5, this.widget_width, 15);
         this.cr_scale.set_source_rgba(0.0,0.12,0.4,0.6);
@@ -1485,10 +1496,11 @@ namespace WizWidgets {
         px_end = timestamp_to_scale_pos(next_timestamp);
         graphheight = this.commit_store.get_commits_between_timestamps(timestamp, next_timestamp);
         if (this.orientation_controls == Constant.VERTICAL) {
-          // TODO 8
+          this.cr_scale.rectangle(15 - (int)(graphheight * gap) + 4.5, this.widget_height - px_pos - (px_end - px_pos) + 2.5,
+                                  (int)(graphheight * gap), px_end - px_pos -4);
         } else {
           this.cr_scale.rectangle(px_pos + 2.5, 15 - (int)(graphheight * gap) + 4.5,
-                       px_end - px_pos -4, (int)(graphheight * gap));
+                                  px_end - px_pos -4, (int)(graphheight * gap));
         }
         timestamp = next_timestamp;
       }
@@ -1501,7 +1513,9 @@ namespace WizWidgets {
       while (timestamp < this.newest_timestamp) {
         px_pos = timestamp_to_scale_pos(timestamp);
         if (this.orientation_controls == Constant.VERTICAL) {
-          // TODO 8
+          // TODO 8 - this may still be incorrect, must get other things done first
+          this.cr_scale.move_to(0, this.widget_height - px_pos + 0.5);
+          this.cr_scale.line_to(this.scale_height, this.widget_height - px_pos + 0.5);
         } else {
           this.cr_scale.move_to(px_pos + 0.5, 0);
           this.cr_scale.line_to(px_pos + 0.5, this.scale_height);
@@ -1515,17 +1529,26 @@ namespace WizWidgets {
     // TODO 8
     private void render_controls_handle(int timestamp) {
       double hhw = (double)this.handle_width / 2.0;
+      Cairo.Pattern pattern;
 
       var hpos = this.timestamp_to_scale_pos(timestamp) + this.padding;
-      // Handle outline
-      this.cr_controls.move_to(hpos - hhw, 0.5);
-      this.cr_controls.line_to(hpos - hhw, (double)this.controls_height - 5.5);
-      this.cr_controls.line_to(hpos, (double)this.controls_height - 0.5);
-      this.cr_controls.line_to(hpos + hhw, (double)this.controls_height - 5.5);
-      this.cr_controls.line_to(hpos + hhw, 0.5);
-      this.cr_controls.line_to(hpos - hhw, 0.5);
-      // Handle fill
-      var pattern = new Cairo.Pattern.linear(hpos - 4.5, 0, hpos + 4.5, 0);
+      if (this.orientation_controls == Constant.VERTICAL) {
+        this.cr_controls.move_to(0.5, hpos - hhw);
+        this.cr_controls.line_to((double)this.controls_height - 5.5, hpos - hhw);
+        this.cr_controls.line_to((double)this.controls_height - 0.5, hpos);
+        this.cr_controls.line_to((double)this.controls_height - 5.5, hpos + hhw);
+        this.cr_controls.line_to(0.5, hpos + hhw);
+        this.cr_controls.line_to(0.5, hpos - hhw);
+        pattern = new Cairo.Pattern.linear(0, hpos - 4.5, 0, hpos + 4.5);
+      } else {
+        this.cr_controls.move_to(hpos - hhw, 0.5);
+        this.cr_controls.line_to(hpos - hhw, (double)this.controls_height - 5.5);
+        this.cr_controls.line_to(hpos, (double)this.controls_height - 0.5);
+        this.cr_controls.line_to(hpos + hhw, (double)this.controls_height - 5.5);
+        this.cr_controls.line_to(hpos + hhw, 0.5);
+        this.cr_controls.line_to(hpos - hhw, 0.5);
+        pattern = new Cairo.Pattern.linear(hpos - 4.5, 0, hpos + 4.5, 0);
+      }
       pattern.add_color_stop_rgb(0, 0xee/255.0, 0xee/255.0, 0xec/255.0);
       pattern.add_color_stop_rgb(1, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
 
@@ -1536,23 +1559,37 @@ namespace WizWidgets {
 
       hhw = hhw - 1;
       // Handle inner highlight
-      this.cr_controls.move_to(hpos - hhw, 1.5);
-      this.cr_controls.line_to(hpos - hhw, (double)this.controls_height - 6.15);
-      this.cr_controls.line_to(hpos, this.controls_height - 2);
-      this.cr_controls.line_to(hpos + hhw, (double)this.controls_height - 6.15);
-      this.cr_controls.line_to(hpos + hhw, 1.5);
-      this.cr_controls.line_to(hpos - hhw, 1.5);
-
+      if (this.orientation_controls == Constant.VERTICAL) {
+        this.cr_controls.move_to(1.5, hpos - hhw);
+        this.cr_controls.line_to((double)this.controls_height - 6.15, hpos - hhw);
+        this.cr_controls.line_to(this.controls_height - 2, hpos);
+        this.cr_controls.line_to((double)this.controls_height - 6.15, hpos + hhw);
+        this.cr_controls.line_to(1.5, hpos + hhw);
+        this.cr_controls.line_to(1.5, hpos - hhw);
+      } else {
+        this.cr_controls.move_to(hpos - hhw, 1.5);
+        this.cr_controls.line_to(hpos - hhw, (double)this.controls_height - 6.15);
+        this.cr_controls.line_to(hpos, this.controls_height - 2);
+        this.cr_controls.line_to(hpos + hhw, (double)this.controls_height - 6.15);
+        this.cr_controls.line_to(hpos + hhw, 1.5);
+        this.cr_controls.line_to(hpos - hhw, 1.5);
+      }
       this.cr_controls.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
       this.cr_controls.stroke();
     }
 
-    // TODO 8
     private void render_controls_slider() {
-      var pattern = new Cairo.Pattern.linear(0, 3.5, 0, 9.5);
+      Cairo.Pattern pattern;
+      if (this.orientation_controls == Constant.VERTICAL) {
+        pattern = new Cairo.Pattern.linear(3.5, 0, 9.5, 0);
+        this.cr_controls.rectangle(3.5, 0.5 + this.padding, 6.0, this.widget_height);
+      } else {
+        pattern = new Cairo.Pattern.linear(0, 3.5, 0, 9.5);
+        this.cr_controls.rectangle(0.5 + this.padding, 3.5, this.widget_width, 6.0);
+      }
+
       pattern.add_color_stop_rgb(0, 0x88/255.0, 0x8a/255.0, 0x85/255.0);
       pattern.add_color_stop_rgb(1, 0xee/255.0, 0xee/255.0, 0xec/255.0);
-      this.cr_controls.rectangle(0.5 + this.padding, 3.5, this.widget_width, 6.0);
       this.cr_controls.set_line_width(1);
       this.cr_controls.set_source (pattern);
       this.cr_controls.fill_preserve();
@@ -1565,8 +1602,13 @@ namespace WizWidgets {
       center = center + this.start_timestamp;
       center = (double)this.timestamp_to_scale_pos((int)center) - 3.5 + this.padding;
 
-      this.cr_controls.rectangle (start_pos + 4.5, 0.5, end_pos - start_pos - 9, (double)this.controls_height - 6);
-      pattern = new Cairo.Pattern.linear(0, 0.5, 0, (double)this.controls_height - 6);
+      if (this.orientation_controls == Constant.VERTICAL) {
+        this.cr_controls.rectangle (0.5, start_pos + 4.5, (double)this.controls_height - 6, end_pos - start_pos - 9);
+        pattern = new Cairo.Pattern.linear(0.5, 0, (double)this.controls_height - 6, 0);
+      } else {
+        this.cr_controls.rectangle (start_pos + 4.5, 0.5, end_pos - start_pos - 9, (double)this.controls_height - 6);
+        pattern = new Cairo.Pattern.linear(0, 0.5, 0, (double)this.controls_height - 6);
+      }
       pattern.add_color_stop_rgb(0, 0x72/255.0,0x9f/255.0,0xcf/255.0);
       pattern.add_color_stop_rgb(1, 0x34/255.0,0x65/255.0,0xa4/255.0);
       this.cr_controls.set_source (pattern);
@@ -1574,14 +1616,26 @@ namespace WizWidgets {
       this.cr_controls.set_source_rgb(0x20/255.0,0x4a/255.0,0x87/255.0);
       // Render some ticks in the middle of the slider
       for (var i = 0; i < 3; i++) {
-        this.cr_controls.move_to(center + (i * 3), 3.5);
-        this.cr_controls.line_to(center + (i * 3), (double)this.controls_height - 9);
+        if (this.orientation_controls == Constant.VERTICAL) {
+          this.cr_controls.move_to(3.5, center + (i * 3));
+          this.cr_controls.line_to((double)this.controls_height - 9, center + (i * 3));
+        } else {
+          this.cr_controls.move_to(center + (i * 3), 3.5);
+          this.cr_controls.line_to(center + (i * 3), (double)this.controls_height - 9);
+        }
       }
       this.cr_controls.stroke();
       // Slider Highlight
       this.cr_controls.set_source_rgba(0xff/255.0,0xff/255.0,0xff/255.0, 20/100.0);
-      this.cr_controls.rectangle (start_pos + 5.5, 1.5,
-                    end_pos - start_pos - 11, (double)this.controls_height - 8);
+      if (this.orientation_controls == Constant.VERTICAL) {
+        this.cr_controls.rectangle (1.5, start_pos + 5.5,
+                                    (double)this.controls_height - 8,
+                                    end_pos - start_pos - 11);
+      } else {
+        this.cr_controls.rectangle (start_pos + 5.5, 1.5,
+                                    end_pos - start_pos - 11, 
+                                    (double)this.controls_height - 8);
+      }
       this.cr_controls.stroke();
     }
 
@@ -1683,7 +1737,7 @@ namespace WizWidgets {
       int sh = 0;
 
       if (this.orientation_timeline == Constant.VERTICAL) {
-        gy =  this.padding - (int)(this.zoomed_extent - this.offset - this.graph_height); // TODO 8
+        //gy =  this.padding - (int)(this.zoomed_extent - this.offset - this.graph_height); // TODO 8
         cx = (this.padding*2) + this.graph_width;
         sx = cx + this.controls_height + this.scale_padding;
         cw = this.controls_height;
