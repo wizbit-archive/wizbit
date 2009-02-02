@@ -1,11 +1,11 @@
 using GLib;
 using Wiz;
 
-RarCommit create_dummy_commits(CommitStore store, uint no_commits, RarCommit ?graft_point = null) {
-	RarCommit cur = graft_point;
+Commit create_dummy_commits(CommitStore store, uint no_commits, Commit ?graft_point = null) {
+	Commit cur = graft_point;
 
 	for (uint i=0; i<no_commits; i++) {
-		var nw = new RarCommit();
+		var nw = new Commit();
 		if (cur != null)
 			nw.parents.append(cur.uuid);
 		nw.blob = "abc123";
@@ -21,8 +21,8 @@ RarCommit create_dummy_commits(CommitStore store, uint no_commits, RarCommit ?gr
 	return cur;
 }
 
-RarCommit create_merge(CommitStore store, RarCommit c1, RarCommit c2) {
-	var c = new RarCommit();
+Commit create_merge(CommitStore store, Commit c1, Commit c2) {
+	var c = new Commit();
 	c.parents.append(c1.uuid);
 	c.parents.append(c2.uuid);
 	c.blob = "abc123";

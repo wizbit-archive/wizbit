@@ -192,8 +192,8 @@ namespace Wiz {
 			return (this.lookup_commit(uuid) != null);
 		}
 
-		public RarCommit? lookup_commit(string uuid) {
-			var c = new RarCommit();
+		public Commit? lookup_commit(string uuid) {
+			var c = new Commit();
 			c.uuid = uuid;
 
 			this.select_commit_sql.bind_text(1, uuid);
@@ -222,7 +222,7 @@ namespace Wiz {
 			return c;
 		}
 
-		public RarCommit store_commit(RarCommit c) {
+		public Commit store_commit(Commit c) {
 			if (c.uuid == null)
 				c.uuid = generate_uuid();
 
@@ -299,7 +299,7 @@ namespace Wiz {
 		}
 	}
 
-	public class RarCommit : GLib.Object {
+	public class Commit : GLib.Object {
 		public string uuid { get; set; }
 		public string blob { get; set; }
 		public string committer { get; set; }
@@ -307,7 +307,7 @@ namespace Wiz {
 		public int timestamp2 {get; set; }
 		public List<string> parents;
 
-		public void RarCommit() {
+		public void Commit() {
 			this.parents = new List<string>();
 		}
 	}

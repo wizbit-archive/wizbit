@@ -81,7 +81,7 @@ namespace Wiz {
 			blob.set_contents((void *)data, data.len());
 			blob.write();
 
-			var commit = new RarCommit();
+			var commit = new Commit();
 			commit.blob = blob.uuid;
 			if (parent != null)
 				commit.parents.append( parent.version_uuid );
@@ -106,7 +106,7 @@ namespace Wiz {
 			blob.set_contents((void *)data, data.len());
 			blob.write();
 
-			var commit = new RarCommit();
+			var commit = new Commit();
 			commit.blob = blob.uuid;
 			if (parent != null)
 				commit.parents.append( parent.version_uuid );

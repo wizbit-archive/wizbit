@@ -8,7 +8,7 @@ namespace Wiz {
 		public Bit bit { get; construct; }
 		public string version_uuid { get; construct; }
 
-		private RarCommit commit;
+		private Commit commit;
 
 		/* deprecated */
 		protected string blob_id {

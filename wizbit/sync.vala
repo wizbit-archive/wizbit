@@ -188,7 +188,7 @@ public class SyncClient : Object {
 		long mark;
 		long pos;
 
-		var c = new RarCommit();
+		var c = new Commit();
 		c.uuid = uuid;
 
 		bufptr = (char *) raw;
