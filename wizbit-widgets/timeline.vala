@@ -570,7 +570,7 @@ namespace WizWidgets {
                                     (int)Render.GRAPH |
                                     (int)Render.SCALE |
                                     (int)Render.BACKGROUND;
-      this.orientation_timeline   = Constant.VERTICAL;
+      this.orientation_timeline   = Constant.HORIZONTAL;
       this.orientation_controls   = Constant.VERTICAL;
       
       double h = Math.sqrt(2);
@@ -890,7 +890,7 @@ namespace WizWidgets {
     private int timestamp_to_scale_pos(int timestamp) {
       var range = this.newest_timestamp - this.oldest_timestamp;
       double pos = (double)(timestamp - this.oldest_timestamp) / (double)range;
-      if (this.orientation_timeline == Constant.VERTICAL) {
+      if (this.orientation_controls == Constant.VERTICAL) {
         return (int)Math.ceil((pos * (double)this.widget_height) + 0.5);
       } else {
         return (int)Math.ceil((pos * (double)this.widget_width) + 0.5);
@@ -900,7 +900,7 @@ namespace WizWidgets {
     private int scale_pos_to_timestamp(int xpos) {
       double t = this.newest_timestamp - this.oldest_timestamp;
       double ratio;
-      if (this.orientation_timeline == Constant.VERTICAL) {
+      if (this.orientation_controls == Constant.VERTICAL) {
         ratio = (xpos - this.padding + 0.5) / (this.widget_height);
       } else {
         ratio = (xpos - this.padding + 0.5) / (this.widget_width);
@@ -1605,6 +1605,7 @@ namespace WizWidgets {
       this.cr_controls.stroke();
     }
 
+    // TODO 8, this is upside down
     private void render_controls_slider() {
       Cairo.Pattern pattern;
       if (this.orientation_controls == Constant.VERTICAL) {
@@ -1725,7 +1726,7 @@ namespace WizWidgets {
       int scale_width = 0;
       int scale_height = 0;
 
-      if (this.orientation_timeline == Constant.VERTICAL) {
+      if (this.orientation_controls == Constant.VERTICAL) {
         controls_height = this.widget_height + 1 + this.handle_width;
         controls_width  = this.controls_height;
         scale_height    = this.widget_height + 1;
@@ -1765,6 +1766,10 @@ namespace WizWidgets {
 
       if (this.orientation_timeline == Constant.VERTICAL) {
         //gy =  this.padding - (int)(this.zoomed_extent - this.offset - this.graph_height); // TODO 8
+      } else {
+        gx = this.padding - (int)(this.zoomed_extent - this.offset - this.graph_width);
+      }
+      if (this.orientation_controls == Constant.VERTICAL) {
         cx = (this.padding*2) + this.graph_width;
         sx = cx + this.controls_height + this.scale_padding;
         cw = this.controls_height;
@@ -1772,7 +1777,6 @@ namespace WizWidgets {
         sw = this.scale_height;
         sh = this.widget_height + 1;
       } else {
-        gx = this.padding - (int)(this.zoomed_extent - this.offset - this.graph_width);
         cy = (this.padding*2) + this.graph_height;
         sy = cy + this.controls_height + this.scale_padding;
         cw = this.allocation.width + 1;
