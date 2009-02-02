@@ -40,7 +40,7 @@ namespace Wiz {
 			"SELECT count(*) FROM commits WHERE timestamp > ? and timestamp < ?";
 
 		private static const string SELECT_RELATION_SQL =
-			"SELECT r.parent_id FROM relations AS r WHERE r.node_id=?";
+			"SELECT c.uuid FROM commits AS c, relations AS r WHERE r.node_id=? AND c.id==r.parent_id";
 
 		private Database db;
 
