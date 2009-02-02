@@ -28,16 +28,21 @@ namespace Wiz {
 			return false;
 		}
 
-		public Version next() {
+		public Version? next() {
 			var p = this.queue.pop_head();
 			while(p!=null && this.have_visited(p))
 				p = this.queue.pop_head();
+
+			if (p == null)
+				return null;
 
 			foreach (var par in p.parents)
 				this.queue.push_tail(par);
 
 			if (this.queue.get_length() == 0)
 				this.end = true;
+
+			this.add_visited(p);
 
 			return p;
 		}
@@ -46,7 +51,12 @@ namespace Wiz {
 			var retval = new List<Version>();
 			var i = size;
 			while (i > 0 && !this.end) {
-				retval.append(this.next());
+				var foo = this.next();
+				if (foo == null) {
+					this.end = true;
+					continue;
+				}
+				retval.append(foo);
 				i--;
 			}
 			return retval;
