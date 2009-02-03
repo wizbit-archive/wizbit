@@ -1,0 +1,10 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+
+Name: wizbit-widgets
+Description: Widgets for viewing Wiz->bit's
+Version: @VERSION@
+Libs: -L${libdir} -lwizbit-widgets
+Cflags: -I${includedir}/wizbit-1.0/wizbit-widgets/

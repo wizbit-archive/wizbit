@@ -17,4 +17,4 @@ AM_CPPFLAGS = \
 	$(NULL)
 
 pkgconfigdir = $(libdir)/pkgconfig
-pkgconfig_DATA = wizbit.pc
+pkgconfig_DATA = wizbit.pc wizbit-widgets.pc
