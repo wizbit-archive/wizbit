@@ -26,6 +26,7 @@ AC_SUBST(WIZBIT_LIBS)
 
 AC_CONFIG_FILES([
 	wizbit.pc
+	wizbit-widgets.pc
 	Makefile
 	wizbit/Makefile
 	wizbit-widgets/Makefile
