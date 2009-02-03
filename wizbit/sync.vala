@@ -96,7 +96,7 @@ public class SyncSource : Object {
 		}
 
 		var retval = new List<string>();
-		var found = this.iter.get(this.size);
+		var found = this.iter.get_multiple(this.size);
 		foreach (var f in found) {
 			retval.append(f.version_uuid);
 		}

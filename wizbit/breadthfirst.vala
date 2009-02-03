@@ -4,6 +4,7 @@ namespace Wiz {
 	public class BreadthFirstIterator : Object {
 		List<Version> visited;
 		Queue<Version> queue;
+		Version current;
 
 		public bool end { get; private set; default = true; }
 
@@ -28,13 +29,13 @@ namespace Wiz {
 			return false;
 		}
 
-		public Version? next() {
+		public bool next() {
 			var p = this.queue.pop_head();
 			while(p!=null && this.have_visited(p))
 				p = this.queue.pop_head();
 
 			if (p == null)
-				return null;
+				return false;
 
 			foreach (var par in p.parents)
 				this.queue.push_tail(par);
@@ -43,20 +44,20 @@ namespace Wiz {
 				this.end = true;
 
 			this.add_visited(p);
+			this.current = p;
 
-			return p;
+			return true;
 		}
 
-		public List<Version> get(uint size) {
+		public Version get() {
+			return this.current;
+		}
+
+		public List<Version> get_multiple(uint size) {
 			var retval = new List<Version>();
 			var i = size;
-			while (i > 0 && !this.end) {
-				var foo = this.next();
-				if (foo == null) {
-					this.end = true;
-					continue;
-				}
-				retval.append(foo);
+			while (this.next() && i > 0) {
+				retval.append(this.get());
 				i--;
 			}
 			return retval;
