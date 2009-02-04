@@ -6,6 +6,12 @@ INCLUDES = \
 
 TEST_PROGS += test-everything test-sync test-commit-store test-widget
 
+COMMON_VALASOURCES = \
+	$(top_builddir)/wizbit/wizbit.vapi		\
+	tests.vala					\
+	tests.vapi					\
+	$(NULL)
+
 noinst_PROGRAMS = $(TEST_PROGS)
 
 BUILT_SOURCES = \
@@ -16,7 +22,7 @@ BUILT_SOURCES = \
 	$(NULL)
 
 test_everything_VALASOURCES = \
-	$(top_builddir)/wizbit/wizbit.vapi		\
+	$(COMMON_VALASOURCES)				\
 	test-everything.vala				\
 	$(NULL)
 
@@ -33,7 +39,7 @@ test_everything_CFLAGS=@WIZBIT_CFLAGS@
 test_everything_LDADD=../wizbit/libwizbit.la
 
 test_sync_VALASOURCES = \
-	$(top_builddir)/wizbit/wizbit.vapi		\
+	$(COMMON_VALASOURCES)				\
 	test-sync.vala					\
 	$(NULL)
 
@@ -50,7 +56,7 @@ test_sync_CFLAGS=@WIZBIT_CFLAGS@
 test_sync_LDADD=../wizbit/libwizbit.la
 
 test_commit_store_VALASOURCES = \
-	$(top_builddir)/wizbit/wizbit.vapi		\
+	$(COMMON_VALASOURCES)				\
 	test-commit-store.vala				\
 	$(NULL)
 
