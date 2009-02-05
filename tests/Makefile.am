@@ -8,6 +8,7 @@ TEST_PROGS += test-everything test-sync test-commit-store test-widget
 
 COMMON_VALASOURCES = \
 	$(top_builddir)/wizbit/wizbit.vapi		\
+	config.vapi					\
 	tests.vala					\
 	tests.vapi					\
 	$(NULL)

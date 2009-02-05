@@ -52,7 +52,7 @@ public void test_graph() {
 	var store = new BlobStore("data/graph");
 
 	var blob = new Blob(store);
-	blob.set_contents_from_file("data/blob-data");
+	blob.set_contents_from_file(Config.TESTDATADIR + "blob-data");
 	blob.write();
 
 	assert( blob.uuid.len() == 40 );
