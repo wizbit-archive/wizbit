@@ -48,16 +48,6 @@ public void test_wiz_refs_2() {
 	assert( obj.tips.length() == 1 );
 }
 
-public void test_graph() {
-	var store = new BlobStore("data/graph");
-
-	var blob = new Blob(store);
-	blob.set_contents_from_file(Config.TESTDATADIR + "blob-data");
-	blob.write();
-
-	assert( blob.uuid.len() == 40 );
-}
-
 public static void main (string[] args) {
 	if (!FileUtils.test("data", FileTest.IS_DIR)) { 
 		DirUtils.create_with_parents("data", 0755);
@@ -68,6 +58,5 @@ public static void main (string[] args) {
 	Test.add_func("/wizbit/bit/1", test_wiz_bit_1);
 	Test.add_func("/wizbit/refs/1", test_wiz_refs_1);
 	Test.add_func("/wizbit/refs/2", test_wiz_refs_2);
-	Test.add_func("/wizbit/graph/1", test_graph);
 	Test.run();
 }
