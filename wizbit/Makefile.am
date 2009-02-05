@@ -10,6 +10,7 @@ INCLUDES= \
 BUILT_SOURCES = libwizbit.vala.stamp
 
 libwizbit_la_VALASOURCES = \
+	config.vapi \
 	blob_store.vala \
 	commit.vala \
 	commit_store.vala \
