@@ -49,10 +49,6 @@ public void test_wiz_refs_2() {
 }
 
 public static void main (string[] args) {
-	if (!FileUtils.test("data", FileTest.IS_DIR)) { 
-		DirUtils.create_with_parents("data", 0755);
-		/* Should write some data to the file data/blob-data */
-	}
 	Test.init (ref args);
 	Test.add_func("/wizbit/store/1", test_wiz_store);
 	Test.add_func("/wizbit/bit/1", test_wiz_bit_1);
