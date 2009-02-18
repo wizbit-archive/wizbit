@@ -7,4 +7,4 @@ Name: wizbit
 Description: Wizbit
 Version: @VERSION@
 Libs: -L${libdir} -lwizbit
-Cflags: -I${includedir}/wizbit-1.0/wizbit
+Cflags: -I${includedir}/wizbit-1.0
