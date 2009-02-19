@@ -14,6 +14,8 @@ namespace Wiz {
 			this.blob_store = bit.blobs;
 
 			this.new_commit = new Commit();
+			this.new_commit.timestamp = 0;
+			this.new_commit.committer = "";
 		}
 
 		public void add_parent(Version parent) {
