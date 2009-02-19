@@ -73,62 +73,8 @@ namespace Wiz {
 		}
 
 		public CommitBuilder get_commit_builder() {
-			return new CommitBuilder(this.commits);
+			return new CommitBuilder(this.commits, this.blobs);
 		}
 
-		public OutputStream create_next_version() {
-			return new OutputStream();
-		}
-
-		public Version create_next_version_from_string(string data, Version ?parent = null) throws GLib.FileError {
-			var blob = new Blob(this.blobs);
-			blob.set_contents((void *)data, data.len());
-			blob.write();
-
-			var commit = new Commit();
-			commit.blob = blob.uuid;
-			if (parent != null)
-				commit.parents.append( parent.version_uuid );
-			// TODO Should get the committer from the env, or contacts :D
-			commit.committer = "John Carr <john.carr@unrouted.co.uk>";
-			commit.timestamp = (int) time_t();
-
-			// my brain can imagine edge cases where this is wrong, but its only a heuristic
-			// and is probably good enough
-			TimeVal t = TimeVal();
-			t.get_current_time();
-			commit.timestamp2 = (int) t.tv_usec;
-
-			this.commits.store_commit(commit);
-
-			var new_version = new Version(this, commit.uuid);
-			return new_version;
-		}
-
-		public Version test_create_next_version_from_string(string data, Version ?parent = null, int timestamp) {
-			var blob = new Blob(this.blobs);
-			blob.set_contents((void *)data, data.len());
-			blob.write();
-
-			var commit = new Commit();
-			commit.blob = blob.uuid;
-			if (parent != null)
-				commit.parents.append( parent.version_uuid );
-			// TODO
-      // Committer should be retrieved from (getpwnam)->pw_gecos
-			commit.committer = "John Carr <john.carr@unrouted.co.uk>";
-			commit.timestamp = timestamp;
-
-			// my brain can imagine edge cases where this is wrong, but its only a heuristic
-			// and is probably good enough
-			//var t = new TimeVal();
-			//t.get_current_time();
-			commit.timestamp2 = 0;//(int) t.tv_usec;
-
-			this.commits.store_commit(commit);
-
-			var new_version = new Version(this, commit.uuid);
-			return new_version;
-		}
 	}
 }
