@@ -2,18 +2,22 @@
 namespace Wiz {
 
 	public class CommitBuilder {
+		private Bit bit;
 		private CommitStore commit_store;
 		private BlobStore blob_store;
 		private Commit new_commit;
 		private string _blob;
 
-		public CommitBuilder(CommitStore commit_store, BlobStore blob_store) {
-			this.commit_store = commit_store;
+		public CommitBuilder(Bit bit) {
+			this.bit = bit;
+			this.commit_store = bit.commits;
+			this.blob_store = bit.blobs;
+
 			this.new_commit = new Commit();
 		}
 
-		public void add_parent(string parent) {
-			this.new_commit.parents.append(parent);
+		public void add_parent(Version parent) {
+			this.new_commit.parents.append(parent.version_uuid);
 		}
 
 		public string blob {
@@ -34,7 +38,7 @@ namespace Wiz {
 			}
 		}
 
-		public void commit() {
+		public Version commit() {
 			// The next 4 lines are deprecated and here only to ease transition
 			// of wiz-fuse, sync and our tests
 			var blob = new Blob(this.blob_store);
@@ -54,7 +58,9 @@ namespace Wiz {
 				this.new_commit.timestamp2 = (int) tv.tv_usec;
 			}
 
-			this.commit_store.store_commit(new_commit);
+			this.commit_store.store_commit(this.new_commit);
+
+			return this.bit.open_version(this.new_commit.uuid);
 		}
 
 	}

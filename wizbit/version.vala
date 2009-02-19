@@ -77,7 +77,7 @@ namespace Wiz {
 
 		public CommitBuilder get_commit_builder() {
 			var cb = this.bit.get_commit_builder();
-			cb.add_parent(this.version_uuid);
+			cb.add_parent(this);
 			return cb;
 		}
 

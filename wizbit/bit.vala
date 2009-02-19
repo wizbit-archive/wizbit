@@ -73,7 +73,7 @@ namespace Wiz {
 		}
 
 		public CommitBuilder get_commit_builder() {
-			return new CommitBuilder(this.commits, this.blobs);
+			return new CommitBuilder(this);
 		}
 
 	}
