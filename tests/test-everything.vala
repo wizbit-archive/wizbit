@@ -2,6 +2,14 @@ using GLib;
 using Wiz;
 
 class TestBit : TestSuiteWithTempDir {
+	private Wiz.Version dummy_commit(Wiz.Bit obj, string data, Version? parent) {
+		var cb = obj.get_commit_builder();
+		if (parent != null)
+			cb.add_parent(parent);
+		cb.blob = data;
+		return cb.commit();
+	}
+
 	public void test_wiz_store() {
 		var store = new Wiz.Store("repo_uuid", "data/wiz_store");
 		var obj = store.create_bit();
@@ -15,8 +23,8 @@ class TestBit : TestSuiteWithTempDir {
 	public void test_wiz_bit_1() {
 		var obj = new Wiz.Bit("SOMENAME", "data/wiz_bit");
 
-		var v1 = obj.create_next_version_from_string("FOOBAR", null);
-		var v2 = obj.create_next_version_from_string("BARFOO", obj.primary_tip);
+		var v1 = dummy_commit(obj, "FOOBAR", null);
+		var v2 = dummy_commit(obj, "BARFOO", obj.primary_tip);
 
 		obj = new Wiz.Bit("SOMENAME", "data/wiz_bit");
 
@@ -35,15 +43,15 @@ class TestBit : TestSuiteWithTempDir {
 
 	public void test_wiz_refs_1() {
 		var obj = new Wiz.Bit("REFSTEST", "data/wiz_refs_1");
-		obj.create_next_version_from_string("BARFOO", obj.primary_tip);
-		obj.create_next_version_from_string("FOOBAR", obj.primary_tip);
+		dummy_commit(obj, "BARFOO", obj.primary_tip);
+		dummy_commit(obj, "FOOBAR", obj.primary_tip);
 		assert( obj.tips.length() == 1 );
 	}
 
 	public void test_wiz_refs_2() {
 		var obj = new Wiz.Bit("REFSTEST2", "data/wiz_refs_2");
-		obj.create_next_version_from_string("BARFOO", obj.primary_tip);
-		obj.create_next_version_from_string("FOOBAR", obj.primary_tip);
+		dummy_commit(obj, "BARFOO", obj.primary_tip);
+		dummy_commit(obj, "FOOBAR", obj.primary_tip);
 
 		var obj_2 = new Wiz.Bit("REFSTEST2", "tests/data/wiz_refs_2");
 		assert( obj.tips.length() == 1 );
