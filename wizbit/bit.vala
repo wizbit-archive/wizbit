@@ -72,6 +72,10 @@ namespace Wiz {
 			return new Version(this, uuid);
 		}
 
+		public CommitBuilder get_commit_builder() {
+			return new CommitBuilder(this.commits);
+		}
+
 		public OutputStream create_next_version() {
 			return new OutputStream();
 		}
