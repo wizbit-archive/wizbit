@@ -6,4 +6,4 @@ test -z "$srcdir" && srcdir=.
 
 PKG_NAME="wizbit"
 
-. gnome-autogen.sh
+USE_COMMON_DOC_BUILD=yes . gnome-autogen.sh
