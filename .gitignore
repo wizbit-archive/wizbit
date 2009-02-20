@@ -16,7 +16,14 @@ Makefile
 .dirstamp
 .libs
 intltool-*
-libwizbit/*.[ch]
+m4
+gtk-doc.make
+omf.make
+xmldocs.make
+wizbit/*.[ch]
+wizbit/wizbit.vapi
+wizbit-widgets/*.[ch]
+wizbit-widgets/wizbit-widgets.vapi
 tests/*.[ch]
 src/*.[ch]
 config.*
@@ -29,3 +36,4 @@ config.*
 .*.sw[pon]
 *.bzr
 *~
+*.pc
