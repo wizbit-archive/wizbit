@@ -75,7 +75,10 @@ test_commit_store_CFLAGS=@WIZBIT_CFLAGS@
 test_commit_store_LDADD=../wizbit/libwizbit.la
 
 test_blob_store_VALASOURCES = \
-	$(COMMON_VALASOURCES)				\
+	$(top_srcdir)/wizbit/blob_store.vala		\
+	tests.vapi					\
+	config.vapi					\
+	tests.vala					\
 	test-blob-store.vala				\
 	$(NULL)
 

@@ -9,7 +9,7 @@ namespace Wiz {
 		private string refs_path;
 		private string objects_path;
 
-		protected BlobStore blobs;
+		internal BlobStore blobs;
 		public CommitStore commits;
 
 		public string store_path { get; construct; }
