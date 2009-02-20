@@ -72,8 +72,8 @@ expand_content_files=
 # signals and properties.
 # e.g. INCLUDES=-I$(top_srcdir) -I$(top_builddir) $(GTK_DEBUG_FLAGS)
 # e.g. GTKDOC_LIBS=$(top_builddir)/gtk/$(gtktargetlib)
-INCLUDES=-I$(top_srcdir) $(GLIB_CFLAGS)
-GTKDOC_LIBS=$(GLIB_LIBS) $(top_builddir)/wizbit/libwizbit.la
+INCLUDES=-I$(top_srcdir) $(WIZBIT_CFLAGS)
+GTKDOC_LIBS=$(WIZBIT_LIBS) $(top_builddir)/wizbit/libwizbit.la
 
 # This includes the standard gtk-doc make rules, copied by gtkdocize.
 include $(top_srcdir)/gtk-doc.make
