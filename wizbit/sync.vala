@@ -82,13 +82,14 @@ public class SyncSource : Object {
 		}
 	}
 
+	/**
+	 * sync_source_search_for_shas:
+	 * @versions: A list of versions to kick out of the iterator
+	 * @returns: A list of versions found by the breadth first search
+	 *
+	 * Does stuff with a monkey
+	 */
 	public List<string> search_for_shas(Queue<string> versions) {
-		/*
-		 * search_for_shas
-		 * @versions: A list of versions to kick out of the iterator
-		 *
-		 * Returns: A list of versions found by the breadth first search
-		 */
 		for (uint i = 0; i < versions.get_length(); i++) {
 			var v = versions.peek_nth(i);
 			var wz = this.bit.open_version(v);
