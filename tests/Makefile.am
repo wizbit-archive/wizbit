@@ -58,7 +58,12 @@ test_sync_CFLAGS=@WIZBIT_CFLAGS@
 test_sync_LDADD=../wizbit/libwizbit.la
 
 test_commit_store_VALASOURCES = \
-	$(COMMON_VALASOURCES)				\
+	$(top_srcdir)/wizbit/commit_store.vala		\
+	$(top_srcdir)/wizbit/commit.vala		\
+	$(top_srcdir)/wizbit/utils.vala			\
+	$(top_srcdir)/wizbit/uuid.vapi			\
+	tests.vapi					\
+	tests.vala					\
 	test-commit-store.vala				\
 	$(NULL)
 
@@ -68,7 +73,7 @@ test_commit_store_SOURCES = \
 	$(NULL)
 
 test-commit-store.vala.stamp:	$(test_commit_store_VALASOURCES)
-	$(VALAC) -C --basedir $(top_srcdir) --pkg gio-2.0  $^
+	$(VALAC) -C --basedir $(top_srcdir) --pkg sqlite3  $^
 	touch $@
 
 test_commit_store_CFLAGS=@WIZBIT_CFLAGS@

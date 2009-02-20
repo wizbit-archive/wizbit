@@ -1,6 +1,6 @@
 
 namespace Wiz {
-	public class Commit {
+	internal class Commit {
 		public string uuid { get; set; }
 		public string blob { get; set; }
 		public string committer { get; set; }
