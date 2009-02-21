@@ -13,6 +13,7 @@ libwizbit_la_VALASOURCES = \
 	config.vapi \
 	blob_store.vala \
 	commit.vala \
+	commit_builder.vala \
 	commit_store.vala \
 	store.vala \
 	bit.vala \

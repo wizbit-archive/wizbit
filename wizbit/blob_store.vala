@@ -5,7 +5,7 @@ namespace Wiz {
 	/**
 	 * Represents a collection of raw objects
 	 */
-	public class BlobStore : GLib.Object {
+	internal class BlobStore : GLib.Object {
 
 		public string directory { get; construct; }
 
@@ -58,7 +58,7 @@ namespace Wiz {
 	/**
 	 * Represents a single raw object
 	 */
-	public class Blob : GLib.Object {
+	internal class Blob : GLib.Object {
 		public bool parsed { get; set; }
 		public BlobStore store { get; construct; }
 		public string uuid { get; set; }

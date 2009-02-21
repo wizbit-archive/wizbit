@@ -192,7 +192,7 @@ namespace Wiz {
 			return (this.lookup_commit(uuid) != null);
 		}
 
-		public Commit? lookup_commit(string uuid) {
+		internal Commit? lookup_commit(string uuid) {
 			var c = new Commit();
 			c.uuid = uuid;
 
@@ -222,7 +222,7 @@ namespace Wiz {
 			return c;
 		}
 
-		public Commit store_commit(Commit c) {
+		internal  Commit store_commit(Commit c) {
 			if (c.uuid == null)
 				c.uuid = generate_uuid();
 

@@ -9,6 +9,7 @@ SUBDIRS = \
 	wizbit \
 	wizbit-widgets \
 	tests \
+	docs \
 	$(NULL)
 
 AM_CPPFLAGS = \

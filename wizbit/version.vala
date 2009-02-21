@@ -75,6 +75,15 @@ namespace Wiz {
 			this.commit = this.bit.commits.lookup_commit(this.version_uuid);
 		}
 
+		public CommitBuilder get_commit_builder() {
+			var cb = this.bit.get_commit_builder();
+			cb.add_parent(this);
+			return cb;
+		}
+
+
+		/* STUFF BELOW HERE CONSIDERED FAIL */
+
 		void _open_blob() throws GLib.FileError {
 			if (this.file == null) {
 				this.blob = new Blob.from_uuid(this.bit.blobs, this.commit.blob);
