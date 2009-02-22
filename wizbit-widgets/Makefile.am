@@ -31,6 +31,11 @@ wizbitwidgetsinclude_HEADERS = \
 	$(libwizbit_widgets_la_VALASOURCES:.vala=.h) \
 	$(NULL)
 
+wizbitvapidir = $(datadir)/vala/vapi
+wizbitvapi_DATA = \
+	wizbit-widgets.vapi \
+	$(NULL)
+
 EXTRA_DIST += \
 	$(libwizbit_widgets_la_VALASOURCES) \
 	libwizbit-widgets.vala.stamp \
