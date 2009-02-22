@@ -1,4 +1,4 @@
-public string generate_uuid() {
+internal string generate_uuid() {
 	char[] uuid = new char[16];
 	var output = new StringBuilder();
 	weak char[] hexstring = (char[]) "0123456789ABCDEF";
