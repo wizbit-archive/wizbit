@@ -6,8 +6,6 @@ namespace Wiz {
 		Queue<Version> queue;
 		Version current;
 
-		public bool end { get; private set; default = true; }
-
 		public BreadthFirstIterator() {
 			this.visited = new List<Version>();
 			this.queue = new Queue<Version>();
@@ -15,7 +13,6 @@ namespace Wiz {
 
 		public void add_version(Version v) {
 			this.queue.push_tail(v);
-			this.end = false;
 		}
 
 		public void add_visited(Version v) {
@@ -39,9 +36,6 @@ namespace Wiz {
 
 			foreach (var par in p.parents)
 				this.queue.push_tail(par);
-
-			if (this.queue.get_length() == 0)
-				this.end = true;
 
 			this.add_visited(p);
 			this.current = p;
@@ -77,8 +71,6 @@ namespace Wiz {
 					}
 				}
 			}
-			if (this.queue.get_length() == 0)
-				this.end = true;
 		}
 	}
 }
