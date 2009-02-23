@@ -16,6 +16,10 @@ namespace Wiz {
 		public string uuid { get; construct; }
 
 		public Version? primary_tip {
+			/**
+			 * wiz_bit_get_primary_tip:
+			 * @returns: The most recent version
+			 */
 			owned get {
 				var pt = this.commits.get_primary_tip();
 				if (pt != null)
@@ -25,6 +29,10 @@ namespace Wiz {
 		}
 
 		public List<Version> tips {
+			/**
+			 * wiz_bit_get_tips:
+			 * @returns: All unmerged versions for the current bit
+			 */
 			owned get {
 				var retval = new List<Version>();
 				foreach (var t in this.commits.get_tips())
@@ -34,6 +42,10 @@ namespace Wiz {
 		}
 
 		public Version? root {
+			/**
+			 * wiz_bit_get_root:
+			 * @returns: The first version of this bit
+			 */
 			owned get {
 				var root = this.commits.get_root();
 				if (root != null)
@@ -64,14 +76,26 @@ namespace Wiz {
 			this.commits = new CommitStore(Path.build_filename(this.refs_path, uuid), uuid);
 		}
 
+		/**
+		 * wiz_bit_has_version:
+		 * @returns: True if bit has specified version, False otherwise.
+		 */
 		public bool has_version(string uuid) {
 			return this.commits.has_commit(uuid);
 		}
 
+		/**
+		 * wiz_bit_open_version:
+		 * @returns: A version object for the specified version uuid
+		 */
 		public Version open_version(string uuid) {
 			return new Version(this, uuid);
 		}
 
+		/**
+		 * wiz_bit_get_commit_builder:
+		 * @returns: A new commit builder object
+		 */
 		public CommitBuilder get_commit_builder() {
 			return new CommitBuilder(this);
 		}
