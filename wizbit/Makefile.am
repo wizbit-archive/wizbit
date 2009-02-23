@@ -21,6 +21,7 @@ libwizbit_la_VALASOURCES = \
 	uuid.vapi \
 	utils.vala \
 	breadthfirst.vala \
+	depthfirst.vala \
 	sync.vala
 	$(NULL)
 
