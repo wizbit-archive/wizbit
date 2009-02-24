@@ -1,5 +1,5 @@
 using GLib;
-using Wiz;
+using Wiz.Private;
 
 Commit create_dummy_commits(CommitStore store, uint no_commits, Commit ?graft_point = null) {
 	Commit cur = graft_point;

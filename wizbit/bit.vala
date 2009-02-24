@@ -1,4 +1,5 @@
 using GLib;
+using Wiz.Private;
 
 namespace Wiz {
 	public class Bit : GLib.Object {

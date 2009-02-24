@@ -1,7 +1,7 @@
 using GLib;
 using Sqlite;
 
-namespace Wiz {
+namespace Wiz.Private {
 	public class CommitStore : Object {
 		public string database { get; construct; }
 		public string uuid { get; construct; }

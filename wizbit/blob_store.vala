@@ -1,6 +1,6 @@
 using GLib;
 
-namespace Wiz {
+namespace Wiz.Private {
 
 	/**
 	 * Represents a collection of raw objects
@@ -28,10 +28,12 @@ namespace Wiz {
 		}
 
 		/**
-		 * Does an object with a given unique identifier exist in this store
+		 * wiz_private_blob_store_exists:
 		 *
 		 * @param uuid    unique identfier
 		 * @returns       true if object is store, false otherwise
+		 *
+		 * Does an object with a given unique identifier exist in this store
 		 */
 		public bool exists(string uuid) {
 			return FileUtils.test(this.get_path_for_uuid(uuid), FileTest.EXISTS);

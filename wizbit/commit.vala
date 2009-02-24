@@ -1,5 +1,5 @@
 
-namespace Wiz {
+namespace Wiz.Private {
 	internal class Commit {
 		public string uuid { get; set; }
 		public string blob { get; set; }

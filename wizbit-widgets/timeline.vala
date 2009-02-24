@@ -356,7 +356,7 @@ namespace WizWidgets {
 	public class Timeline : Gtk.Widget {
 		private Wiz.Bit bit									 = null;
 		private Wiz.Store store							 = null;
-		private Wiz.CommitStore commit_store	= null;
+		private Wiz.Private.CommitStore commit_store	= null;
 
 		// The dag itself
 		private Node primary_tip							= null;

@@ -1,5 +1,5 @@
 using GLib;
-using Wiz;
+using Wiz.Private;
 
 class TestBlobStore : TestSuiteWithTempDir {
 	public void test_graph() {

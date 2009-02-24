@@ -8,6 +8,7 @@
 
 using GLib;
 using Wiz;
+using Wiz.Private;
 
 public class SyncSource : Object {
 	public Wiz.Store store { private get; construct; }

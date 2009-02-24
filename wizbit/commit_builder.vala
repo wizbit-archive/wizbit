@@ -1,3 +1,4 @@
+using Wiz.Private;
 
 namespace Wiz {
 
