@@ -3,14 +3,14 @@ using GLib;
 namespace Wiz {
 
 	public class VersionIterator : Object {
-		public delegate void Gather(VersionIterator iter, Version v);
-		Gather gather;
+		public static delegate void Gatherer(VersionIterator iter, Version v);
+		Gatherer gather;
 
 		List<Version> visited;
 		Queue<Version> queue;
 		Version current;
 
-		public VersionIterator(Gather gather) {
+		public VersionIterator(Gatherer gather) {
 			this.visited = new List<Version>();
 			this.queue = new Queue<Version>();
 			this.gather = gather;
@@ -54,27 +54,28 @@ namespace Wiz {
 		public Version get() {
 			return this.current;
 		}
+
+		public static void DepthFirstGatherer(VersionIterator iter, Version v) {
+			// Visit each parent, depth first
+			foreach (var p in v.parents)
+				iter.prepend_queue(p);
+		}
+
+		public static void BreadthFirstGatherer(VersionIterator iter, Version v) {
+			// Visit each parent, breadth first
+			foreach (var p in v.parents)
+				iter.append_queue(p);
+		}
+
+		public static void MainlineGatherer(VersionIterator iter, Version v) {
+			// Visit the first parent
+			if (v.parents.length() > 0)
+				iter.append_queue(v.parents.nth_data(0));
+		}
+
+		public static void NoHuntGatherer(VersionIterator iter, Version v) {
+			// Don't queue any nodes to visit
+		}
 	}
 
-	public void depth_first_gatherer(VersionIterator iter, Version v) {
-		// Visit each parent, depth first
-		foreach (var p in v.parents)
-			iter.prepend_queue(p);
-	}
-
-	public void breadth_first_gatherer(VersionIterator iter, Version v) {
-		// Visit each parent, breadth first
-		foreach (var p in v.parents)
-			iter.append_queue(p);
-	}
-
-	public void mainline_gatherer(VersionIterator iter, Version v) {
-		// Visit the first parent
-		if (v.parents.length() > 0)
-			iter.append_queue(v.parents.nth_data(0));
-	}
-
-	public void nohunt_gatherer(VersionIterator iter, Version v) {
-		// Don't queue any nodes to visit
-	}
 }

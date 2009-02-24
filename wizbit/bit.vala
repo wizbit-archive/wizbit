@@ -94,6 +94,16 @@ namespace Wiz {
 		}
 
 		/**
+		 * wiz_bit_get_iterator:
+		 * @returns: A history iterator starting at the specified version_uuid
+		 */
+		public VersionIterator get_iterator(string version_uuid, VersionIterator.Gatherer gatherer) {
+			var iter = new VersionIterator(gatherer);
+			iter.append_queue(this.open_version(version_uuid));
+			return iter;
+		}
+
+		/**
 		 * wiz_bit_get_commit_builder:
 		 * @returns: A new commit builder object
 		 */

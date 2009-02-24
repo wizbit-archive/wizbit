@@ -82,7 +82,6 @@ namespace Wiz {
 			return cb;
 		}
 
-
 		/* STUFF BELOW HERE CONSIDERED FAIL */
 
 		void _open_blob() throws GLib.FileError {
