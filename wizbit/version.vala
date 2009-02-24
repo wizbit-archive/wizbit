@@ -6,10 +6,18 @@ namespace Wiz {
 		/* A Version is a pair of Graph objects, one representing the commit
 		 * the other representing the blob
 		 */
+
 		public Bit bit { get; construct; }
 		public string version_uuid { get; construct; }
 
 		private Commit commit;
+
+		public Version(Bit bit, string version_uuid) {
+			this.bit = bit;
+			this.version_uuid = version_uuid;
+
+			this.commit = this.bit.commits.lookup_commit(this.version_uuid);
+		}
 
 		/* deprecated */
 		protected string blob_id {
@@ -68,13 +76,6 @@ namespace Wiz {
 
 		private Blob blob;
 		private MappedFile file;
-
-		public Version(Bit bit, string version_uuid) {
-			this.bit = bit;
-			this.version_uuid = version_uuid;
-
-			this.commit = this.bit.commits.lookup_commit(this.version_uuid);
-		}
 
 		public CommitBuilder get_commit_builder() {
 			var cb = this.bit.get_commit_builder();
