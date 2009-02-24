@@ -19,8 +19,13 @@ namespace Wiz {
 			this.commit = this.bit.commits.lookup_commit(this.version_uuid);
 		}
 
-		/* deprecated */
-		protected string blob_id {
+		/**
+		 * wiz_version_get_blob_id:
+		 * @returns: The sha of the blob associated with this version.
+		 *
+		 * Deprecated: 0.1
+		 */
+		internal string blob_id {
 			get {
 				return this.commit.blob;
 			}
