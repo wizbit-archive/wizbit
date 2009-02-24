@@ -2,10 +2,10 @@ using GLib;
 
 namespace Wiz {
 
-	public static delegate void Gather(VersionIterator iter, Version v);
-
 	public class VersionIterator : Object {
+		public delegate void Gather(VersionIterator iter, Version v);
 		Gather gather;
+
 		List<Version> visited;
 		Queue<Version> queue;
 		Version current;
