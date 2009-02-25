@@ -79,7 +79,7 @@ namespace Wiz {
 			}
 		}
 
-		private Blob blob;
+		private Wiz.Private.Blob blob;
 		private MappedFile file;
 
 		public CommitBuilder get_commit_builder() {
