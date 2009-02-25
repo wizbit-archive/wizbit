@@ -1,12 +1,8 @@
 
 [Compact]
 public class BaseTestSuite {
-	void setup(void *fixture) {}
-	void teardown(void *fixture) {}
-
-	void assert_true(bool condition) {
-		assert(condition);
-	}
+	public void setup(void *fixture) {}
+	public void teardown(void *fixture) {}
 }
 
 public class TestSuiteWithTempDir : BaseTestSuite {
