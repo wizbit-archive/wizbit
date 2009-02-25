@@ -12,7 +12,6 @@ namespace Wiz {
 		private Wiz.Private.CommitStore commit_store;
 		private Wiz.Private.BlobStore blob_store;
 		private Wiz.Private.Commit new_commit;
-		private string _blob;
 
 		public CommitBuilder(Bit bit) {
 			this.bit = bit;
@@ -28,11 +27,7 @@ namespace Wiz {
 			this.new_commit.parents.append(parent.version_uuid);
 		}
 
-		public string blob {
-			set {
-				this._blob = value;
-			}
-		}
+		public Wiz.File file { get; set; }
 
 		public int timestamp {
 			set {
@@ -47,10 +42,12 @@ namespace Wiz {
 		}
 
 		public Commit commit() {
-			// The next 4 lines are deprecated and here only to ease transition
-			// of wiz-fuse, sync and our tests
+			// FIXME: Think about interaction between Wiz.Private.Blob and Wiz.File
+			// Wiz.File currently assumes things about W.P.Blob, and this will
+			// start to smell when we get to GroupCompress
+			// Could refactor some WizFile code into Blob (and add a get_temp_file method)
 			var blob = new Wiz.Private.Blob(this.blob_store);
-			blob.set_contents((void *)this._blob, this._blob.len());
+			blob.set_contents_from_file(this.file.get_path());
 			blob.write();
 			this.new_commit.hash = blob.uuid;
 

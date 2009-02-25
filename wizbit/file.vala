@@ -18,7 +18,18 @@ namespace Wiz {
 			this.parent_hash = parent_hash;
 			if (this.parent_hash != null) {
 				this.temp_file = this.mk_temp();
+			} else {
+				this.temp_file = this.mk_temp_new();
 			}
+		}
+
+		/*
+		 * Create a new empty temp file for writing
+		 */
+		private GLib.File? mk_temp_new() {
+			GLib.File store = GLib.File.new_for_path(Environment.get_home_dir());
+			store = store.get_child(".wizbit").get_child("objects");
+			return GLib.File.new_for_path(store.get_path() + "/" + generate_uuid());
 		}
 
 		/*
@@ -63,6 +74,29 @@ namespace Wiz {
 			return dst;
 		}
 
+		/**
+		 * wiz_file_get_contents:
+		 * @returns: The contents of the file as a string.
+		 */
+		public string get_contents() throws FileError {
+			string contents;
+			long length;
+			FileUtils.get_contents(this.get_path(), out contents, out length);
+			return contents;
+		}
+
+		/**
+		 * wiz_file_set_contents:
+		 * @returns: Set the contents of the file from a string.
+		 */
+		public void set_contents(string contents, long length = -1) throws FileError {
+			FileUtils.set_contents(this.get_path(), contents, length);
+		}
+
+		/**
+		 * wiz_file_get_mapped_file:
+		 * @returns: A GLib.MappedFile object
+		 */
 		public MappedFile get_mapped_file() {
 			return new MappedFile(this.get_path(), false);
 		}
