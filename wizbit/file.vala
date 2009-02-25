@@ -61,16 +61,16 @@ namespace Wiz {
 			return dst;
 		}
 
-		public void read() {
+		public GLib.InputStream read() {
+			return this.temp_file.read(null);
 		}
 
-		public void append_to() {
+		public GLib.OutputStream append_to() {
+			return this.temp_file.append_to(FileCreateFlags.PRIVATE, null);	
 		}
 
-		public void replace() {
-		}
-
-		public void seek() {
+		public GLib.OutputStream replace() {
+			return this.temp_file.replace(null, false, FileCreateFlags.PRIVATE, null);
 		}
 
 		/*
