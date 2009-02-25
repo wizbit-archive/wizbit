@@ -326,7 +326,6 @@ namespace Wiz.Private {
 
 			if (version <= 1) {
 				// upgrade version 1 to version 2
-				// upgrade version 1 to version 2
 				this.upgrade_database_step("ALTER TABLE commits RENAME TO commits_old");
 
 				this.upgrade_database_step(
@@ -369,6 +368,10 @@ namespace Wiz.Private {
 			tmp.reset();
 			if (tmp.step() == Sqlite.DONE)
 				return 0;
+
+			// TODO To check for database version 2 we should look for a table called
+			// blobs. I don't want this to happen right now as it would break the DB
+			// as it stands.
 
 			return 1;
 		}
