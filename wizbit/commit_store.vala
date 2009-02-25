@@ -203,7 +203,7 @@ namespace Wiz.Private {
 				return null;
 
 			assert(res == Sqlite.ROW);
-			c.blob =this.select_commit_sql.column_text(0);
+			c.hash = this.select_commit_sql.column_text(0);
 			c.committer = this.select_commit_sql.column_text(1);
 			c.timestamp = this.select_commit_sql.column_int(2);
 			c.timestamp2 = this.select_commit_sql.column_int(3);
@@ -230,7 +230,7 @@ namespace Wiz.Private {
 			//assert(res == Sqlite.OK);
 
 			this.insert_commit_sql.bind_text(1, c.uuid);
-			this.insert_commit_sql.bind_text(2, c.blob);
+			this.insert_commit_sql.bind_text(2, c.hash);
 			this.insert_commit_sql.bind_text(3, c.committer);
 			this.insert_commit_sql.bind_int(4, c.timestamp);
 			this.insert_commit_sql.bind_int(5, c.timestamp2);
@@ -301,7 +301,7 @@ namespace Wiz.Private {
 
 	internal class Commit {
 		public string uuid { get; set; }
-		public string blob { get; set; }
+		public string hash { get; set; }
 		public string committer { get; set; }
 		public int timestamp { get; set; }
 		public int timestamp2 {get; set; }

@@ -23,7 +23,7 @@ namespace Wiz {
 		 */
 		internal string blob_id {
 			get {
-				return this.commit.blob;
+				return this.commit.hash;
 			}
 		}
 
@@ -108,7 +108,7 @@ namespace Wiz {
 
 		void _open_blob() throws GLib.FileError {
 			if (this.file == null) {
-				this.blob = new Blob.from_uuid(this.bit.blobs, this.commit.blob);
+				this.blob = new Blob.from_uuid(this.bit.blobs, this.commit.hash);
 				this.file = this.blob.read();
 			}
 		}

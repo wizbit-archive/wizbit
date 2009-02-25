@@ -46,7 +46,7 @@ namespace Wiz {
 			var blob = new Wiz.Private.Blob(this.blob_store);
 			blob.set_contents((void *)this._blob, this._blob.len());
 			blob.write();
-			this.new_commit.blob = blob.uuid;
+			this.new_commit.hash = blob.uuid;
 
 			if (this.new_commit.committer == "") {
 				// Retrieve from (getpwname)->pw_gecos, env or something
