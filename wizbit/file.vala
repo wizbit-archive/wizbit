@@ -32,8 +32,7 @@ namespace Wiz {
 		 * Create a new empty temp file for writing
 		 */
 		private GLib.File? mk_temp_new() {
-			GLib.File store = GLib.File.new_for_path(Environment.get_home_dir());
-			store = store.get_child(".wizbit").get_child("objects");
+			GLib.File store = GLib.File.new_for_path(Environment.get_tmp_dir());
 			return GLib.File.new_for_path(store.get_path() + "/" + generate_uuid());
 		}
 
