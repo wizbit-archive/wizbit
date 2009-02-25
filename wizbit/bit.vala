@@ -97,7 +97,7 @@ namespace Wiz {
 		 * wiz_bit_get_iterator:
 		 * @returns: A history iterator starting at the specified version_uuid
 		 */
-		public CommitIterator get_iterator(string version_uuid, CommitIterator.Gatherer gatherer) {
+		private CommitIterator get_iterator(string version_uuid, CommitIterator.Gatherer gatherer) {
 			var iter = new CommitIterator(gatherer);
 			iter.append_queue(this.open_commit(version_uuid));
 			return iter;
