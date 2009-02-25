@@ -41,7 +41,7 @@ class TestBit : TestSuiteWithTempDir {
 		assert( v1 != null );
 		assert( v1.committer != null);
 		assert( v1.parents.length() == 0 );
-		mf = v2.file.get_mapped_file();
+		mf = v1.file.get_mapped_file();
 		assert( Memory.cmp(mf.get_contents(), "FOOBAR", 6) == 0 );
 	}
 
