@@ -40,6 +40,10 @@ namespace Wiz.Private {
 			return FileUtils.test(this.get_path_for_uuid(uuid), FileTest.EXISTS);
 		}
 
+		public Blob get(string hash) {
+			return new Blob.from_uuid(this, hash);
+		}
+
 		public MappedFile read(string uuid) throws GLib.FileError {
 			string path = this.get_path_for_uuid(uuid);
 			return new MappedFile(path, false);

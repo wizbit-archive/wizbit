@@ -59,7 +59,7 @@ namespace Wiz {
 		 */
 		public File file {
 			owned get {
-				return new File(this.blob_id);
+				return new File.from_blob(this.bit.blobs.get(this.commit.hash));
 			}
 		}
 

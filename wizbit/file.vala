@@ -23,6 +23,11 @@ namespace Wiz {
 			}
 		}
 
+		internal File.from_blob(Wiz.Private.Blob blob) {
+			this.parent_hash = blob.uuid;
+			this.temp_file = blob.get_temp_file();
+		}
+
 		/*
 		 * Create a new empty temp file for writing
 		 */
