@@ -59,7 +59,6 @@ test_sync_LDADD=../wizbit/libwizbit.la
 
 test_commit_store_VALASOURCES = \
 	$(top_srcdir)/wizbit/commit_store.vala		\
-	$(top_srcdir)/wizbit/commit.vala		\
 	$(top_srcdir)/wizbit/utils.vala			\
 	$(top_srcdir)/wizbit/uuid.vapi			\
 	tests.vapi					\
