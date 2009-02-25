@@ -3,10 +3,6 @@ using Wiz.Private;
 
 namespace Wiz {
 	public class Commit : GLib.Object {
-		/* A Version is a pair of Graph objects, one representing the commit
-		 * the other representing the blob
-		 */
-
 		public Bit bit { get; construct; }
 		public string version_uuid { get; construct; }
 
@@ -20,7 +16,7 @@ namespace Wiz {
 		}
 
 		/**
-		 * wiz_version_get_blob_id:
+		 * wiz_commit_get_blob_id:
 		 * @returns: The sha of the blob associated with this version.
 		 *
 		 * Deprecated: 0.1
@@ -31,18 +27,30 @@ namespace Wiz {
 			}
 		}
 
+		/**
+		 * wiz_commit_get_committer:
+		 * @returns: The name of person who made this commit
+		 */
 		public string committer {
 			get {
 				return this.commit.committer;
 			}
 		}
 
+		/**
+		 * wiz_commit_get_timestamp:
+		 * @returns: The timestamp
+		 */
 		public int timestamp {
 			get {
 				return this.commit.timestamp;
 			}
 		}
 
+		/**
+		 * wiz_commit_get_previous:
+		 * @returns: The previous commit along the mainline
+		 */
 		public Commit? previous {
 			owned get {
 				var v = this.bit.commits.get_backward(this.version_uuid);
@@ -52,6 +60,10 @@ namespace Wiz {
 			}
 		}
 
+		/**
+		 * wiz_commit_get_next:
+		 * @returns: The next commit along the mainline
+		 */
 		public Commit? next {
 			owned get {
 				var v = this.bit.commits.get_forward(this.version_uuid);
@@ -82,6 +94,10 @@ namespace Wiz {
 		private Wiz.Private.Blob blob;
 		private MappedFile file;
 
+		/**
+		 * wiz_commit_get_commit_builder:
+		 * @returns: A new commit builder object
+		 */
 		public CommitBuilder get_commit_builder() {
 			var cb = this.bit.get_commit_builder();
 			cb.add_parent(this);
