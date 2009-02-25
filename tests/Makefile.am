@@ -80,6 +80,8 @@ test_commit_store_LDADD=../wizbit/libwizbit.la
 
 test_blob_store_VALASOURCES = \
 	$(top_srcdir)/wizbit/blob_store.vala		\
+	$(top_srcdir)/wizbit/uuid.vapi			\
+	$(top_srcdir)/wizbit/utils.vala			\
 	tests.vapi					\
 	config.vapi					\
 	tests.vala					\
