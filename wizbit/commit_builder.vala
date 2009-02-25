@@ -13,20 +13,36 @@ namespace Wiz {
 		private Wiz.Private.BlobStore blob_store;
 		private Wiz.Private.Commit new_commit;
 		private string _blob;
+		private List<File> streams;
 
 		public CommitBuilder(Bit bit) {
 			this.bit = bit;
 			this.commit_store = bit.commits;
 			this.blob_store = bit.blobs;
+			this.streams = new List<File>();
 
 			this.new_commit = new Wiz.Private.Commit();
 			this.new_commit.timestamp = 0;
 			this.new_commit.committer = "";
 		}
 
+		/**
+		 * wiz_commit_builder_add_parent:
+		 * @param parent		the parent commit to add to this commit
+		 */
 		public void add_parent(Commit parent) {
 			this.new_commit.parents.append(parent.version_uuid);
 		}
+
+		/**
+		 * wiz_commit_builder_add_stream:
+		 * @param name			the name of the stream
+		 * @param stream		the WizFile stream
+		 */
+		public void add_stream(string name, File stream) {
+
+		}
+
 
 		public string blob {
 			set {
@@ -46,6 +62,10 @@ namespace Wiz {
 			}
 		}
 
+		/**
+		 * wiz_commit_builder_commit:
+		 * make the commit, updates the databae and blob store, this is immutable
+		 */
 		public Commit commit() {
 			// The next 4 lines are deprecated and here only to ease transition
 			// of wiz-fuse, sync and our tests
