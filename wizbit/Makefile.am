@@ -17,7 +17,6 @@ libwizbit_la_VALASOURCES = \
 	commit_store.vala \
 	store.vala \
 	bit.vala \
-	version.vala \
 	uuid.vapi \
 	utils.vala \
 	breadthfirst.vala \
