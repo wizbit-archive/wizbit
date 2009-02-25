@@ -54,6 +54,16 @@ namespace Wiz {
 		}
 
 		/**
+		 * wiz_commit_get_file:
+		 * @returns: The blob
+		 */
+		public File file {
+			owned get {
+				return new File(this.blob_id);
+			}
+		}
+
+		/**
 		 * wiz_commit_get_previous:
 		 * @returns: The previous commit along the mainline
 		 */
@@ -97,9 +107,6 @@ namespace Wiz {
 			}
 		}
 
-		private Wiz.Private.Blob blob;
-		private MappedFile file;
-
 		/**
 		 * wiz_commit_get_commit_builder:
 		 * @returns: A new commit builder object
@@ -108,30 +115,6 @@ namespace Wiz {
 			var cb = this.bit.get_commit_builder();
 			cb.add_parent(this);
 			return cb;
-		}
-
-		/* STUFF BELOW HERE CONSIDERED FAIL */
-
-		void _open_blob() throws GLib.FileError {
-			if (this.file == null) {
-				this.blob = new Blob.from_uuid(this.bit.blobs, this.commit.hash);
-				this.file = this.blob.read();
-			}
-		}
-
-		public long get_length() throws GLib.FileError {
-			this._open_blob();
-			return this.file.get_length();
-		}
-
-		public GLib.InputStream read() throws GLib.FileError {
-			this._open_blob();
-			return new MemoryInputStream.from_data(this.file.get_contents(), this.file.get_length(), null);
-		}
-
-		public char *read_as_string() throws GLib.FileError {
-			this._open_blob();
-			return (char *)this.file.get_contents();
 		}
 	}
 }

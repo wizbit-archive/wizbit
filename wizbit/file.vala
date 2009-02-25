@@ -61,6 +61,10 @@ namespace Wiz {
 			return dst;
 		}
 
+		public MappedFile get_mapped_file() {
+			return new MappedFile(this.get_path(), false);
+		}
+
 		public GLib.InputStream read() {
 			return this.temp_file.read(null);
 		}

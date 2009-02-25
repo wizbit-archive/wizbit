@@ -32,13 +32,15 @@ class TestBit : TestSuiteWithTempDir {
 		assert( v2 != null );
 		assert( v2.committer != null );
 		assert( v2.parents.length() == 1 );
-		assert( Memory.cmp(v2.read_as_string(), "BARFOO", 6) == 0 );
+		var mf = v2.file.get_mapped_file();
+		assert( Memory.cmp(mf.get_contents(), "BARFOO", 6) == 0 );
 
 		v1 = v2.parents.nth_data(0);
 		assert( v1 != null );
 		assert( v1.committer != null);
 		assert( v1.parents.length() == 0 );
-		assert( Memory.cmp(v1.read_as_string(), "FOOBAR", 6) == 0 );
+		mf = v2.file.get_mapped_file();
+		assert( Memory.cmp(mf.get_contents(), "FOOBAR", 6) == 0 );
 	}
 
 	public void test_wiz_refs_1() {
