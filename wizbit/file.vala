@@ -13,6 +13,8 @@ namespace Wiz {
 		 * @param parent_hash        the hash of the parent to duplicate for writing
 		 */
 		public File(string? parent_hash) {
+			// FIXME: This class needs to be lazier.
+			// E.g. Replace case doesnt need to boher with checking out a temp file
 			this.parent_hash = parent_hash;
 			if (this.parent_hash != null) {
 				this.temp_file = this.mk_temp();
@@ -65,19 +67,32 @@ namespace Wiz {
 			return new MappedFile(this.get_path(), false);
 		}
 
+		/**
+		 * wiz_file_read:
+		 * @returns: A GLib.InputStream for reading from the resource
+		 */
 		public GLib.InputStream read() {
 			return this.temp_file.read(null);
 		}
 
+		/**
+		 * wiz_file_append_to
+		 * @returns: A GLib.OutputStream for append to a resource
+		 */
 		public GLib.OutputStream append_to() {
 			return this.temp_file.append_to(FileCreateFlags.PRIVATE, null);	
 		}
 
+		/**
+		 * wiz_file_replace
+		 * @returns: A GLib.OutputStream for replacing a resource
+		 */
 		public GLib.OutputStream replace() {
 			return this.temp_file.replace(null, false, FileCreateFlags.PRIVATE, null);
 		}
 
-		/*
+		/**
+		 * wiz_file_hash:
 		 * Hashing function, generates a hash of this file once the hash is 
 		 * generated this file can no longer be changed, all other writes
 		 * should land on a new commit.
@@ -86,6 +101,9 @@ namespace Wiz {
 			return "HASH GENERATED ON CLOSE?";
 		}
 
+		/**
+		 * wiz_file_get_path:
+		 */
 		public string get_path() {
 			return this.temp_file.get_path();
 		}
