@@ -33,6 +33,15 @@ namespace Wiz.Private {
 		private static const string INSERT_RELATION_SQL =
 			"INSERT INTO relations VALUES ( (SELECT c.id from commits AS c WHERE c.uuid = ?), (SELECT c.id from commits AS c WHERE c.uuid = ?))";
 
+		private static const string INSERT_BLOB_SQL =
+			"INSERT INTO blobs VALUES ((SELECT c.id from commits AS c WHERE c.uuid = ?), ?, ?)";
+
+		private static const string GET_BLOB_SQL =
+			"SELECT hash FROM blobs WHERE commit_id = (SELECT c.id from commits AS c WHERE c.uuid = ?) AND stream_name = ?";
+
+		private static const string GET_STREAMS_SQL =
+			"SELECT stream_name FROM blobs WHERE commit_id = (SELECT c.id from commits AS c WHERE c.uuid = ?) GROUP BY stream_name";
+
 		private static const string SELECT_COMMIT_SQL =
 			"SELECT c.blob, c.committer, c.timestamp, c.timestamp2, c.id FROM commits AS c WHERE c.uuid=?";
 
@@ -57,6 +66,9 @@ namespace Wiz.Private {
 		private Statement get_root_sql;
 		private Statement insert_commit_sql;
 		private Statement insert_relation_sql;
+		private Statement insert_blob_sql;
+		private Statement get_blob_sql;
+		private Statement get_streams_sql;
 		private Statement select_commit_sql;
 		private Statement select_commit_by_id_sql;
 		private Statement select_version_timestamp_sql;
@@ -78,6 +90,9 @@ namespace Wiz.Private {
 			this.prepare_statement(GET_ROOT_SQL, out get_root_sql);
 			this.prepare_statement(INSERT_COMMIT_SQL, out insert_commit_sql);
 			this.prepare_statement(INSERT_RELATION_SQL, out insert_relation_sql);
+			this.prepare_statement(INSERT_BLOB_SQL, out insert_blob_sql);
+			this.prepare_statement(GET_BLOB_SQL, out get_blob_sql);
+			this.prepare_statement(GET_STREAMS_SQL, out get_streams_sql);
 			this.prepare_statement(SELECT_COMMIT_SQL, out select_commit_sql);
 			this.prepare_statement(SELECT_COMMIT_BY_ID_SQL, out select_commit_by_id_sql);
 			this.prepare_statement(SELECT_VERSION_TIMESTAMP_SQL, out select_version_timestamp_sql);
@@ -194,6 +209,38 @@ namespace Wiz.Private {
 			return retval;
 		}
 
+		public void store_blob(string uuid, string stream_name, string hash) {
+			this.insert_blob_sql.bind_text(1, uuid);
+			this.insert_blob_sql.bind_text(2, stream_name);
+			this.insert_blob_sql.bind_text(3, hash);
+			var res = this.insert_blob_sql.step();
+			assert(res == Sqlite.DONE);
+			this.insert_blob_sql.reset();
+		}
+
+		public string get_blob(string uuid, string stream_name) {
+			string retval;
+			this.get_blob_sql.bind_text(1, uuid);
+			this.get_blob_sql.bind_text(2, stream_name);
+			var res = this.get_blob_sql.step();
+			retval = this.get_blob_sql.column_text(0);
+			assert(res == Sqlite.DONE);
+			this.get_blob_sql.reset();
+			return retval;
+		}
+
+		public List<string> get_streams(string uuid) {
+			var retval = new List<string>();
+			this.get_streams_sql.bind_text(1, uuid);
+			var res = this.get_streams_sql.step();
+			while (res == Sqlite.ROW) {
+				retval.append(this.get_streams_sql.column_text(0));
+			}
+			assert(res == Sqlite.DONE);
+			this.get_streams_sql.reset();
+			return retval;
+		}
+
 		public bool has_commit(string uuid) {
 			return (this.lookup_commit(uuid) != null);
 		}
@@ -210,7 +257,6 @@ namespace Wiz.Private {
 
 			assert(res == Sqlite.ROW);
 			c.hash = this.select_commit_sql.column_text(0);
-			c.committer = this.select_commit_sql.column_text(1);
 			c.timestamp = this.select_commit_sql.column_int(2);
 			c.timestamp2 = this.select_commit_sql.column_int(3);
 			int commit_id = this.select_commit_sql.column_int(4);
@@ -280,6 +326,37 @@ namespace Wiz.Private {
 
 			if (version <= 1) {
 				// upgrade version 1 to version 2
+				// upgrade version 1 to version 2
+				this.upgrade_database_step("ALTER TABLE commits RENAME TO commits_old");
+
+				this.upgrade_database_step(
+					"CREATE TABLE blobs(commit_id INTEGER PRIMARY KEY, stream_name VARCHAR(40), hash VARCHAR(40))");
+
+				this.upgrade_database_step(
+					"CREATE TABLE commits(id INTEGER PRIMARY KEY, uuid VARCHAR(40), committer VARCHAR(256), timestamp INTEGER, timestamp2 INTEGER)");
+				// Loop over the old commits table and fill in the data into commits_new
+				// this is currently bad because it would cause the primary keys to
+				// be regenerated :/ although we don't want to delete commits do we...
+				Statement get_all;
+				this.db.prepare("SELECT id, uuid, blob, committer, timestamp, timestamp2 FROM commits_old ORDER BY id ASC", -1, out get_all);
+				int res = get_all.step();
+				while (res == Sqlite.ROW) {
+					this.insert_commit_sql.bind_text(1, get_all.column_text(1));
+					this.insert_commit_sql.bind_text(2, get_all.column_text(3));
+					this.insert_commit_sql.bind_int(3, get_all.column_int(4));
+					this.insert_commit_sql.bind_int(4, get_all.column_int(5));
+					res = this.insert_commit_sql.step();
+					assert(res == Sqlite.DONE);
+					this.insert_commit_sql.reset();
+
+					this.store_blob(get_all.column_text(1), "data", get_all.column_text(2));
+
+					res = get_all.step();
+				}
+				get_all.reset();
+				assert(res == Sqlite.DONE);
+
+				this.upgrade_database_step("DROP TABLE IF EXISTS commits_old");
 			}
 		}
 
