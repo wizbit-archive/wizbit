@@ -1,12 +1,11 @@
-using Wiz.Private;
 
 namespace Wiz {
 
 	public class CommitBuilder {
 		private Bit bit;
-		private CommitStore commit_store;
-		private BlobStore blob_store;
-		private Commit new_commit;
+		private Wiz.Private.CommitStore commit_store;
+		private Wiz.Private.BlobStore blob_store;
+		private Wiz.Private.Commit new_commit;
 		private string _blob;
 
 		public CommitBuilder(Bit bit) {
@@ -14,12 +13,12 @@ namespace Wiz {
 			this.commit_store = bit.commits;
 			this.blob_store = bit.blobs;
 
-			this.new_commit = new Commit();
+			this.new_commit = new Wiz.Private.Commit();
 			this.new_commit.timestamp = 0;
 			this.new_commit.committer = "";
 		}
 
-		public void add_parent(Version parent) {
+		public void add_parent(Commit parent) {
 			this.new_commit.parents.append(parent.version_uuid);
 		}
 
@@ -41,10 +40,10 @@ namespace Wiz {
 			}
 		}
 
-		public Version commit() {
+		public Commit commit() {
 			// The next 4 lines are deprecated and here only to ease transition
 			// of wiz-fuse, sync and our tests
-			var blob = new Blob(this.blob_store);
+			var blob = new Wiz.Private.Blob(this.blob_store);
 			blob.set_contents((void *)this._blob, this._blob.len());
 			blob.write();
 			this.new_commit.blob = blob.uuid;

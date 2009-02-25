@@ -13,12 +13,12 @@ public class Test.Widget : GLib.Object {
     stdout.printf("SELECTION CHANGED\n");
     string selected_uuid = timeline.selected_uuid;
     stdout.printf("%s\n", selected_uuid);
-    //Wiz.Version ver = bit.open_version(selected_uuid);
+    //Wiz.Commit ver = bit.open_version(selected_uuid);
     //string text = ver.read_as_string();
     label.set_text(selected_uuid);
   }
 
-  private static void dummy_commit(Wiz.Bit bit, string data, Wiz.Version? parent, int timestamp) {
+  private static void dummy_commit(Wiz.Bit bit, string data, Wiz.Commit? parent, int timestamp) {
   	var cb = bit.get_commit_builder();
   	if (parent != null)
   		cb.add_parent(parent);
@@ -45,7 +45,7 @@ public class Test.Widget : GLib.Object {
 	     *
 	     */
 
-	    Wiz.Version a, b, c, d; // Branches
+	    Wiz.Commit a, b, c, d; // Branches
 	    stdout.printf("Creating a faux history\n");
 	    dummy_commit(bit, "FOO", null, 1225274400);            // ROOT
 	    dummy_commit(bit, "BAR", bit.primary_tip, 1225359400); // NODE x

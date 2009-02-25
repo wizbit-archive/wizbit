@@ -2,7 +2,7 @@ using GLib;
 using Wiz.Private;
 
 namespace Wiz {
-	public class Version : GLib.Object {
+	public class Commit : GLib.Object {
 		/* A Version is a pair of Graph objects, one representing the commit
 		 * the other representing the blob
 		 */
@@ -10,9 +10,9 @@ namespace Wiz {
 		public Bit bit { get; construct; }
 		public string version_uuid { get; construct; }
 
-		private Commit commit;
+		private Wiz.Private.Commit commit;
 
-		public Version(Bit bit, string version_uuid) {
+		public Commit(Bit bit, string version_uuid) {
 			this.bit = bit;
 			this.version_uuid = version_uuid;
 
@@ -43,38 +43,38 @@ namespace Wiz {
 			}
 		}
 
-		public Version? previous {
+		public Commit? previous {
 			owned get {
 				var v = this.bit.commits.get_backward(this.version_uuid);
 				if (v == null)
 					return null;
-				return new Version(this.bit, v);
+				return new Commit(this.bit, v);
 			}
 		}
 
-		public Version? next {
+		public Commit? next {
 			owned get {
 				var v = this.bit.commits.get_forward(this.version_uuid);
 				if (v == null)
 					return null;
-				return new Version(this.bit, v);
+				return new Commit(this.bit, v);
 			}
 		}
 
-		public List<Version> parents {
+		public List<Commit> parents {
 			owned get {
-				var parents = new List<Version>();
+				var parents = new List<Commit>();
 				foreach (var p in this.bit.commits.get_backwards(this.version_uuid))
-					parents.append(new Version(this.bit, p));
+					parents.append(new Commit(this.bit, p));
 				return parents;
 			}
 		}
 
-		public List<Version> children {
+		public List<Commit> children {
 			owned get {
-				var children = new List<Version>();
+				var children = new List<Commit>();
 				foreach (var c in this.bit.commits.get_forwards(this.version_uuid))
-					children.append(new Version(this.bit, c));
+					children.append(new Commit(this.bit, c));
 				return children;
 			}
 		}

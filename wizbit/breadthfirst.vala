@@ -2,24 +2,24 @@ using GLib;
 
 namespace Wiz {
 	public class BreadthFirstIterator : Object {
-		List<Version> visited;
-		Queue<Version> queue;
-		Version current;
+		List<Commit> visited;
+		Queue<Commit> queue;
+		Commit current;
 
 		public BreadthFirstIterator() {
-			this.visited = new List<Version>();
-			this.queue = new Queue<Version>();
+			this.visited = new List<Commit>();
+			this.queue = new Queue<Commit>();
 		}
 
-		public void add_version(Version v) {
+		public void add_version(Commit v) {
 			this.queue.push_tail(v);
 		}
 
-		public void add_visited(Version v) {
+		public void add_visited(Commit v) {
 			this.visited.append(v);
 		}
 
-		bool have_visited(Version v) {
+		bool have_visited(Commit v) {
 			foreach (var visited in this.visited)
 				if (v.version_uuid == visited.version_uuid)
 					return true;
@@ -43,12 +43,12 @@ namespace Wiz {
 			return true;
 		}
 
-		public Version get() {
+		public Commit get() {
 			return this.current;
 		}
 
-		public List<Version> get_multiple(uint size) {
-			var retval = new List<Version>();
+		public List<Commit> get_multiple(uint size) {
+			var retval = new List<Commit>();
 			var i = size;
 			while (this.next() && i > 0) {
 				retval.append(this.get());
@@ -57,7 +57,7 @@ namespace Wiz {
 			return retval;
 		}
 
-		public void kick_out(Version v) {
+		public void kick_out(Commit v) {
 			for (int i = 0; i < this.queue.get_length(); i++) {
 				if (v.version_uuid == this.queue.peek_nth(i).version_uuid) {
 					this.queue.pop_nth(i);

@@ -8,7 +8,6 @@
 
 using GLib;
 using Wiz;
-using Wiz.Private;
 
 public class SyncSource : Object {
 	public Wiz.Store store { private get; construct; }
@@ -123,7 +122,7 @@ public class SyncSource : Object {
 
 	public string grab_blob(string bit_uuid, string version_uuid) {
 		var b = this.store.open_bit(bit_uuid);
-		var v = new Version(b, version_uuid);
+		var v = new Commit(b, version_uuid);
 		return "%.*s".printf(v.get_length(), v.read_as_string());
 	}
 }
@@ -190,7 +189,7 @@ public class SyncClient : Object {
 		long mark;
 		long pos;
 
-		var c = new Commit();
+		var c = new Wiz.Private.Commit();
 		c.uuid = uuid;
 
 		bufptr = (char *) raw;

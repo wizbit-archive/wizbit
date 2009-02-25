@@ -2,7 +2,7 @@ using GLib;
 using Wiz;
 
 class TestBit : TestSuiteWithTempDir {
-	private Wiz.Version dummy_commit(Wiz.Bit obj, string data, Version? parent) {
+	private Wiz.Commit dummy_commit(Wiz.Bit obj, string data, Commit? parent) {
 		var cb = obj.get_commit_builder();
 		if (parent != null)
 			cb.add_parent(parent);

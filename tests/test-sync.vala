@@ -3,7 +3,7 @@ using Wiz;
 
 class TestSync : TestSuiteWithTempDir {
 
-	private Wiz.Version dummy_commit(Wiz.Bit bit, string data, Wiz.Version? parent = null)
+	private Wiz.Commit dummy_commit(Wiz.Bit bit, string data, Wiz.Commit? parent = null)
 	{
 		var cb = bit.get_commit_builder();
 		if (parent!=null)

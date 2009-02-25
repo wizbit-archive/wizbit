@@ -16,7 +16,7 @@ namespace Wiz {
 		public string store_path { get; construct; }
 		public string uuid { get; construct; }
 
-		public Version? primary_tip {
+		public Commit? primary_tip {
 			/**
 			 * wiz_bit_get_primary_tip:
 			 * @returns: The most recent version
@@ -24,25 +24,25 @@ namespace Wiz {
 			owned get {
 				var pt = this.commits.get_primary_tip();
 				if (pt != null)
-					return new Version(this, pt);
+					return new Commit(this, pt);
 				return null;
 			}
 		}
 
-		public List<Version> tips {
+		public List<Commit> tips {
 			/**
 			 * wiz_bit_get_tips:
 			 * @returns: All unmerged versions for the current bit
 			 */
 			owned get {
-				var retval = new List<Version>();
+				var retval = new List<Commit>();
 				foreach (var t in this.commits.get_tips())
-					retval.append(new Version(this, t));
+					retval.append(new Commit(this, t));
 				return retval;
 			}
 		}
 
-		public Version? root {
+		public Commit? root {
 			/**
 			 * wiz_bit_get_root:
 			 * @returns: The first version of this bit
@@ -50,7 +50,7 @@ namespace Wiz {
 			owned get {
 				var root = this.commits.get_root();
 				if (root != null)
-					return new Version(this, root);
+					return new Commit(this, root);
 				return null;
 			}
 		}
@@ -89,8 +89,8 @@ namespace Wiz {
 		 * wiz_bit_open_version:
 		 * @returns: A version object for the specified version uuid
 		 */
-		public Version open_version(string uuid) {
-			return new Version(this, uuid);
+		public Commit open_version(string uuid) {
+			return new Commit(this, uuid);
 		}
 
 		/**
