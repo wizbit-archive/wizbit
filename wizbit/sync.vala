@@ -92,7 +92,7 @@ public class SyncSource : Object {
 	public List<string> search_for_shas(Queue<string> versions) {
 		for (uint i = 0; i < versions.get_length(); i++) {
 			var v = versions.peek_nth(i);
-			var wz = this.bit.open_version(v);
+			var wz = this.bit.open_commit(v);
 			this.iter.kick_out(wz);
 		}
 

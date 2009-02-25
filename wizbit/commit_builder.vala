@@ -62,7 +62,7 @@ namespace Wiz {
 
 			this.commit_store.store_commit(this.new_commit);
 
-			return this.bit.open_version(this.new_commit.uuid);
+			return this.bit.open_commit(this.new_commit.uuid);
 		}
 
 	}

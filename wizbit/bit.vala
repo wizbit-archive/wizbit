@@ -86,10 +86,10 @@ namespace Wiz {
 		}
 
 		/**
-		 * wiz_bit_open_version:
-		 * @returns: A version object for the specified version uuid
+		 * wiz_bit_open_commit:
+		 * @returns: A commit object for the specified version uuid
 		 */
-		public Commit open_version(string uuid) {
+		public Commit open_commit(string uuid) {
 			return new Commit(this, uuid);
 		}
 
@@ -99,7 +99,7 @@ namespace Wiz {
 		 */
 		public VersionIterator get_iterator(string version_uuid, VersionIterator.Gatherer gatherer) {
 			var iter = new VersionIterator(gatherer);
-			iter.append_queue(this.open_version(version_uuid));
+			iter.append_queue(this.open_commit(version_uuid));
 			return iter;
 		}
 
