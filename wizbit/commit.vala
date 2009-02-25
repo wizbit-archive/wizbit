@@ -2,6 +2,12 @@ using GLib;
 using Wiz.Private;
 
 namespace Wiz {
+	/**
+	 * WizCommit:
+	 * The WizCommit object represents a point in history, it allows the developer
+	 * to access the parents and children of a version as well as gain access to
+	 * the blob itself.
+	 */
 	public class Commit : GLib.Object {
 		public Bit bit { get; construct; }
 		public string version_uuid { get; construct; }

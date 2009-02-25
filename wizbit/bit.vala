@@ -2,11 +2,13 @@ using GLib;
 using Wiz.Private;
 
 namespace Wiz {
+	/**
+	 * WizBit
+	 * A WizBit represents an object with history, for instance a file. The WizBit
+	 * is how we obtain information regarding the history of a file or other
+	 * piece of data.
+	 */
 	public class Bit : GLib.Object {
-		/* A bit is a collection of tips, a tip being a Version object
-		 * which represents the tip of a series of commits, this is almost 
-		 * identical to a reference in git.
-		 */
 		private string refs_path;
 		private string objects_path;
 

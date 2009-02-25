@@ -1,6 +1,12 @@
 
 namespace Wiz {
-
+	/**
+	 * WizCommitBuilder:
+	 * The WizCommitBuilder class is responsible for taking blobs and Commits and
+	 * entering them into the commit store and blob store where appropriate.
+	 * essentially the CommitBuilder acts as a way of pulling together the
+	 * disparate elements of a commit and invoking the WizCommitStore correctly.
+	 */
 	public class CommitBuilder {
 		private Bit bit;
 		private Wiz.Private.CommitStore commit_store;
