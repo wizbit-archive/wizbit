@@ -8,7 +8,7 @@ Commit create_dummy_commits(CommitStore store, uint no_commits, Commit ?graft_po
 		var nw = new Commit();
 		if (cur != null)
 			nw.parents.append(cur.uuid);
-		nw.blob = "abc123";
+		nw.hash = "abc123";
 
 		nw.timestamp = (int) time_t();
 		var t = TimeVal();
@@ -25,7 +25,7 @@ Commit create_merge(CommitStore store, Commit c1, Commit c2) {
 	var c = new Commit();
 	c.parents.append(c1.uuid);
 	c.parents.append(c2.uuid);
-	c.blob = "abc123";
+	c.hash = "abc123";
 	store.store_commit(c);
 	return c;
 }
@@ -58,7 +58,7 @@ void test_commit_lookup() {
 
 	var c1_lookup = s.lookup_commit(c.uuid);
 	assert(c1_lookup.uuid == c.uuid);
-	assert(c1_lookup.blob == "abc123");
+	assert(c1_lookup.hash == "abc123");
 }
 
 void test_commit() {
@@ -188,10 +188,6 @@ void test_get_root() {
 }
 
 public static void main (string[] args) {
-	if (!FileUtils.test("data", FileTest.IS_DIR)) { 
-		DirUtils.create_with_parents("data", 0755);
-		/* Should write some data to the file data/blob-data */
-	}
 	Test.init (ref args);
 	Test.add_func("/wizbit/commit_store/store_new", test_store_new);
 	Test.add_func("/wizbit/commit_store/commit_lookup", test_commit_lookup);
