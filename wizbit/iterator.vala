@@ -86,46 +86,46 @@ namespace Wiz {
 		}
 
 		/**
-		 * wiz_commit_iterator_depth_first_gatherer:
+		 * wiz_commit_iterator_depth_first:
 		 * A delegate that allows @WizCommitIterator to iterate over history
 		 * depth first.
 		 */
-		public static void DepthFirstGatherer(CommitIterator iter, Commit v) {
+		public static void depth_first(CommitIterator iter, Commit v) {
 			// Visit each parent, depth first
 			foreach (var p in v.parents)
 				iter.prepend_queue(p);
 		}
 
 		/**
-		 * wiz_commit_iterator_breadth_first_gatherer:
+		 * wiz_commit_iterator_breadth_first:
 		 * A delegate that allows @WizCommitIterator to iterate over history
 		 * breadth first.
 		 */
-		public static void BreadthFirstGatherer(CommitIterator iter, Commit v) {
+		public static void breadth_first(CommitIterator iter, Commit v) {
 			// Visit each parent, breadth first
 			foreach (var p in v.parents)
 				iter.append_queue(p);
 		}
 
 		/**
-		 * wiz_commit_iterator_mainline_gatherer:
+		 * wiz_commit_iterator_mainline:
 		 * A delegate that allows @WizCommitIterator to iterate over the mainline
 		 * of history.
 		 */
-		public static void MainlineGatherer(CommitIterator iter, Commit v) {
+		public static void mainline(CommitIterator iter, Commit v) {
 			// Visit the first parent
 			if (v.parents.length() > 0)
 				iter.append_queue(v.parents.nth_data(0));
 		}
 
 		/**
-		 * wiz_commit_iterator_no_hunt_gatherer:
+		 * wiz_commit_iterator_no_hunt:
 		 * A delegate that no-ops the @WizCommit gathering part of @WizCommitIterator.
 		 *
 		 * This allows the user to finely control which @WizCommit objects to visit,
 		 * but take advantage of the iterator boilerplate and 'have visited' logic.
 		 */
-		public static void NoHuntGatherer(CommitIterator iter, Commit v) {
+		public static void no_hunt(CommitIterator iter, Commit v) {
 			// Don't queue any nodes to visit
 		}
 	}
