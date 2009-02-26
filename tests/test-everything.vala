@@ -6,7 +6,7 @@ class TestBit : TestSuiteWithTempDir {
 		var cb = obj.get_commit_builder();
 		if (parent != null)
 			cb.add_parent(parent);
-		var f = new Wiz.File(null);
+		var f = new Wiz.File();
 		f.set_contents(data);
 		cb.file = f;
 		return cb.commit();

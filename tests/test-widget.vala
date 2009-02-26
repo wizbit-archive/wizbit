@@ -23,7 +23,7 @@ public class Test.Widget : GLib.Object {
   	if (parent != null)
   		cb.add_parent(parent);
   	cb.timestamp = timestamp;
-  	var f = new Wiz.File(null);
+  	var f = new Wiz.File();
   	f.set_contents(data);
   	cb.file = f;
 	cb.commit();

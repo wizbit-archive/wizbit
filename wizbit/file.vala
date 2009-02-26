@@ -9,29 +9,16 @@ namespace Wiz {
 		private string parent_hash;
 		private GLib.File temp_file;
 
-		/*
-		 * @param parent_hash        the hash of the parent to duplicate for writing
-		 */
-		public File(string? parent_hash) {
-			// FIXME: This class needs to be lazier.
-			// E.g. Replace case doesnt need to boher with checking out a temp file
-			this.parent_hash = parent_hash;
-			if (this.parent_hash == null) {
-				this.temp_file = this.mk_temp_new();
-			}
+		public File() {
+			GLib.File store = GLib.File.new_for_path(Environment.get_tmp_dir());
+			this.temp_file = GLib.File.new_for_path(store.get_path() + "/" + generate_uuid());
 		}
 
 		internal File.from_blob(Wiz.Private.Blob blob) {
+			// FIXME: Make temp file creation lazier
+			// E.g. Replace case doesnt need to bother with checking out a temp file
 			this.parent_hash = blob.uuid;
 			this.temp_file = blob.get_temp_file();
-		}
-
-		/*
-		 * Create a new empty temp file for writing
-		 */
-		private GLib.File? mk_temp_new() {
-			GLib.File store = GLib.File.new_for_path(Environment.get_tmp_dir());
-			return GLib.File.new_for_path(store.get_path() + "/" + generate_uuid());
 		}
 
 		/**
