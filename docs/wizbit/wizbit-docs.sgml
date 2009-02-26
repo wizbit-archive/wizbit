@@ -6,5 +6,19 @@
     <title>Wizbit API Reference</title>
   </bookinfo>
 
-  <xi:include href="xml/wizbit.xml"/>
+  <part id="wizbit-core">
+    <title>Wizbit Core Reference</title>
+    <xi:include href="xml/store.xml" />
+    <xi:include href="xml/bit.xml" />
+    <xi:include href="xml/commit.xml" />
+    <xi:include href="xml/commit_builder.xml" />
+    <xi:include href="xml/iterator.xml" />
+    <xi:include href="xml/file.xml" />
+  </part>
+
+  <part id="wizbit-sync">
+    <title>Wizbit Synchronization</title>
+    <xi:include href="xml/breadth_first.xml" />
+    <xi:include href="xml/sync.xml" />
+  </part>
 </book>
