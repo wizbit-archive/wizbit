@@ -28,7 +28,7 @@ namespace Wiz.Private {
 			"SELECT c.uuid FROM commits AS c ORDER BY c.timestamp, c.timestamp2 LIMIT 1";
 
 		private static const string INSERT_COMMIT_SQL =
-			"INSERT INTO commits (uuid, blob, committer, timestamp, timestamp2) VALUES (?, ?, ?, ?, ?)";
+			"INSERT INTO commits (uuid, committer, timestamp, timestamp2) VALUES (?, ?, ?, ?)";
 
 		private static const string INSERT_RELATION_SQL =
 			"INSERT INTO relations VALUES ( (SELECT c.id from commits AS c WHERE c.uuid = ?), (SELECT c.id from commits AS c WHERE c.uuid = ?))";
@@ -43,7 +43,7 @@ namespace Wiz.Private {
 			"SELECT stream_name FROM blobs WHERE commit_id = (SELECT c.id from commits AS c WHERE c.uuid = ?) GROUP BY stream_name";
 
 		private static const string SELECT_COMMIT_SQL =
-			"SELECT c.blob, c.committer, c.timestamp, c.timestamp2, c.id FROM commits AS c WHERE c.uuid=?";
+			"SELECT c.committer, c.timestamp, c.timestamp2, c.id FROM commits AS c WHERE c.uuid=?";
 
 		private static const string SELECT_COMMIT_BY_ID_SQL = 
 			"SELECT c.uuid FROM commits AS c WHERE c.id=? LIMIT 1";
@@ -256,10 +256,9 @@ namespace Wiz.Private {
 				return null;
 
 			assert(res == Sqlite.ROW);
-			c.hash = this.select_commit_sql.column_text(0);
-			c.timestamp = this.select_commit_sql.column_int(2);
-			c.timestamp2 = this.select_commit_sql.column_int(3);
-			int commit_id = this.select_commit_sql.column_int(4);
+			c.timestamp = this.select_commit_sql.column_int(1);
+			c.timestamp2 = this.select_commit_sql.column_int(2);
+			int commit_id = this.select_commit_sql.column_int(3);
 			this.select_commit_sql.reset();
 
 			this.select_relation_sql.bind_int(1, commit_id);
@@ -282,10 +281,9 @@ namespace Wiz.Private {
 			//assert(res == Sqlite.OK);
 
 			this.insert_commit_sql.bind_text(1, c.uuid);
-			this.insert_commit_sql.bind_text(2, c.hash);
-			this.insert_commit_sql.bind_text(3, c.committer);
-			this.insert_commit_sql.bind_int(4, c.timestamp);
-			this.insert_commit_sql.bind_int(5, c.timestamp2);
+			this.insert_commit_sql.bind_text(2, c.committer);
+			this.insert_commit_sql.bind_int(3, c.timestamp);
+			this.insert_commit_sql.bind_int(4, c.timestamp2);
 			var res = this.insert_commit_sql.step();
 			assert(res == Sqlite.DONE);
 
