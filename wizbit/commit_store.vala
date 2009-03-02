@@ -253,7 +253,7 @@ namespace Wiz.Private {
 			assert(res == Sqlite.DONE);
 			this.get_blob_sql.reset();
 
-			// temporary:
+			// FIXME: temporary:
 			c.hash = c.streams.get("data");
 
 			return c;
@@ -284,7 +284,12 @@ namespace Wiz.Private {
 				this.insert_relation_sql.reset();
 			}
 
-			this.store_blob(c.uuid, "data", c.hash);
+			// FIXME: temporary:
+			c.streams.set("data", c.hash);
+
+			foreach (var key in c.streams.get_keys()) {
+				this.store_blob(c.uuid, key, c.streams.get(key));
+			}
 
 			res = this.db.exec("END");
 			if (res != Sqlite.OK)
