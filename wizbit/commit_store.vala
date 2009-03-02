@@ -271,10 +271,12 @@ namespace Wiz.Private {
 			assert(res == Sqlite.DONE);
 			this.select_relation_sql.reset();
 
+			c.hash = this.get_blob(c.uuid, "data");
+
 			return c;
 		}
 
-		internal  Commit store_commit(Commit c) {
+		internal Commit store_commit(Commit c) {
 			if (c.uuid == null)
 				c.uuid = generate_uuid();
 
@@ -298,6 +300,8 @@ namespace Wiz.Private {
 
 				this.insert_relation_sql.reset();
 			}
+
+			this.store_blob(c.uuid, "data", c.hash);
 
 			//res = this.db.exec("END");
 			//debug(this.db.errmsg());
