@@ -371,9 +371,11 @@ namespace Wiz.Private {
 		public int timestamp { get; set; }
 		public int timestamp2 {get; set; }
 		public List<string> parents;
+		public Gee.HashMap<string,string> streams;
 
-		public void Commit() {
+		public Commit() {
 			this.parents = new List<string>();
+			this.streams = new Gee.HashMap<string,string>();
 		}
 	}
 }
