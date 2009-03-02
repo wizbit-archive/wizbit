@@ -256,6 +256,7 @@ namespace Wiz.Private {
 				return null;
 
 			assert(res == Sqlite.ROW);
+			c.committer = this.select_commit_sql.column_text(0);
 			c.timestamp = this.select_commit_sql.column_int(1);
 			c.timestamp2 = this.select_commit_sql.column_int(2);
 			int commit_id = this.select_commit_sql.column_int(3);
