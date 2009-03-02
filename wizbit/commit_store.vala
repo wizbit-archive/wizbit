@@ -280,14 +280,14 @@ namespace Wiz.Private {
 			if (c.uuid == null)
 				c.uuid = generate_uuid();
 
-			//var res = this.db.exec("BEGIN");
-			//assert(res == Sqlite.OK);
+			var res = this.db.exec("BEGIN");
+			assert(res == Sqlite.OK);
 
 			this.insert_commit_sql.bind_text(1, c.uuid);
 			this.insert_commit_sql.bind_text(2, c.committer);
 			this.insert_commit_sql.bind_int(3, c.timestamp);
 			this.insert_commit_sql.bind_int(4, c.timestamp2);
-			var res = this.insert_commit_sql.step();
+			res = this.insert_commit_sql.step();
 			assert(res == Sqlite.DONE);
 
 			this.insert_commit_sql.reset();
@@ -303,9 +303,10 @@ namespace Wiz.Private {
 
 			this.store_blob(c.uuid, "data", c.hash);
 
-			//res = this.db.exec("END");
-			//debug(this.db.errmsg());
-			//assert(res == Sqlite.OK);
+			res = this.db.exec("END");
+			if (res != Sqlite.OK)
+				critical(this.db.errmsg());
+			assert(res == Sqlite.OK);
 
 			return c;
 		}
