@@ -41,7 +41,7 @@ void test_store_new() {
 	 * (otherwise the number of tips would go up)
 	 */
 	var foo = new List<CommitStore>();
-	for (int i=0; i<10000; i++) {
+	for (int i=0; i<1000; i++) {
 		var test = new CommitStore(":memory:", "foo");
 		create_dummy_commits(test, 1);
 		assert(test.get_tips().length() == 1);
