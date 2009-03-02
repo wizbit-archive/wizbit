@@ -13,12 +13,19 @@ namespace Wiz {
 		public string version_uuid { get; construct; }
 
 		private Wiz.Private.Commit commit;
+		private Gee.HashMap<string,Wiz.File> _streams;
 
 		public Commit(Bit bit, string version_uuid) {
 			this.bit = bit;
 			this.version_uuid = version_uuid;
 
 			this.commit = this.bit.commits.lookup_commit(this.version_uuid);
+
+			this._streams = new Gee.HashMap<string,Wiz.File> (str_hash, str_equal, str_equal);
+			foreach (var key in this.commit.streams.get_keys()) {
+				var file = new File.from_blob(this.bit.blobs.get(this.commit.streams.get(key)));
+				this._streams.set(key, file);
+			}
 		}
 
 		/**
@@ -48,6 +55,16 @@ namespace Wiz {
 		public File file {
 			owned get {
 				return new File.from_blob(this.bit.blobs.get(this.commit.hash));
+			}
+		}
+
+		/**
+		 * wiz_commit_get_streams:
+		 * @returns: A readonly only hash map of string:Wiz.File
+		 */
+		public Gee.ReadOnlyMap<string,Wiz.File> streams {
+			owned get {
+				return new Gee.ReadOnlyMap<string,Wiz.File>(this._streams);
 			}
 		}
 
