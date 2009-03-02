@@ -324,43 +324,19 @@ namespace Wiz.Private {
 			if (version <= 0) {
 				// upgrade version 0 to version 1
 				this.upgrade_database_step(
-					"CREATE TABLE commits(id INTEGER PRIMARY KEY, uuid VARCHAR(40), blob VARCHAR(40), committer VARCHAR(256), timestamp INTEGER, timestamp2 INTEGER)");
+					"CREATE TABLE commits(id INTEGER PRIMARY KEY, uuid VARCHAR(40), committer VARCHAR(256), timestamp INTEGER, timestamp2 INTEGER)");
 				this.upgrade_database_step(
 					"CREATE TABLE relations(node_id INTEGER, parent_id INTEGER)");
+				this.upgrade_database_step(
+					"CREATE TABLE blobs(commit_id INTEGER PRIMARY KEY, stream_name VARCHAR(40), hash VARCHAR(40))");
+				this.upgrade_database_step(
+					"CREATE TABLE version(version INTEGER)");
+				this.upgrade_database_step(
+					"INSERT INTO version VALUES(1)");
 			}
 
 			if (version <= 1) {
 				// upgrade version 1 to version 2
-				this.upgrade_database_step("ALTER TABLE commits RENAME TO commits_old");
-
-				this.upgrade_database_step(
-					"CREATE TABLE blobs(commit_id INTEGER PRIMARY KEY, stream_name VARCHAR(40), hash VARCHAR(40))");
-
-				this.upgrade_database_step(
-					"CREATE TABLE commits(id INTEGER PRIMARY KEY, uuid VARCHAR(40), committer VARCHAR(256), timestamp INTEGER, timestamp2 INTEGER)");
-				// Loop over the old commits table and fill in the data into commits_new
-				// this is currently bad because it would cause the primary keys to
-				// be regenerated :/ although we don't want to delete commits do we...
-				Statement get_all;
-				this.db.prepare("SELECT id, uuid, blob, committer, timestamp, timestamp2 FROM commits_old ORDER BY id ASC", -1, out get_all);
-				int res = get_all.step();
-				while (res == Sqlite.ROW) {
-					this.insert_commit_sql.bind_text(1, get_all.column_text(1));
-					this.insert_commit_sql.bind_text(2, get_all.column_text(3));
-					this.insert_commit_sql.bind_int(3, get_all.column_int(4));
-					this.insert_commit_sql.bind_int(4, get_all.column_int(5));
-					res = this.insert_commit_sql.step();
-					assert(res == Sqlite.DONE);
-					this.insert_commit_sql.reset();
-
-					this.store_blob(get_all.column_text(1), "data", get_all.column_text(2));
-
-					res = get_all.step();
-				}
-				get_all.reset();
-				assert(res == Sqlite.DONE);
-
-				this.upgrade_database_step("DROP TABLE IF EXISTS commits_old");
 			}
 		}
 
@@ -374,11 +350,9 @@ namespace Wiz.Private {
 			if (tmp.step() == Sqlite.DONE)
 				return 0;
 
-			// TODO To check for database version 2 we should look for a table called
-			// blobs. I don't want this to happen right now as it would break the DB
-			// as it stands.
+			//FIXME: Read the contents of the version table to work out which version we are
 
-			return 2;
+			return 1;
 		}
 
 		private void upgrade_database_step(string sql) {
