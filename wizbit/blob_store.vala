@@ -40,6 +40,10 @@ namespace Wiz.Private {
 			return FileUtils.test(this.get_path_for_uuid(uuid), FileTest.EXISTS);
 		}
 
+		public Blob get(string hash) {
+			return new Blob.from_uuid(this, hash);
+		}
+
 		public MappedFile read(string uuid) throws GLib.FileError {
 			string path = this.get_path_for_uuid(uuid);
 			return new MappedFile(path, false);
@@ -82,6 +86,44 @@ namespace Wiz.Private {
 			this.store = store;
 			this.uuid = uuid;
 			this.parsed = false;
+		}
+
+		public GLib.File get_temp_file() {
+			GLib.File src, dst, tmp;
+			GLib.File store = GLib.File.new_for_path(this.store.directory);
+
+			// Open the parent for copying 
+			string path = store.get_path() + "/" + this.uuid.substring(0,2) + 
+			                                 "/" + this.uuid.substring(2,-1);
+			src = GLib.File.new_for_path(path);
+			if (!src.query_exists (null)) {
+				stderr.printf ("Parent '%s' at '%s' doesn't exist.\n", 
+				               this.uuid, src.get_path ());
+				return null;
+			}
+
+			// Make sure the temp folder exists
+			path = store.get_path() + "/temp";
+			tmp = GLib.File.new_for_path(path);
+			if (!tmp.query_exists (null)) {
+				try {
+					tmp.make_directory(null);
+				} catch (GLib.Error e) {
+					stdout.printf("Caught GLib.Error %s\n", e.message);
+				}
+			}
+
+			// Create a temporary destination file name
+			path = tmp.get_path() + "/" + generate_uuid();
+			dst = GLib.File.new_for_path(path);
+			try {
+				src.copy (dst, GLib.FileCopyFlags.NONE, null, null);
+			} catch (GLib.Error e) {
+				stdout.printf("Caught GLib.Error %s\n", e.message);
+			}
+
+			// Serve the GLib.File of the temporary file up
+			return dst;
 		}
 
 		public void set_contents(void *bufptr, long size) {

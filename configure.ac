@@ -59,6 +59,7 @@ AM_CONDITIONAL(ENABLE_GTK_DOC, test x$enable_gtk_doc = xyes)
 
 AC_CONFIG_FILES([
 	wizbit.pc
+	wizbit-uninstalled.pc
 	wizbit-widgets.pc
 	Makefile
 	wizbit/Makefile
