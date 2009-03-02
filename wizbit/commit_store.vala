@@ -223,8 +223,9 @@ namespace Wiz.Private {
 			this.get_blob_sql.bind_text(1, uuid);
 			this.get_blob_sql.bind_text(2, stream_name);
 			var res = this.get_blob_sql.step();
+			if (res != Sqlite.ROW)
+				return "";
 			retval = this.get_blob_sql.column_text(0);
-			assert(res == Sqlite.DONE);
 			this.get_blob_sql.reset();
 			return retval;
 		}
