@@ -10,7 +10,6 @@ COMMON_VALASOURCES = \
 	$(top_builddir)/wizbit/wizbit.vapi		\
 	config.vapi					\
 	tests.vala					\
-	tests.vapi					\
 	$(NULL)
 
 noinst_PROGRAMS = $(TEST_PROGS)
@@ -61,7 +60,6 @@ test_commit_store_VALASOURCES = \
 	$(top_srcdir)/wizbit/commit_store.vala		\
 	$(top_srcdir)/wizbit/utils.vala			\
 	$(top_srcdir)/wizbit/uuid.vapi			\
-	tests.vapi					\
 	tests.vala					\
 	test-commit-store.vala				\
 	$(NULL)
@@ -82,7 +80,6 @@ test_blob_store_VALASOURCES = \
 	$(top_srcdir)/wizbit/blob_store.vala		\
 	$(top_srcdir)/wizbit/uuid.vapi			\
 	$(top_srcdir)/wizbit/utils.vala			\
-	tests.vapi					\
 	config.vapi					\
 	tests.vala					\
 	test-blob-store.vala				\
