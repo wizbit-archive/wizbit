@@ -37,3 +37,4 @@ config.*
 *.bzr
 *~
 *.pc
+*.gir
