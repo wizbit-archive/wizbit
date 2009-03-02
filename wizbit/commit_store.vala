@@ -37,7 +37,7 @@ namespace Wiz.Private {
 			"INSERT INTO blobs VALUES ((SELECT c.id from commits AS c WHERE c.uuid = ?), ?, ?)";
 
 		private static const string GET_BLOB_SQL =
-			"SELECT hash FROM blobs WHERE commit_id = (SELECT c.id from commits AS c WHERE c.uuid = ?) AND stream_name = ?";
+			"SELECT b.hash FROM blobs As b, commits AS c WHERE b.commit_id = c.id AND c.uuid = ? AND stream_name = ?";
 
 		private static const string GET_STREAMS_SQL =
 			"SELECT stream_name FROM blobs WHERE commit_id = (SELECT c.id from commits AS c WHERE c.uuid = ?) GROUP BY stream_name";
