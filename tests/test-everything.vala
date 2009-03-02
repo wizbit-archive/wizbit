@@ -8,7 +8,7 @@ class TestBit : TestSuiteWithTempDir {
 			cb.add_parent(parent);
 		var f = new Wiz.File();
 		f.set_contents(data);
-		cb.file = f;
+		cb.streams.set("data", f);
 		return cb.commit();
 	}
 
@@ -34,14 +34,14 @@ class TestBit : TestSuiteWithTempDir {
 		assert( v2 != null );
 		assert( v2.committer != null );
 		assert( v2.parents.length() == 1 );
-		var mf = v2.file.get_mapped_file();
+		var mf = v2.streams.get("data").get_mapped_file();
 		assert( Memory.cmp(mf.get_contents(), "BARFOO", 6) == 0 );
 
 		v1 = v2.parents.nth_data(0);
 		assert( v1 != null );
 		assert( v1.committer != null);
 		assert( v1.parents.length() == 0 );
-		mf = v1.file.get_mapped_file();
+		mf = v1.streams.get("data").get_mapped_file();
 		assert( Memory.cmp(mf.get_contents(), "FOOBAR", 6) == 0 );
 	}
 

@@ -123,7 +123,7 @@ public class SyncSource : Object {
 	public string grab_blob(string bit_uuid, string version_uuid) {
 		var b = this.store.open_bit(bit_uuid);
 		var v = new Commit(b, version_uuid);
-		var mf = v.file.get_mapped_file();
+		var mf = v.streams.get("data").get_mapped_file();
 		return "%.*s".printf(mf.get_length(), mf.get_contents());
 	}
 }

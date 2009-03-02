@@ -49,16 +49,6 @@ namespace Wiz {
 		}
 
 		/**
-		 * wiz_commit_get_file:
-		 * @returns: The blob
-		 */
-		public File file {
-			owned get {
-				return this._streams.get("data");
-			}
-		}
-
-		/**
 		 * wiz_commit_get_streams:
 		 * @returns: A readonly only hash map of string:Wiz.File
 		 */

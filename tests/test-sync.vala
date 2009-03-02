@@ -10,7 +10,7 @@ class TestSync : TestSuiteWithTempDir {
 			cb.add_parent(parent);
 		var f = new Wiz.File();
 		f.set_contents(data);
-		cb.file = f;
+		cb.streams.set("data", f);
 		return cb.commit();
 	}
 

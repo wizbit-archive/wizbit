@@ -25,7 +25,7 @@ public class Test.Widget : GLib.Object {
   	cb.timestamp = timestamp;
   	var f = new Wiz.File();
   	f.set_contents(data);
-  	cb.file = f;
+	cb.streams.set("data", f);
 	cb.commit();
   }
 

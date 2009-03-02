@@ -43,9 +43,6 @@ namespace Wiz {
 			this.streams.set(name, stream);
 		}
 
-		//FIXME: Remove below
-		public Wiz.File file { get; set; }
-
 		public int timestamp {
 			set {
 				this.new_commit.timestamp = value;
@@ -74,9 +71,6 @@ namespace Wiz {
 				tv.get_current_time();
 				this.new_commit.timestamp2 = (int) tv.tv_usec;
 			}
-
-			if (this.file != null)
-				this.streams.set("data", this.file);
 
 			foreach (var key in this.streams.get_keys()) {
 				var file = this.streams.get(key);
