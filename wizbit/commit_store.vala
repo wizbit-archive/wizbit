@@ -378,7 +378,7 @@ namespace Wiz.Private {
 			// blobs. I don't want this to happen right now as it would break the DB
 			// as it stands.
 
-			return 1;
+			return 2;
 		}
 
 		private void upgrade_database_step(string sql) {
