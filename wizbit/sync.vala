@@ -111,7 +111,7 @@ public class SyncSource : Object {
 		var c = b.commits.lookup_commit(version_uuid);
 
 		var builder = new StringBuilder();
-		builder.append("hash %s\n".printf(c.hash));
+		builder.append("hash %s\n".printf(c.streams.get("data")));
 		foreach (var parent in c.parents)
 			builder.append("parent %s\n".printf(parent));
 		builder.append("committer %s\n".printf(c.committer));
@@ -203,7 +203,7 @@ public class SyncClient : Object {
 		while (bufptr[pos] != '\n' && pos < size)
 			pos ++;
 
-		c.hash = ((string)bufptr).substring(mark, pos-mark);
+		c.streams.set("data", ((string)bufptr).substring(mark, pos-mark));
 		mark = pos = pos+1;
 
 		while (matches(&bufptr[pos], "parent ")) {

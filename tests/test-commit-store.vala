@@ -8,7 +8,7 @@ Commit create_dummy_commits(CommitStore store, uint no_commits, Commit ?graft_po
 		var nw = new Commit();
 		if (cur != null)
 			nw.parents.append(cur.uuid);
-		nw.hash = "abc123";
+		nw.streams.set("data","abc123");
 
 		nw.timestamp = (int) time_t();
 		var t = TimeVal();
@@ -25,7 +25,7 @@ Commit create_merge(CommitStore store, Commit c1, Commit c2) {
 	var c = new Commit();
 	c.parents.append(c1.uuid);
 	c.parents.append(c2.uuid);
-	c.hash = "abc123";
+	c.streams.set("data",  "abc123");
 	store.store_commit(c);
 	return c;
 }
@@ -58,7 +58,7 @@ void test_commit_lookup() {
 
 	var c1_lookup = s.lookup_commit(c.uuid);
 	assert(c1_lookup.uuid == c.uuid);
-	assert(c1_lookup.hash == "abc123");
+	assert(c1_lookup.streams.get("data") == "abc123");
 }
 
 void test_commit() {

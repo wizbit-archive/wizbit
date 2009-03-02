@@ -253,9 +253,6 @@ namespace Wiz.Private {
 			assert(res == Sqlite.DONE);
 			this.get_blob_sql.reset();
 
-			// FIXME: temporary:
-			c.hash = c.streams.get("data");
-
 			return c;
 		}
 
@@ -283,9 +280,6 @@ namespace Wiz.Private {
 
 				this.insert_relation_sql.reset();
 			}
-
-			if (c.hash != null)
-				c.streams.set("data", c.hash);
 
 			foreach (var key in c.streams.get_keys()) {
 				this.store_blob(c.uuid, key, c.streams.get(key));
@@ -353,7 +347,6 @@ namespace Wiz.Private {
 
 	internal class Commit {
 		public string uuid { get; set; }
-		public string hash { get; set; }
 		public string committer { get; set; }
 		public int timestamp { get; set; }
 		public int timestamp2 {get; set; }
