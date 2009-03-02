@@ -12,17 +12,18 @@ namespace Wiz {
 		private Wiz.Private.CommitStore commit_store;
 		private Wiz.Private.BlobStore blob_store;
 		private Wiz.Private.Commit new_commit;
-		private List<File> streams;
+		public Gee.HashMap<string,Wiz.File> streams;
 
 		public CommitBuilder(Bit bit) {
 			this.bit = bit;
 			this.commit_store = bit.commits;
 			this.blob_store = bit.blobs;
-			this.streams = new List<File>();
 
 			this.new_commit = new Wiz.Private.Commit();
 			this.new_commit.timestamp = 0;
 			this.new_commit.committer = "";
+
+			this.streams = new Gee.HashMap<string,Wiz.File>(str_hash, str_equal, str_equal);
 		}
 
 		/**
@@ -38,8 +39,8 @@ namespace Wiz {
 		 * @param name			the name of the stream
 		 * @param stream		the WizFile stream
 		 */
-		public void add_stream(string name, File stream) {
-
+		public void add_stream(string name, Wiz.File stream) {
+			this.streams.set(name, stream);
 		}
 
 		//FIXME: Remove below
@@ -59,18 +60,9 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_builder_commit:
-		 * make the commit, updates the databae and blob store, this is immutable
+		 * make the commit, updates the database and blob store, this is immutable
 		 */
 		public Commit commit() {
-			// FIXME: Think about interaction between Wiz.Private.Blob and Wiz.File
-			// Wiz.File currently assumes things about W.P.Blob, and this will
-			// start to smell when we get to GroupCompress
-			// Could refactor some WizFile code into Blob (and add a get_temp_file method)
-			var blob = new Wiz.Private.Blob(this.blob_store);
-			blob.set_contents_from_file(this.file.get_path());
-			blob.write();
-			this.new_commit.hash = blob.uuid;
-
 			if (this.new_commit.committer == "") {
 				// Retrieve from (getpwname)->pw_gecos, env or something
 				this.new_commit.committer = "John Carr <john.carr@unrouted.co.uk>";
@@ -81,6 +73,22 @@ namespace Wiz {
 				var tv = TimeVal();
 				tv.get_current_time();
 				this.new_commit.timestamp2 = (int) tv.tv_usec;
+			}
+
+			if (this.file != null)
+				this.streams.set("data", this.file);
+
+			foreach (var key in this.streams.get_keys()) {
+				var file = this.streams.get(key);
+
+				// FIXME: Think about interaction between Wiz.Private.Blob and Wiz.File
+				// Wiz.File currently assumes things about W.P.Blob, and this will
+				// start to smell when we get to GroupCompress
+				var blob = new Wiz.Private.Blob(this.blob_store);
+				blob.set_contents_from_file(file.get_path());
+				blob.write();
+
+				this.new_commit.streams.set(key, blob.uuid);
 			}
 
 			this.commit_store.store_commit(this.new_commit);

@@ -54,7 +54,7 @@ namespace Wiz {
 		 */
 		public File file {
 			owned get {
-				return new File.from_blob(this.bit.blobs.get(this.commit.hash));
+				return this._streams.get("data");
 			}
 		}
 
@@ -119,6 +119,8 @@ namespace Wiz {
 		public CommitBuilder get_commit_builder() {
 			var cb = this.bit.get_commit_builder();
 			cb.add_parent(this);
+			foreach (var key in this._streams.get_keys())
+				cb.streams.set(key, this._streams.get(key));
 			return cb;
 		}
 	}

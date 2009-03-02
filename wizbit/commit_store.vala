@@ -284,8 +284,8 @@ namespace Wiz.Private {
 				this.insert_relation_sql.reset();
 			}
 
-			// FIXME: temporary:
-			c.streams.set("data", c.hash);
+			if (c.hash != null)
+				c.streams.set("data", c.hash);
 
 			foreach (var key in c.streams.get_keys()) {
 				this.store_blob(c.uuid, key, c.streams.get(key));
