@@ -22,18 +22,6 @@ namespace Wiz {
 		}
 
 		/**
-		 * wiz_commit_get_blob_id:
-		 * @returns: The sha of the blob associated with this version.
-		 *
-		 * Deprecated: 0.1
-		 */
-		internal string blob_id {
-			get {
-				return this.commit.hash;
-			}
-		}
-
-		/**
 		 * wiz_commit_get_committer:
 		 * @returns: The name of person who made this commit
 		 */

@@ -89,7 +89,6 @@ wiz_commit_new
 wiz_commit_get_commit_builder
 wiz_commit_get_bit
 wiz_commit_get_version_uuid
-wiz_commit_get_blob_id
 wiz_commit_get_committer
 wiz_commit_get_timestamp
 wiz_commit_get_file
