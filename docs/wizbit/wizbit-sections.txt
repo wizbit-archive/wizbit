@@ -1,6 +1,5 @@
 <SECTION>
 <FILE>bit</FILE>
-WizBitPrivate
 <TITLE>WizBit</TITLE>
 WizBit
 wiz_bit_new
@@ -23,7 +22,6 @@ WIZ_BIT_GET_CLASS
 
 <SECTION>
 <FILE>file</FILE>
-WizFilePrivate
 <TITLE>WizFile</TITLE>
 WizFile
 wiz_file_new
@@ -48,7 +46,6 @@ WIZ_FILE_GET_CLASS
 
 <SECTION>
 <FILE>breadthfirst</FILE>
-WizBreadthFirstIteratorPrivate
 <TITLE>WizBreadthFirstIterator</TITLE>
 WizBreadthFirstIterator
 wiz_breadth_first_iterator_new
@@ -70,7 +67,6 @@ WIZ_BREADTH_FIRST_ITERATOR_GET_CLASS
 
 <SECTION>
 <FILE>commit</FILE>
-WizCommitPrivate
 <TITLE>WizCommit</TITLE>
 WizCommit
 wiz_commit_new
@@ -95,7 +91,6 @@ WIZ_COMMIT_GET_CLASS
 
 <SECTION>
 <FILE>commit_builder</FILE>
-WizCommitBuilderPrivate
 WizParamSpecCommitBuilder
 <TITLE>WizCommitBuilder</TITLE>
 WizCommitBuilder
@@ -121,7 +116,6 @@ WIZ_COMMIT_BUILDER_GET_CLASS
 
 <SECTION>
 <FILE>iterator</FILE>
-WizCommitIteratorPrivate
 WizCommitIteratorGatherer
 <TITLE>WizCommitIterator</TITLE>
 WizCommitIterator
@@ -148,7 +142,6 @@ WIZ_COMMIT_ITERATOR_GET_CLASS
 
 <SECTION>
 <FILE>store</FILE>
-WizStorePrivate
 <TITLE>WizStore</TITLE>
 WizStore
 wiz_store_new
@@ -176,14 +169,12 @@ SYNC_SOURCE_CLASS
 IS_SYNC_SOURCE
 IS_SYNC_SOURCE_CLASS
 SYNC_SOURCE_GET_CLASS
-SyncSourcePrivate
 TYPE_SYNC_CLIENT
 SYNC_CLIENT
 SYNC_CLIENT_CLASS
 IS_SYNC_CLIENT
 IS_SYNC_CLIENT_CLASS
 SYNC_CLIENT_GET_CLASS
-SyncClientPrivate
 <TITLE>SyncSource</TITLE>
 SyncSource
 <TITLE>SyncClient</TITLE>
