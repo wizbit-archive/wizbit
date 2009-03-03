@@ -4,6 +4,7 @@ namespace Wiz.Private {
 
 	/**
 	 * WizBlobStore:
+	 *
 	 * Represents a collection of raw objects
 	 */
 	internal class BlobStore : GLib.Object {

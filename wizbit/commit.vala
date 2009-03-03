@@ -139,6 +139,7 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_get_commit_builder:
+		 * @self: The commit to base a new commit on
 		 * @returns: A new commit builder object
 		 *
 		 * When getting a commit builder from an existing commit it will automatically

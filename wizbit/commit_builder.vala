@@ -2,6 +2,7 @@
 namespace Wiz {
 	/**
 	 * WizCommitBuilder:
+	 *
 	 * The WizCommitBuilder class is responsible for taking blobs and Commits and
 	 * entering them into the commit store and blob store where appropriate.
 	 * essentially the CommitBuilder acts as a way of pulling together the
@@ -28,7 +29,8 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_builder_add_parent:
-		 * @param parent		the parent commit to add to this commit
+		 * @self:		the commit builder to update
+		 * @parent:		the parent commit to add to this commit
 		 */
 		public void add_parent(Commit parent) {
 			this.new_commit.parents.append(parent.version_uuid);
@@ -36,8 +38,9 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_builder_add_stream:
-		 * @param name			the name of the stream
-		 * @param stream		the WizFile stream
+		 * @self:		the commit builder to update
+		 * @name:		the name of the stream
+		 * @stream:		the WizFile stream
 		 */
 		public void add_stream(string name, Wiz.File stream) {
 			this.streams.set(name, stream);
@@ -57,6 +60,9 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_builder_commit:
+		 * @self: The pending commit to write out
+		 * @returns: A freshly created, immutable commit object
+		 *
 		 * make the commit, updates the database and blob store, this is immutable
 		 */
 		public Commit commit() {

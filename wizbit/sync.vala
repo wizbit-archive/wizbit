@@ -47,6 +47,7 @@ public class SyncSource : Object {
 	public List<string> search_for_objects(List<string> objects) {
 		/*
 		 * search_for_objects
+		 * @self: Source to search for objects in
 		 * @objects: A list of object ids that we want to pull
 		 *
 		 * Returns: A list of objects that arent on the source
@@ -89,6 +90,7 @@ public class SyncSource : Object {
 
 	/**
 	 * sync_source_search_for_shas:
+	 * @self: Source to search in for given shas
 	 * @versions: A list of versions to kick out of the iterator
 	 * @returns: A list of versions found by the breadth first search
 	 *
