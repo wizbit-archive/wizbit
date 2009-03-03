@@ -18,7 +18,7 @@
 
   <part id="wizbit-sync">
     <title>Wizbit Synchronization</title>
-    <xi:include href="xml/breadth_first.xml" />
+    <xi:include href="xml/breadthfirst.xml" />
     <xi:include href="xml/sync.xml" />
   </part>
 </book>
