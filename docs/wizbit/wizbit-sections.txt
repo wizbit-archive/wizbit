@@ -25,7 +25,6 @@ WIZ_BIT_GET_CLASS
 <TITLE>WizFile</TITLE>
 WizFile
 wiz_file_new
-wiz_file_new_from_blob
 wiz_file_get_contents
 wiz_file_set_contents
 wiz_file_get_mapped_file
