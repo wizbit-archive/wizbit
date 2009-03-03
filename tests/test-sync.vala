@@ -26,14 +26,14 @@ class TestSync : TestSuiteWithTempDir {
 		var a2 = dummy_commit(z, "2", a1);
 		var a3 = dummy_commit(z, "3", a2);
 		var a4 = dummy_commit(z, "4", a3);
-		var a5 = dummy_commit(z, "5", a4);
+		dummy_commit(z, "5", a4);
 
 		assert( z.tips.length() == 1 );
 
 		var a6 = dummy_commit(z, "6", a2);
 		var a7 = dummy_commit(z, "7", a6);
 		var a8 = dummy_commit(z, "8", a7);
-		var a9 = dummy_commit(z, "9", a8);
+		dummy_commit(z, "9", a8);
 
 		assert( z.tips.length() == 2 );
 
@@ -45,10 +45,10 @@ class TestSync : TestSuiteWithTempDir {
 
 		var ta = new SyncSource(a);
 		var tb = new SyncClient(b);
-		sb.pull(ta);
+		tb.pull(ta);
 
-		var a10 = dummy_commit(z, "10", a2);
-		var a11 = dummy_commit(z, "11", a3);
+		dummy_commit(z, "10", a2);
+		dummy_commit(z, "11", a3);
 
 		assert( z.tips.length() == 4 );
 

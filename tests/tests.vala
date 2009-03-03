@@ -1,11 +1,5 @@
 
-[Compact]
-public class BaseTestSuite {
-	public void setup(void *fixture) {}
-	public void teardown(void *fixture) {}
-}
-
-public class TestSuiteWithTempDir : BaseTestSuite {
+public class TestSuiteWithTempDir {
 
 	private string olddir;
 	protected string directory;
