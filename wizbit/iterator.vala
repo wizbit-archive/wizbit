@@ -4,6 +4,7 @@ namespace Wiz {
 
 	/**
 	 * WizCommitIterator:
+	 *
 	 * A generic iterator object for browsing over history
 	 */
 	public class CommitIterator : Object {

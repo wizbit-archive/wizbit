@@ -4,6 +4,7 @@ using Wiz.Private;
 namespace Wiz {
 	/**
 	 * WizStore:
+	 *
 	 * The WizStore is responsible for providing access to the Wizbit Store.
 	 * Essentially allowing the application developer to retrieve files as
 	 * WizBit's.

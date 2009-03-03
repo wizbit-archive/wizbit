@@ -9,6 +9,11 @@
 using GLib;
 using Wiz;
 
+/**
+ * SyncSource:
+ *
+ * Somewhere we are pulling from
+ */
 public class SyncSource : Object {
 	public Wiz.Store store { private get; construct; }
 
@@ -128,6 +133,11 @@ public class SyncSource : Object {
 	}
 }
 
+/**
+ * SyncClient:
+ *
+ * The object that is doing the pulling
+ */
 public class SyncClient : Object {
 	Wiz.BreadthFirstIterator iter;
 

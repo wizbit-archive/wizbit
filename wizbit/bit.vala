@@ -4,6 +4,7 @@ using Wiz.Private;
 namespace Wiz {
 	/**
 	 * WizBit:
+	 *
 	 * A WizBit represents an object with history, for instance a file. The WizBit
 	 * is how we obtain information regarding the history of a file or other
 	 * piece of data.
