@@ -17,7 +17,8 @@ using GLib;
 
 namespace Wiz {
 
-	/* WizFile:
+	/**
+	 * WizFile:
 	 *
 	 * The File object allows you to interact with streams in different ways.
 	 */
