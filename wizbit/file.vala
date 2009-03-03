@@ -16,7 +16,6 @@ namespace Wiz {
 	 * insanity back.
 	 */
 	public class File : GLib.Object {
-		public string stream_name { get; set; }
 		private string parent_hash;
 		private GLib.File temp_file;
 

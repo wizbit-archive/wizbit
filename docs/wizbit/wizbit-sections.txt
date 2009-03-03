@@ -39,8 +39,6 @@ wiz_file_append_to
 wiz_file_replace
 wiz_file_hash
 wiz_file_get_path
-wiz_file_get_stream_name
-wiz_file_set_stream_name
 <SUBSECTION Standard>
 WIZ_FILE
 WIZ_IS_FILE
@@ -86,7 +84,6 @@ wiz_commit_get_bit
 wiz_commit_get_version_uuid
 wiz_commit_get_committer
 wiz_commit_get_timestamp
-wiz_commit_get_file
 wiz_commit_get_previous
 wiz_commit_get_next
 wiz_commit_get_parents
@@ -111,8 +108,6 @@ wiz_commit_builder_construct
 wiz_commit_builder_new
 wiz_commit_builder_add_parent
 wiz_commit_builder_commit
-wiz_commit_builder_get_file
-wiz_commit_builder_set_file
 wiz_commit_builder_set_timestamp
 wiz_commit_builder_set_committer
 wiz_param_spec_commit_builder
