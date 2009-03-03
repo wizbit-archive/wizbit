@@ -107,7 +107,7 @@ namespace Wiz {
 		 * @self: The iterator to access
 		 * @returns: A @WizCommit for the current history point
 		 */
-		public Commit get() {
+		public new Commit get() {
 			return this.current;
 		}
 

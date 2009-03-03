@@ -51,7 +51,7 @@ namespace Wiz {
 			return true;
 		}
 
-		public Commit get() {
+		public new Commit get() {
 			return this.current;
 		}
 

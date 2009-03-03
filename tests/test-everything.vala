@@ -57,7 +57,7 @@ class TestBit : TestSuiteWithTempDir {
 		dummy_commit(obj, "BARFOO", obj.primary_tip);
 		dummy_commit(obj, "FOOBAR", obj.primary_tip);
 
-		var obj_2 = new Wiz.Bit("REFSTEST2", "tests/data/wiz_refs_2");
+		new Wiz.Bit("REFSTEST2", "tests/data/wiz_refs_2");
 		assert( obj.tips.length() == 1 );
 	}
 
