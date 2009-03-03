@@ -23,47 +23,57 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_iterator_have_visited:
+		 * @self: The iterator to check
+		 * @commit: The commit to check for
 		 * @returns: true if we have visited this node already, false otherwise
 		 */
-		public bool have_visited(Commit version) {
+		public bool have_visited(Commit commit) {
 			foreach (var v in this.visited)
-				if (v.version_uuid == version.version_uuid)
+				if (v.version_uuid == commit.version_uuid)
 					return true;
 			return false;
 		}
 
 		/**
 		 * wiz_commit_iterator_prepend_queue:
+		 * @self: The iterator to update
+		 * @commit: The commit to prepend to the queue
 		 *
 		 * Queues a #WizCommit to be visited next
 		 */
-		public void prepend_queue(Commit version) {
-			this.queue.push_head(version);
+		public void prepend_queue(Commit commit) {
+			this.queue.push_head(commit);
 		}
 
 		/**
 		 * wiz_commit_iterator_append_queue:
+		 * @self: The iterator to update
+		 * @commit: The commit to append to the queue
 		 *
 		 * Queues a #WizCommit to be visited last
 		 */
-		public void append_queue(Commit version) {
-			this.queue.push_tail(version);
+		public void append_queue(Commit commit) {
+			this.queue.push_tail(commit);
 		}
 
 		/**
 		 * wiz_commit_iterator_append_visited:
+		 * @self: The iterator to update
+		 * @commit: The commit to append to the visited list
 		 *
 		 * Record that we have visited a #WizCommit or no longer
 		 * need to visit it
 		 */
-		public void append_visited(Commit version) {
-			this.visited.append(version);
+		public void append_visited(Commit commit) {
+			this.visited.append(commit);
 		}
 
 		/**
 		 * wiz_commit_iterator_next:
-		 * @returns: True if there is a #WizCommit to look at, False otherrwise
-		 * Advance to the next #WizCommit
+		 * @self: The iterator to advance.
+		 * @returns: True if there is a #WizCommit to look at, False otherwise
+		 *
+		 * Advances to the next #WizCommit
 		 */
 		public bool next() {
 			var v = this.queue.pop_head();
@@ -83,6 +93,7 @@ namespace Wiz {
 		
 		/**
 		 * wiz_commit_iterator_get:
+		 * @self: The iterator to access
 		 * @returns: A @WizCommit for the current history point
 		 */
 		public Commit get() {
@@ -91,49 +102,57 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_iterator_depth_first:
+		 * @iter: An iterator to update
+		 * @commit: A commit to inspect
 		 *
 		 * A delegate that allows #WizCommitIterator to iterate over history
 		 * depth first.
 		 */
-		public static void depth_first(CommitIterator iter, Commit v) {
+		public static void depth_first(CommitIterator iter, Commit commit) {
 			// Visit each parent, depth first
-			foreach (var p in v.parents)
+			foreach (var p in commit.parents)
 				iter.prepend_queue(p);
 		}
 
 		/**
 		 * wiz_commit_iterator_breadth_first:
+		 * @iter: An iterator to update
+		 * @commit: A commit to inspect
 		 *
 		 * A delegate that allows #WizCommitIterator to iterate over history
 		 * breadth first.
 		 */
-		public static void breadth_first(CommitIterator iter, Commit v) {
+		public static void breadth_first(CommitIterator iter, Commit commit) {
 			// Visit each parent, breadth first
-			foreach (var p in v.parents)
+			foreach (var p in commit.parents)
 				iter.append_queue(p);
 		}
 
 		/**
 		 * wiz_commit_iterator_mainline:
+		 * @iter: An iterator to update
+		 * @commit: A commit to inspect
 		 *
 		 * A delegate that allows #WizCommitIterator to iterate over the mainline
 		 * of history.
 		 */
-		public static void mainline(CommitIterator iter, Commit v) {
+		public static void mainline(CommitIterator iter, Commit commit) {
 			// Visit the first parent
-			if (v.parents.length() > 0)
-				iter.append_queue(v.parents.nth_data(0));
+			if (commit.parents.length() > 0)
+				iter.append_queue(commit.parents.nth_data(0));
 		}
 
 		/**
 		 * wiz_commit_iterator_no_hunt:
+		 * @iter: An iterator to update
+		 * @commit: A commit to inspect
 		 *
 		 * A delegate that no-ops the #WizCommit gathering part of #WizCommitIterator.
 		 *
 		 * This allows the user to finely control which #WizCommit objects to visit,
 		 * but take advantage of the iterator boilerplate and 'have visited' logic.
 		 */
-		public static void no_hunt(CommitIterator iter, Commit v) {
+		public static void no_hunt(CommitIterator iter, Commit commit) {
 			// Don't queue any nodes to visit
 		}
 	}
