@@ -76,10 +76,6 @@ WIZ_BREADTH_FIRST_ITERATOR_GET_CLASS
 
 <SECTION>
 <FILE>commit</FILE>
-WizBit
-WizBitClass
-WizCommitBuilder
-WizCommitBuilderClass
 WizCommitPrivate
 <TITLE>WizCommit</TITLE>
 WizCommit
