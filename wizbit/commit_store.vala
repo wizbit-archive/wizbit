@@ -140,6 +140,8 @@ namespace Wiz.Private {
 		public string? get_forward(string version_uuid) {
 			this.go_forwards_sql.bind_text(1, version_uuid);
 			var res = this.go_forwards_sql.step();
+			if (res != Sqlite.ROW)
+				return null;
 			this.select_commit_by_id_sql.bind_int(1, this.go_forwards_sql.column_int(0));
 			this.select_commit_by_id_sql.step();
 			var retval = this.select_commit_by_id_sql.column_text(0);
@@ -167,6 +169,8 @@ namespace Wiz.Private {
 		public string? get_backward(string version_uuid) {
 			this.go_backwards_sql.bind_text(1, version_uuid);
 			var res = this.go_backwards_sql.step();
+			if (res != Sqlite.ROW)
+				return null;
 			this.select_commit_by_id_sql.bind_int(1, this.go_backwards_sql.column_int(0));
 			this.select_commit_by_id_sql.step();
 			var retval = this.select_commit_by_id_sql.column_text(0);
@@ -190,6 +194,7 @@ namespace Wiz.Private {
 		public int get_timestamp(string version_uuid) {
 			this.select_version_timestamp_sql.bind_text(1, version_uuid);
 			var res = this.select_version_timestamp_sql.step();
+			assert(res == Sqlite.ROW);
 			int retval = this.select_version_timestamp_sql.column_int(0);
 			this.select_version_timestamp_sql.reset();
 			return retval;
@@ -201,6 +206,7 @@ namespace Wiz.Private {
 			this.count_between_timestamps_sql.bind_int(1, timestamp1);
 			this.count_between_timestamps_sql.bind_int(2, timestamp2);
 			var res = this.count_between_timestamps_sql.step();
+			assert(res == Sqlite.ROW);
 			int retval = this.count_between_timestamps_sql.column_int(0);
 			this.count_between_timestamps_sql.reset();
 			return retval;
