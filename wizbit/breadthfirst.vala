@@ -1,3 +1,11 @@
+/**
+ * SECTION: breadthfirst
+ * @short_description: Breadth first iteration for sync
+ *
+ * This code provides a deprecated breadth first iterator which is used
+ * by the sync code.
+ */
+
 using GLib;
 
 namespace Wiz {

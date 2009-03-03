@@ -1,3 +1,18 @@
+/**
+ * SECTION: file
+ * @short_description: Interaction with the actual data you versioned
+ *
+ * The #WizFile object allows you to work with a stream of data stored in Wizbit. 
+ *
+ * When accessing an existing commit, you can use the file object to access
+ * data as memory mapped data, as a GIO stream or as a string.
+ *
+ * When preparing a stream for a new commit, you can use GIO streams or the
+ * simple and dirty wiz_file_set_contents() method.
+ *
+ * You can also get an fd, but this won't be easily cross platform.
+ */
+
 using GLib;
 
 namespace Wiz {
@@ -5,15 +20,6 @@ namespace Wiz {
 	/* WizFile:
 	 *
 	 * The File object allows you to interact with streams in different ways.
-	 *
-	 * When accessing an existing commit, you can use the file object to access
-	 * data as memory mapped data, as a GIO stream or as a string.
-	 *
-	 * When preparing a stream for a new commit, you can use GIO streams or the
-	 * simple and dirty wiz_file_set_contents() method.
-	 *
-	 * It also provides a unix fd for people who called 1962 and asked for their
-	 * insanity back.
 	 */
 	public class File : GLib.Object {
 		private string parent_hash;

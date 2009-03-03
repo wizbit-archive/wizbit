@@ -1,3 +1,12 @@
+/**
+ * SECTION: commit
+ * @short_description: A single point in the history of an object
+ *
+ * The #WizCommit object represents a single point in the history of an object. It provides both
+ * methods for visiting other points in history, getting metadata about the change such as when
+ * it was committed and also for access the data as it was at that time.
+ */
+
 using GLib;
 using Wiz.Private;
 

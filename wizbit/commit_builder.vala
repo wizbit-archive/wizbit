@@ -1,3 +1,10 @@
+/**
+ * SECTION: commit_builder
+ * @short_description: Manufacturing new commits
+ *
+ * #WizCommitBuilder is an object for creating new commits.
+ *
+ */
 
 namespace Wiz {
 	/**

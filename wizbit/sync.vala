@@ -1,9 +1,13 @@
-/*
- * WARNING: This code is crack!!!
- * Currently uses both the internal and public API's to get the job done. The iterator and what nots need
- * refactoring to use the lower level APIs
+/**
+ * SECTION: sync
+ * @short_description: Synchronisation between Wizbit stores
  *
- * Then hopefully grab_commit / grab_blob won't be so rancid..
+ * This module provides synchronisation routines for pulling from one store to another.
+ *
+ * Currently, a #SyncSource object is used to represent the story that a #SyncClient is
+ * pulling from.
+ *
+ * The code needs considerable rework, especially now a Commit can point at multiple objects.
  */
 
 using GLib;

@@ -1,3 +1,12 @@
+/**
+ * SECTION:store
+ * @short_description: Your face is a short description
+ *
+ * #WizStore represents a collection of #WizBit objects.
+ *
+ * All bit creation and bit access should go through a single store.
+ */
+
 using GLib;
 using Wiz.Private;
 

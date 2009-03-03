@@ -1,3 +1,14 @@
+/**
+ * SECTION: iterator
+ * @short_description: Iterating over history
+ *
+ * The #WizCommitIterator object is used when iterating over history.
+ *
+ * It provides the common code for iterating over history, such as not visiting a node
+ * twice. A delegate, #WizCommitIteratorGatherer, is used to provide the specific iterating
+ * behaviour, such as depth first or breadth first.
+ */
+
 using GLib;
 
 namespace Wiz {

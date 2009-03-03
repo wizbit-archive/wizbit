@@ -1,3 +1,12 @@
+/**
+ * SECTION: bit
+ * @short_description: A single versioned object
+ *
+ * A #WizBit object represents a single versioned object and provides entry points
+ * for accessing its history, including implementations of breadth and depth first
+ * searches.
+ */
+
 using GLib;
 using Wiz.Private;
 
@@ -12,18 +21,26 @@ namespace Wiz {
 	public class Bit : GLib.Object {
 		private string refs_path;
 		private string objects_path;
+		private string _uuid;
 
 		internal BlobStore blobs;
 		public CommitStore commits;
 
 		public string store_path { private get; construct; }
 
-		/**
-		 * wiz_bit_get_uuid:
-		 * @self: The bit to get the uuid of
-		 * @returns: The uuid of the bit, as a string
-		 */
-		public string uuid { get; construct; }
+		public string uuid {
+			/**
+			 * wiz_bit_get_uuid:
+			 * @self: The bit to get the uuid of
+			 * @returns: The uuid of the bit, as a string
+			 */
+			get {
+				return this._uuid;
+			}
+			construct {
+				this._uuid = value;
+			}
+		}
 
 		public Commit? primary_tip {
 			/**
