@@ -34,7 +34,8 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_iterator_prepend_queue:
-		 * Queues a @WizCommit to be visited next
+		 *
+		 * Queues a #WizCommit to be visited next
 		 */
 		public void prepend_queue(Commit version) {
 			this.queue.push_head(version);
@@ -42,7 +43,8 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_iterator_append_queue:
-		 * Queues a @WizCommit to be visited last
+		 *
+		 * Queues a #WizCommit to be visited last
 		 */
 		public void append_queue(Commit version) {
 			this.queue.push_tail(version);
@@ -50,7 +52,8 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_iterator_append_visited:
-		 * Record that we have visited a @WizCommit or no longer
+		 *
+		 * Record that we have visited a #WizCommit or no longer
 		 * need to visit it
 		 */
 		public void append_visited(Commit version) {
@@ -59,8 +62,8 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_iterator_next:
-		 * @returns: True if there is a @WizCommit to look at, False otherrwise
-		 * Advance to the next @WizCommit
+		 * @returns: True if there is a #WizCommit to look at, False otherrwise
+		 * Advance to the next #WizCommit
 		 */
 		public bool next() {
 			var v = this.queue.pop_head();
@@ -88,7 +91,8 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_iterator_depth_first:
-		 * A delegate that allows @WizCommitIterator to iterate over history
+		 *
+		 * A delegate that allows #WizCommitIterator to iterate over history
 		 * depth first.
 		 */
 		public static void depth_first(CommitIterator iter, Commit v) {
@@ -99,7 +103,8 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_iterator_breadth_first:
-		 * A delegate that allows @WizCommitIterator to iterate over history
+		 *
+		 * A delegate that allows #WizCommitIterator to iterate over history
 		 * breadth first.
 		 */
 		public static void breadth_first(CommitIterator iter, Commit v) {
@@ -110,7 +115,8 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_iterator_mainline:
-		 * A delegate that allows @WizCommitIterator to iterate over the mainline
+		 *
+		 * A delegate that allows #WizCommitIterator to iterate over the mainline
 		 * of history.
 		 */
 		public static void mainline(CommitIterator iter, Commit v) {
@@ -121,9 +127,10 @@ namespace Wiz {
 
 		/**
 		 * wiz_commit_iterator_no_hunt:
-		 * A delegate that no-ops the @WizCommit gathering part of @WizCommitIterator.
 		 *
-		 * This allows the user to finely control which @WizCommit objects to visit,
+		 * A delegate that no-ops the #WizCommit gathering part of #WizCommitIterator.
+		 *
+		 * This allows the user to finely control which #WizCommit objects to visit,
 		 * but take advantage of the iterator boilerplate and 'have visited' logic.
 		 */
 		public static void no_hunt(CommitIterator iter, Commit v) {
