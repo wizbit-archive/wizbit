@@ -8,7 +8,6 @@ wiz_bit_new
 wiz_bit_has_version
 wiz_bit_open_commit
 wiz_bit_get_commit_builder
-wiz_bit_get_store_path
 wiz_bit_get_uuid
 wiz_bit_get_primary_tip
 wiz_bit_get_tips

@@ -3,7 +3,7 @@ using Wiz.Private;
 
 namespace Wiz {
 	/**
-	 * WizBit
+	 * WizBit:
 	 * A WizBit represents an object with history, for instance a file. The WizBit
 	 * is how we obtain information regarding the history of a file or other
 	 * piece of data.
@@ -15,12 +15,19 @@ namespace Wiz {
 		internal BlobStore blobs;
 		public CommitStore commits;
 
-		public string store_path { get; construct; }
+		public string store_path { private get; construct; }
+
+		/**
+		 * wiz_bit_get_uuid:
+		 * @self: The bit to get the uuid of
+		 * @returns: The uuid of the bit, as a string
+		 */
 		public string uuid { get; construct; }
 
 		public Commit? primary_tip {
 			/**
 			 * wiz_bit_get_primary_tip:
+			 * @self: A bit object
 			 * @returns: The most recent version
 			 */
 			owned get {
@@ -34,6 +41,7 @@ namespace Wiz {
 		public List<Commit> tips {
 			/**
 			 * wiz_bit_get_tips:
+			 * @self: A bit object
 			 * @returns: All unmerged versions for the current bit
 			 */
 			owned get {
@@ -47,6 +55,7 @@ namespace Wiz {
 		public Commit? root {
 			/**
 			 * wiz_bit_get_root:
+			 * @self: A bit object
 			 * @returns: The first version of this bit
 			 */
 			owned get {
@@ -57,6 +66,12 @@ namespace Wiz {
 			}
 		}
 
+		/**
+		 * wiz_bit_new:
+		 * @uuid: The uuid to create the bit for
+		 * @store_path: The path to the store
+		 * @returns: A bit object
+		 */
 		public Bit(string uuid, string? store_path) {
 			this.uuid = uuid;
 			this.store_path = store_path;
@@ -81,6 +96,8 @@ namespace Wiz {
 
 		/**
 		 * wiz_bit_has_version:
+		 * @self: A bit object
+		 * @uuid: The commit you want to test for
 		 * @returns: True if bit has specified version, False otherwise.
 		 */
 		public bool has_version(string uuid) {
@@ -89,6 +106,8 @@ namespace Wiz {
 
 		/**
 		 * wiz_bit_open_commit:
+		 * @self: A bit object
+		 * @uuid: The commit you want to open
 		 * @returns: A commit object for the specified version uuid
 		 */
 		public Commit open_commit(string uuid) {
@@ -97,6 +116,9 @@ namespace Wiz {
 
 		/**
 		 * wiz_bit_get_iterator:
+		 * @self: A bit object
+		 * @version_uuid: The commit object you want to start iteration at
+		 * @gatherer: A callback that allows you to control which nodes are visited on the next iterations
 		 * @returns: A history iterator starting at the specified version_uuid
 		 */
 		private CommitIterator get_iterator(string version_uuid, CommitIterator.Gatherer gatherer) {
@@ -107,6 +129,7 @@ namespace Wiz {
 
 		/**
 		 * wiz_bit_get_commit_builder:
+		 * @self: A bit object
 		 * @returns: A new commit builder object
 		 */
 		public CommitBuilder get_commit_builder() {

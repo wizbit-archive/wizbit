@@ -34,7 +34,11 @@ namespace Wiz {
 
 		/**
 		 * wiz_file_set_contents:
-		 * @returns: Set the contents of the file from a string.
+		 * @self: The file object to set the contents of
+		 * @contents: A string to load into the file object
+		 * @length: The length of data to load into the file
+		 *
+		 * Set the contents of the file from a string.
 		 */
 		public void set_contents(string contents, long length = -1) throws FileError {
 			FileUtils.set_contents(this.get_path(), contents, length);
@@ -42,7 +46,8 @@ namespace Wiz {
 
 		/**
 		 * wiz_file_get_mapped_file:
-		 * @returns: A GLib.MappedFile object
+		 * @self: The file object from which to get a #GMappedFile
+		 * @returns: A #GMappedFile object
 		 */
 		public MappedFile get_mapped_file() {
 			return new MappedFile(this.get_path(), false);
@@ -50,7 +55,7 @@ namespace Wiz {
 
 		/**
 		 * wiz_file_read:
-		 * @returns: A GLib.InputStream for reading from the resource
+		 * @returns: A #GInputStream for reading from the resource
 		 */
 		public GLib.InputStream read() {
 			return this.temp_file.read(null);
@@ -58,7 +63,7 @@ namespace Wiz {
 
 		/**
 		 * wiz_file_append_to
-		 * @returns: A GLib.OutputStream for append to a resource
+		 * @returns: A #GOutputStream for append to a resource
 		 */
 		public GLib.OutputStream append_to() {
 			return this.temp_file.append_to(FileCreateFlags.PRIVATE, null);	
@@ -66,7 +71,7 @@ namespace Wiz {
 
 		/**
 		 * wiz_file_replace
-		 * @returns: A GLib.OutputStream for replacing a resource
+		 * @returns: A #GOutputStream for replacing a resource
 		 */
 		public GLib.OutputStream replace() {
 			return this.temp_file.replace(null, false, FileCreateFlags.PRIVATE, null);
