@@ -58,6 +58,13 @@ namespace Wiz {
 			 * wiz_bit_get_root:
 			 * @self: A bit object
 			 * @returns: The first version of this bit
+			 *
+			 * The root commit is the furthest point into the past for the bit, the
+			 * only commit in a bit that has no parents.
+			 *
+			 * It is currently identified using a heuristic, fetching literally the
+			 * oldest commit rather than following the DAG to its root. Because of this
+			 * Wizbit doesn't support multi-rooted bits.
 			 */
 			owned get {
 				var root = this.commits.get_root();
