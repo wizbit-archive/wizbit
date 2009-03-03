@@ -4,6 +4,7 @@ using Sqlite;
 namespace Wiz.Private {
 	/**
 	 * WizCommitStore:
+	 *
 	 * The WizCommitStore is responsible for storing historical information
 	 * regarding a WizBit. Essentially a list of commit's and pointers to the
 	 * blobs is stored in a database. 
