@@ -89,7 +89,7 @@ namespace Wiz.Private {
 			this.parsed = false;
 		}
 
-		public GLib.File get_temp_file() {
+		public GLib.File? get_temp_file() {
 			GLib.File src, dst, tmp;
 			GLib.File store = GLib.File.new_for_path(this.store.directory);
 
