@@ -25,7 +25,7 @@ namespace Wiz {
 		private Wiz.Private.Commit commit;
 		private Gee.HashMap<string,Wiz.File> _streams;
 
-		public Commit(Bit bit, string version_uuid) {
+		internal Commit(Bit bit, string version_uuid) {
 			this.bit = bit;
 			this.version_uuid = version_uuid;
 
