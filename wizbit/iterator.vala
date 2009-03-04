@@ -26,7 +26,7 @@ namespace Wiz {
 		Queue<Commit> queue;
 		Commit current;
 
-		public CommitIterator(Gatherer gather) {
+		internal CommitIterator(Gatherer gather) {
 			this.visited = new List<Commit>();
 			this.queue = new Queue<Commit>();
 			this.gather = gather;
