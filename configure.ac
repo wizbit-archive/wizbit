@@ -61,6 +61,7 @@ AC_CONFIG_FILES([
 	wizbit.pc
 	wizbit-uninstalled.pc
 	wizbit-widgets.pc
+	wizbit-widgets-uninstalled.pc
 	Makefile
 	wizbit/Makefile
 	wizbit-widgets/Makefile
