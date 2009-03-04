@@ -26,6 +26,9 @@ wizbit-widgets/*.[ch]
 wizbit-widgets/wizbit-widgets.vapi
 tests/*.[ch]
 src/*.[ch]
+docs/wizbit/html
+docs/wizbit/xml
+docs/wizbit/tmpl
 config.*
 *.stamp
 *.o
