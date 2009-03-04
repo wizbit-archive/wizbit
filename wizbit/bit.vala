@@ -91,7 +91,7 @@ namespace Wiz {
 			}
 		}
 
-		public Bit(string uuid, string? store_path) {
+		internal Bit(string uuid, string? store_path) {
 			this.uuid = uuid;
 			this.store_path = store_path;
 
