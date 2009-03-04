@@ -1,0 +1,5 @@
+Name: Wizbit Widgets Uninstalled
+Description: Wizbit widgets,, Not Installed
+Version: @VERSION@
+Libs: ${pc_top_builddir}/${pcfiledir}/wizbit-widgets/libwizbit-widgets.la
+Cflags: -I${pc_top_builddir}/${pcfiledir}/@srcdir@
