@@ -121,5 +121,18 @@ namespace Wiz {
 		public string get_path() {
 			return this.temp_file.get_path();
 		}
+
+		/**
+		 * wiz_file_get_unix_fd:
+		 * @self: The file object to get an fd for
+		 * @returns: A unix file descriptor
+		 *
+		 * This is to allow use of traditional posix API's on a versioned chunk of data,
+		 * but carries the penalty that the data has to be checked out and the checked in
+		 * after you have made changes - we can't optimise the fulle compress/uncompress away.
+		 */
+		public int get_unix_fd() {
+			return Posix.open(this.get_path(), Posix.O_RDWR);
+		}
 	}
 }
