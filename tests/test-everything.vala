@@ -23,12 +23,14 @@ class TestBit : TestSuiteWithTempDir {
 	}
 
 	public void test_wiz_bit_1() {
-		var obj = new Wiz.Bit("SOMENAME", "data/wiz_bit");
+		var store = new Wiz.Store("repo_uuid", "data/wiz_bit");
+		var obj = store.create_bit();
+		var uuid = obj.uuid;
 
 		var v1 = dummy_commit(obj, "FOOBAR", null);
 		var v2 = dummy_commit(obj, "BARFOO", obj.primary_tip);
 
-		obj = new Wiz.Bit("SOMENAME", "data/wiz_bit");
+		obj = store.open_bit(uuid);
 
 		v2 = obj.primary_tip;
 		assert( v2 != null );
@@ -46,18 +48,21 @@ class TestBit : TestSuiteWithTempDir {
 	}
 
 	public void test_wiz_refs_1() {
-		var obj = new Wiz.Bit("REFSTEST", "data/wiz_refs_1");
+		var store = new Wiz.Store("repo_uuid", "data/wiz_refs_1");
+		var obj = store.create_bit();
 		dummy_commit(obj, "BARFOO", obj.primary_tip);
 		dummy_commit(obj, "FOOBAR", obj.primary_tip);
 		assert( obj.tips.length() == 1 );
 	}
 
 	public void test_wiz_refs_2() {
-		var obj = new Wiz.Bit("REFSTEST2", "data/wiz_refs_2");
+		var store = new Wiz.Store("repo_uuid", "data/wiz_refs_2");
+		var obj = store.create_bit();
+		var uuid = obj.uuid;
 		dummy_commit(obj, "BARFOO", obj.primary_tip);
 		dummy_commit(obj, "FOOBAR", obj.primary_tip);
 
-		new Wiz.Bit("REFSTEST2", "tests/data/wiz_refs_2");
+		obj = store.open_bit(uuid);
 		assert( obj.tips.length() == 1 );
 	}
 
