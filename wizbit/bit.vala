@@ -91,12 +91,6 @@ namespace Wiz {
 			}
 		}
 
-		/**
-		 * wiz_bit_new:
-		 * @uuid: The uuid to create the bit for
-		 * @store_path: The path to the store
-		 * @returns: A bit object
-		 */
 		public Bit(string uuid, string? store_path) {
 			this.uuid = uuid;
 			this.store_path = store_path;
