@@ -26,7 +26,7 @@ namespace Wiz {
 		internal BlobStore blobs;
 		public CommitStore commits;
 
-		public string store_path { private get; construct; }
+		private string store_path;
 
 		public string uuid {
 			/**
