@@ -140,8 +140,10 @@ namespace Wiz.Private {
 		public string? get_forward(string version_uuid) {
 			this.go_forwards_sql.bind_text(1, version_uuid);
 			var res = this.go_forwards_sql.step();
-			if (res != Sqlite.ROW)
+			if (res != Sqlite.ROW) {
+				this.go_forwards_sql.reset();
 				return null;
+			}
 			this.select_commit_by_id_sql.bind_int(1, this.go_forwards_sql.column_int(0));
 			this.select_commit_by_id_sql.step();
 			var retval = this.select_commit_by_id_sql.column_text(0);
@@ -169,8 +171,10 @@ namespace Wiz.Private {
 		public string? get_backward(string version_uuid) {
 			this.go_backwards_sql.bind_text(1, version_uuid);
 			var res = this.go_backwards_sql.step();
-			if (res != Sqlite.ROW)
+			if (res != Sqlite.ROW) {
+				this.go_backwards_sql.reset();
 				return null;
+			}
 			this.select_commit_by_id_sql.bind_int(1, this.go_backwards_sql.column_int(0));
 			this.select_commit_by_id_sql.step();
 			var retval = this.select_commit_by_id_sql.column_text(0);
