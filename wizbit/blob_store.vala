@@ -41,7 +41,7 @@ namespace Wiz.Private {
 			return FileUtils.test(this.get_path_for_uuid(uuid), FileTest.EXISTS);
 		}
 
-		public Blob get(string hash) {
+		public new Blob get(string hash) {
 			return new Blob.from_uuid(this, hash);
 		}
 

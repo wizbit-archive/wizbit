@@ -51,11 +51,16 @@ namespace Wiz {
 		public List<string> list_bits() {
 			var objs = new List<string>();
 			var path = Path.build_filename(this.directory, "refs");
-			var dir = Dir.open(path);
-			var f = dir.read_name();
-			while (f != null) {
-				objs.append(f);
-				f = dir.read_name();
+			Dir dir;
+			try {
+				dir = Dir.open(path);
+				var f = dir.read_name();
+				while (f != null) {
+					objs.append(f);
+					f = dir.read_name();
+				}
+
+			} catch (GLib.FileError e) {
 			}
 			return objs;
 		}

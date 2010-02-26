@@ -46,7 +46,7 @@ namespace Wiz {
 		 */
 		public string get_contents() throws FileError {
 			string contents;
-			long length;
+			ulong length;
 			FileUtils.get_contents(this.get_path(), out contents, out length);
 			return contents;
 		}

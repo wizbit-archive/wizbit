@@ -92,8 +92,11 @@ namespace Wiz {
 				// Wiz.File currently assumes things about W.P.Blob, and this will
 				// start to smell when we get to GroupCompress
 				var blob = new Wiz.Private.Blob(this.blob_store);
-				blob.set_contents_from_file(file.get_path());
-				blob.write();
+				try {
+					blob.set_contents_from_file(file.get_path());
+					blob.write();
+				} catch (GLib.FileError e) {
+				}
 
 				this.new_commit.streams.set(key, blob.uuid);
 			}
