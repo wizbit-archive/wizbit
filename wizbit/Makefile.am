@@ -27,11 +27,10 @@ libwizbit_la_VALASOURCES = \
 
 libwizbit_la_SOURCES = \
 	$(libwizbit_la_VALASOURCES:.vala=.c) \
-	$(libwizbit_la_VALASOURCES:.vala=.h) \
 	$(NULL)
 
 libwizbit.vala.stamp: $(libwizbit_la_VALASOURCES)
-	$(VALAC) -C --basedir $(top_srcdir) --pkg posix --pkg glib-2.0 --pkg gio-2.0 --pkg gio-unix-2.0 --pkg sqlite3 --pkg gee-1.0 --library wizbit $^
+	$(VALAC) -C --basedir $(top_srcdir) --pkg posix --pkg glib-2.0 --pkg gio-2.0 --pkg gio-unix-2.0 --pkg sqlite3 --pkg gee-1.0 -H wizbit.h --library wizbit $^
 	touch $@
 
 libwizbit_la_CFLAGS=@WIZBIT_CFLAGS@
@@ -39,7 +38,7 @@ libwizbit_la_LIBADD=@WIZBIT_LIBS@
 
 wizbitincludedir = $(includedir)/wizbit-1.0/wizbit
 wizbitinclude_HEADERS = \
-	$(libwizbit_la_VALASOURCES:.vala=.h) \
+	wizbit.h \
 	$(NULL)
 
 wizbitvapidir = $(datadir)/vala/vapi
@@ -51,3 +50,10 @@ EXTRA_DIST += \
 	$(libwizbit_la_VALASOURCES) \
 	libwizbit.vala.stamp \
 	$(NULL)
+
+MAINTAINERCLEANFILES = \
+        wizbit.vapi \
+        wizbit.h \
+        $(libwizbit_la_VALASOURCES:.vala=.c) \
+        $(NULL)
+
