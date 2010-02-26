@@ -7,10 +7,11 @@ ACLOCAL_AMFLAGS = -I m4
 
 SUBDIRS = \
 	wizbit \
-	wizbit-widgets \
 	tests \
 	docs \
 	$(NULL)
+
+#	wizbit-widgets
 
 AM_CPPFLAGS = \
 	$(WIZBIT_CFLAGS) \

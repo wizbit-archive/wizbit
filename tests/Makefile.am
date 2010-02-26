@@ -2,9 +2,11 @@ include $(top_srcdir)/Makefile.decl
 
 INCLUDES = \
 	-I$(top_srcdir) \
-	-DTESTDATADIR=\"$(top_srcdir)/tests/data/\"
+	-I$(top_srcdir)/wizbit \
+	-DTESTDATADIR=\"$(abs_top_srcdir)/tests/data/\"
 
-TEST_PROGS += test-everything test-sync test-commit-store test-blob-store test-widget
+TEST_PROGS += test-everything test-sync test-commit-store test-blob-store
+#test-widget
 
 COMMON_VALASOURCES = \
 	$(top_builddir)/wizbit/wizbit.vapi		\
