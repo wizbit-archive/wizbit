@@ -36,7 +36,7 @@ libwizbit.vala.stamp: $(libwizbit_la_VALASOURCES)
 libwizbit_la_CFLAGS=@WIZBIT_CFLAGS@
 libwizbit_la_LIBADD=@WIZBIT_LIBS@
 
-wizbitincludedir = $(includedir)/wizbit-1.0/wizbit
+wizbitincludedir = $(includedir)/wizbit-1.0
 wizbitinclude_HEADERS = \
 	wizbit.h \
 	$(NULL)
